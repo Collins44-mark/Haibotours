@@ -100,44 +100,97 @@ function haiboValidMediaUrl(url) {
   );
 }
 
+function haiboNormalizeDestId(id) {
+  return String(id || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-');
+}
+
 function haiboStaticDestination(id) {
+  const key = haiboNormalizeDestId(id);
   const list = window.HAIBO_DESTINATIONS_STATIC || [];
-  return list.find((d) => d.id === id) || null;
+  return list.find((d) => haiboNormalizeDestId(d.id) === key) || null;
+}
+
+function haiboPickDestinationImage(d) {
+  if (!d) return '';
+  return d.image || d.imageUrl || d.cardImage || d.thumbnail || '';
 }
 
 function haiboMergeDestination(live, staticDest) {
   const base = staticDest ? { ...staticDest } : {};
   const merged = { ...base, ...live };
-  if (!haiboValidMediaUrl(merged.image)) merged.image = base.image || merged.image;
-  if (!haiboValidMediaUrl(merged.heroImage)) {
-    merged.heroImage = base.heroImage || base.image || merged.heroImage;
-  }
+
+  const liveImage = haiboPickDestinationImage(live);
+  const liveHero = live?.heroImage || live?.hero_image || '';
+  merged.image = haiboValidMediaUrl(liveImage)
+    ? liveImage
+    : base.image || haiboPickDestinationImage(base);
+  merged.heroImage = haiboValidMediaUrl(liveHero)
+    ? liveHero
+    : base.heroImage || base.image || merged.image;
+
   if (!Array.isArray(merged.packages) || !merged.packages.length) {
     merged.packages = base.packages || [];
   }
-  if (!Array.isArray(merged.galleryImages) || !merged.galleryImages.length) {
-    merged.galleryImages = base.galleryImages || [];
+  const liveGallery = merged.gallery || merged.galleryImages;
+  if (!Array.isArray(liveGallery) || !liveGallery.length) {
+    merged.gallery = base.gallery || [];
+  } else {
+    merged.gallery = liveGallery;
   }
-  if (!Array.isArray(merged.experiences) || !merged.experiences.length) {
-    merged.experiences = base.experiences || [];
+  delete merged.galleryImages;
+
+  if (!Array.isArray(merged.highlights) || !merged.highlights.length) {
+    merged.highlights = base.highlights || [];
   }
+  if (!merged.experience && base.experience) {
+    merged.experience = base.experience;
+  }
+  if (!merged.description && base.description) merged.description = base.description;
+  if (!merged.bestTime && base.bestTime) merged.bestTime = base.bestTime;
+  if (!merged.region && base.region) merged.region = base.region;
+  if (!merged.subtitle && base.subtitle) merged.subtitle = base.subtitle;
+  if (!merged.name && base.name) merged.name = base.name;
+  if (merged.id == null || String(merged.id).trim() === '') {
+    merged.id = base.id || live?.id;
+  }
+  merged.id = haiboNormalizeDestId(merged.id) || merged.id;
+
   return merged;
 }
 
+/** Always show the full static catalog; Firestore only overrides fields with real content */
 function haiboMergeDestinationsList(liveItems) {
   const staticList =
     window.HAIBO_DESTINATIONS_STATIC ||
     (typeof DESTINATIONS !== 'undefined' ? DESTINATIONS.map((x) => ({ ...x })) : []);
-  const active = (liveItems || []).filter((d) => d && d.id && d.active !== false);
-  if (!active.length) return staticList.map((x) => ({ ...x }));
+  if (!staticList.length) return [];
 
-  const staticById = Object.fromEntries(staticList.map((d) => [d.id, d]));
-  const merged = active
-    .map((d) => haiboMergeDestination(d, staticById[d.id]))
-    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  const active = (liveItems || []).filter((d) => d && d.active !== false);
+  const liveById = new Map();
+  active.forEach((d) => {
+    const key = haiboNormalizeDestId(d.id);
+    if (key) liveById.set(key, d);
+  });
 
-  const withCardImages = merged.filter((d) => haiboValidMediaUrl(d.image));
-  return withCardImages.length ? merged : staticList.map((x) => ({ ...x }));
+  const merged = staticList.map((staticD, index) => {
+    const key = haiboNormalizeDestId(staticD.id);
+    const live = liveById.get(key);
+    if (live) liveById.delete(key);
+    const row = live ? haiboMergeDestination(live, staticD) : { ...staticD };
+    if (row.order == null) row.order = index;
+    return row;
+  });
+
+  liveById.forEach((live) => {
+    const key = haiboNormalizeDestId(live.id);
+    if (!key) return;
+    merged.push(haiboMergeDestination(live, haiboStaticDestination(key)));
+  });
+
+  return merged.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 }
 
 function haiboValidGalleryItem(item) {
@@ -230,3 +283,5 @@ window.haiboMergeDestinationsList = haiboMergeDestinationsList;
 window.haiboMergeGalleryCollection = haiboMergeGalleryCollection;
 window.haiboNormalizeGalleryObject = haiboNormalizeGalleryObject;
 window.haiboStaticDestination = haiboStaticDestination;
+window.haiboPickDestinationImage = haiboPickDestinationImage;
+window.haiboNormalizeDestId = haiboNormalizeDestId;

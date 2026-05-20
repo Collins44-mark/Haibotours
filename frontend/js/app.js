@@ -369,27 +369,41 @@ function initWhatsAppFloat(customMessage) {
 }
 
 function resolveDestinationImage(dest) {
+  const pick =
+    typeof haiboPickDestinationImage === 'function'
+      ? haiboPickDestinationImage(dest)
+      : dest?.image || '';
   const staticD =
     typeof haiboStaticDestination === 'function' ? haiboStaticDestination(dest.id) : null;
-  if (typeof haiboValidMediaUrl === 'function' && haiboValidMediaUrl(dest.image)) {
-    return dest.image;
+  if (typeof haiboValidMediaUrl === 'function' && haiboValidMediaUrl(pick)) {
+    return pick;
   }
-  return staticD?.image || dest.image || '';
+  const fallback =
+    typeof haiboPickDestinationImage === 'function'
+      ? haiboPickDestinationImage(staticD)
+      : staticD?.image;
+  return fallback || pick || '';
+}
+
+function escapeAttrUrl(url) {
+  return String(url || '').replace(/'/g, '%27').replace(/"/g, '%22');
 }
 
 function renderDestinationCard(dest) {
   const href = destinationDetailUrl(dest.id);
   const imageUrl = resolveDestinationImage(dest);
-  const img =
-    typeof window.haiboImgTag === 'function'
-      ? window.haiboImgTag(imageUrl, `${dest.name} safari — ${dest.subtitle}`, {
-          width: 900,
-          class: 'haibo-media h-[380px] md:h-[420px] w-full object-cover',
-        })
-      : `<img src="${imageUrl}" alt="${dest.name} safari — ${dest.subtitle}" loading="lazy" decoding="async" class="haibo-media h-[380px] md:h-[420px] w-full object-cover">`;
+  const alt = `${dest.name} safari — ${dest.subtitle}`;
+  const bg = escapeAttrUrl(imageUrl);
+  const imgSrc =
+    typeof window.haiboOptimizeImage === 'function'
+      ? window.haiboOptimizeImage(imageUrl, { width: 900 })
+      : imageUrl;
+  const img = imageUrl
+    ? `<img src="${escapeAttrUrl(imgSrc)}" alt="${alt.replace(/"/g, '&quot;')}" loading="lazy" decoding="async" class="haibo-media dest-card-img w-full h-[380px] md:h-[420px] object-cover" width="900" height="520">`
+    : '';
   return `
     <a href="${href}" class="destination-card glass rounded-[30px] overflow-hidden">
-      <div class="relative dest-card-media">
+      <div class="relative dest-card-media"${bg ? ` style="background-image:url('${bg}')"` : ''}>
         ${img}
         <div class="absolute inset-0 overlay-dark"></div>
         <div class="absolute bottom-6 left-6 right-6">
@@ -455,8 +469,12 @@ function renderDestinationDetail() {
   const waMessage = `Hello HAIBO Tours! I'm interested in the ${dest.name} (${dest.subtitle}) package. Please share details and availability.`;
   initWhatsAppFloat(waMessage);
 
+  const packages = dest.packages?.length ? dest.packages : staticD?.packages || [];
+  const gallery = dest.gallery?.length ? dest.gallery : staticD?.gallery || [];
+  const highlights = dest.highlights?.length ? dest.highlights : staticD?.highlights || [];
+
   const destBg = getDestinationCtaBg(dest.id);
-  const packagesHtml = dest.packages
+  const packagesHtml = packages
     .map(
       (pkg) => `
     <div class="cta-cinematic package-card rounded-3xl ${pkg.popular ? 'popular' : ''}">
@@ -479,7 +497,7 @@ function renderDestinationDetail() {
     )
     .join('');
 
-  const exp = dest.experience;
+  const exp = dest.experience || staticD?.experience;
   const experienceHtml = exp
     ? exp.items
         .map(
@@ -493,7 +511,7 @@ function renderDestinationDetail() {
         .join('')
     : '';
 
-  const galleryHtml = dest.gallery
+  const galleryHtml = gallery
     .map((imgSrc, i) => {
       const alt = `${dest.name} safari photo ${i + 1} — Tanzania`;
       const cls = `haibo-media gallery-item rounded-[24px] object-cover w-full ${i === 0 ? 'md:col-span-2 md:row-span-2 h-[280px] md:h-full min-h-[280px]' : 'h-[220px] md:h-[240px]'}`;
@@ -504,7 +522,9 @@ function renderDestinationDetail() {
     })
     .join('');
 
-  const highlightsHtml = dest.highlights.map((h) => `<span class="glass px-4 py-2 rounded-full text-sm">${h}</span>`).join('');
+  const highlightsHtml = highlights
+    .map((h) => `<span class="glass px-4 py-2 rounded-full text-sm">${h}</span>`)
+    .join('');
 
   document.getElementById('detail-root').innerHTML = `
     <section class="page-hero hero hero-banner flex items-end" style="--hero-bg-image: url('${heroImg}')">

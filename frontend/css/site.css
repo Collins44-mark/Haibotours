@@ -115,11 +115,33 @@ body {
 .destination-card .dest-card-media {
   position: relative;
   overflow: hidden;
+  min-height: 380px;
+  background-color: #141414;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
-.destination-card .dest-card-media img {
+.destination-card .dest-card-media img,
+.destination-card .dest-card-media .dest-card-img {
+  display: block;
+  width: 100%;
+  min-height: 380px;
+  height: 380px;
   object-fit: cover;
   object-position: center;
+}
+
+@media (min-width: 768px) {
+  .destination-card .dest-card-media {
+    min-height: 420px;
+  }
+
+  .destination-card .dest-card-media img,
+  .destination-card .dest-card-media .dest-card-img {
+    min-height: 420px;
+    height: 420px;
+  }
 }
 
 .overlay-dark {

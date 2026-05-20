@@ -378,8 +378,17 @@ window.syncHaiboDestinations = syncHaiboDestinations;
 
 function getDestinationById(id) {
   if (!id) return null;
-  const key = String(id).trim().toLowerCase();
-  return getHaiboDestinations().find((d) => d.id === key) || null;
+  const key =
+    typeof haiboNormalizeDestId === 'function'
+      ? haiboNormalizeDestId(id)
+      : String(id).trim().toLowerCase();
+  return (
+    getHaiboDestinations().find((d) =>
+      typeof haiboNormalizeDestId === 'function'
+        ? haiboNormalizeDestId(d.id) === key
+        : d.id === key
+    ) || null
+  );
 }
 
 /** Match user input or slug to a destination id */
