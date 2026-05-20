@@ -48,6 +48,20 @@ body.admin-authenticated .admin-shell {
   transition: opacity 0.35s ease;
 }
 
+body.admin-auth-pending.admin-login-page .admin-login-wrap {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+body.admin-login-ready.admin-login-page .admin-login-wrap {
+  visibility: visible;
+  pointer-events: auto;
+}
+
+body.admin-login-ready.admin-login-page #admin-auth-loading {
+  display: none !important;
+}
+
 .admin-auth-loading {
   position: fixed;
   inset: 0;

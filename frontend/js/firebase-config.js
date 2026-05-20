@@ -35,3 +35,9 @@ const FIREBASE_SDK_VERSION = '10.14.1';
 function isFirebaseConfigured() {
   return Boolean(FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.projectId);
 }
+
+/**
+ * Production: add your Vercel/custom domain in Firebase Console →
+ * Authentication → Settings → Authorized domains
+ * (e.g. haibotours.vercel.app, www.haibotours.com)
+ */

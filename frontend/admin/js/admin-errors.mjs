@@ -26,7 +26,11 @@ const FIRESTORE_MESSAGES = {
 };
 
 export function formatAuthError(error) {
+  if (!error) return 'Something went wrong. Please try again.';
   if (error?.friendlyMessage) return error.friendlyMessage;
+  if (String(error?.message || '').includes('timed out')) {
+    return 'Connection timed out. Check your network and try again.';
+  }
   const code = error?.code || '';
   if (code === 'auth/not-authorized') {
     return 'This account is not authorized for admin access.';

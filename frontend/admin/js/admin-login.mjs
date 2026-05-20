@@ -4,14 +4,11 @@ import {
   formatAuthError,
   resolveDashboardPath,
 } from './admin-auth-guard.mjs';
-import { ensureAuthReady } from './admin-firebase.mjs';
 
 if (!isFirebaseConfigured()) {
   document.body.innerHTML =
     '<p style="padding:2rem;color:#fff;font-family:sans-serif">Configure firebase-config.js first.</p>';
 } else {
-  ensureAuthReady();
-
   guardAdminLogin(() => {
     const form = document.getElementById('login-form');
     const submitBtn = form?.querySelector('button[type="submit"]');

@@ -13,6 +13,10 @@ import { formatAuthError } from './admin-errors.mjs';
 export const ADMIN_LOGIN_PATH = '/admin-login';
 export const ADMIN_DASHBOARD_PATH = '/admin';
 
+const AUTH_STATE_TIMEOUT_MS = 4000;
+const ADMIN_CHECK_TIMEOUT_MS = 5000;
+const SESSION_TIMEOUT_MS = 8000;
+
 function isLocalDev() {
   const h = window.location.hostname;
   return h === 'localhost' || h === '127.0.0.1' || window.location.protocol === 'file:';
@@ -43,13 +47,14 @@ export function isDashboardPage() {
 
 export function showAuthLoading(message) {
   const el = document.getElementById('admin-auth-loading');
-  if (!el) return;
-  el.hidden = false;
-  el.setAttribute('aria-busy', 'true');
-  const msg = el.querySelector('[data-auth-loading-msg]');
-  if (msg) msg.textContent = message || 'Checking session…';
+  if (el) {
+    el.hidden = false;
+    el.setAttribute('aria-busy', 'true');
+    const msg = el.querySelector('[data-auth-loading-msg]');
+    if (msg) msg.textContent = message || 'Checking session…';
+  }
   document.body.classList.add('admin-auth-pending');
-  document.body.classList.remove('admin-authenticated');
+  document.body.classList.remove('admin-authenticated', 'admin-login-ready');
 }
 
 export function hideAuthLoading() {
@@ -59,11 +64,30 @@ export function hideAuthLoading() {
     el.setAttribute('aria-busy', 'false');
   }
   document.body.classList.remove('admin-auth-pending');
+  if (isLoginPage()) {
+    document.body.classList.add('admin-login-ready');
+  }
 }
 
 export function markAuthenticated() {
   document.body.classList.add('admin-authenticated');
-  document.body.classList.remove('admin-auth-pending');
+  document.body.classList.remove('admin-auth-pending', 'admin-login-ready');
+}
+
+export function showAuthBanner(message, type) {
+  const el = document.getElementById('login-error');
+  if (!el) return;
+  el.textContent = message;
+  el.style.color = type === 'warn' ? '#fbbf24' : '#f87171';
+}
+
+function withTimeout(promise, ms, label) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(`${label} timed out`)), ms);
+    }),
+  ]);
 }
 
 export function redirectToLogin(query) {
@@ -81,51 +105,78 @@ export async function checkIsAdminUser(user) {
   if (!db) return false;
   try {
     const ref = doc(db, FIRESTORE_ADMIN_COLLECTION, user.uid);
-    const snap = await getDoc(ref);
+    const snap = await withTimeout(getDoc(ref), ADMIN_CHECK_TIMEOUT_MS, 'Admin verification');
     return snap.exists();
   } catch (err) {
-    console.warn('[HAIBO Admin] Admin check failed:', err?.code);
+    console.warn('[HAIBO Admin] Admin check failed:', err?.code || err?.message);
     return false;
   }
 }
 
-export function waitForAuthState() {
+/**
+ * First auth state from Firebase (with timeout — never hangs forever).
+ */
+export async function waitForAuthState() {
+  await ensureAuthReady();
+
   const auth = getAdminAuth();
-  if (!auth) return Promise.resolve({ user: null, ready: true });
+  if (!auth) {
+    return { user: null, ready: true, error: 'Auth unavailable' };
+  }
 
   return new Promise((resolve) => {
     let settled = false;
-    const unsub = watchAdminAuth((user) => {
+    const finish = (payload) => {
       if (settled) return;
       settled = true;
-      unsub();
-      resolve({ user, ready: true });
-    });
-    setTimeout(() => {
-      if (!settled) {
-        settled = true;
+      resolve(payload);
+    };
+
+    let unsub = () => {};
+    try {
+      unsub = watchAdminAuth((user) => {
         unsub();
-        resolve({ user: auth.currentUser, ready: true });
-      }
-    }, 8000);
+        finish({ user: user ?? null, ready: true });
+      });
+    } catch (err) {
+      finish({ user: null, ready: true, error: err.message });
+      return;
+    }
+
+    setTimeout(() => {
+      unsub();
+      finish({
+        user: auth.currentUser ?? null,
+        ready: true,
+        timedOut: true,
+      });
+    }, AUTH_STATE_TIMEOUT_MS);
   });
 }
 
 export async function resolveAdminSession() {
-  await ensureAuthReady();
-  const { user } = await waitForAuthState();
-  if (!user) return { user: null, isAdmin: false };
-  const isAdmin = await checkIsAdminUser(user);
-  return { user, isAdmin };
+  try {
+    await ensureAuthReady();
+    const state = await waitForAuthState();
+    const user = state.user ?? null;
+
+    if (!user) {
+      return { user: null, isAdmin: false, timedOut: state.timedOut, error: state.error };
+    }
+
+    const isAdmin = await checkIsAdminUser(user);
+    return { user, isAdmin, timedOut: state.timedOut, error: state.error };
+  } catch (err) {
+    console.warn('[HAIBO Admin] resolveAdminSession:', err);
+    return { user: null, isAdmin: false, error: err.message };
+  }
 }
 
 export function showUnauthorizedMessage() {
-  const el = document.getElementById('login-error');
-  if (el) {
-    el.textContent =
-      'This account is not authorized. Add your Firebase Auth UID to the admins collection in Firestore.';
-    el.style.color = '#f87171';
-  }
+  showAuthBanner(
+    'This account is not authorized. Add your Firebase Auth UID to the admins collection in Firestore.',
+    'error'
+  );
 }
 
 export async function guardAdminDashboard(onReady) {
@@ -143,15 +194,19 @@ export async function guardAdminDashboard(onReady) {
   showAuthLoading('Verifying admin session…');
 
   try {
-    const { user, isAdmin } = await resolveAdminSession();
+    const session = await withTimeout(
+      resolveAdminSession(),
+      SESSION_TIMEOUT_MS,
+      'Session check'
+    );
 
-    if (!user) {
+    if (!session.user) {
       hideAuthLoading();
-      redirectToLogin();
+      redirectToLogin(session.timedOut ? 'error=session' : undefined);
       return;
     }
 
-    if (!isAdmin) {
+    if (!session.isAdmin) {
       await adminLogout();
       hideAuthLoading();
       redirectToLogin('error=unauthorized');
@@ -160,7 +215,7 @@ export async function guardAdminDashboard(onReady) {
 
     markAuthenticated();
     hideAuthLoading();
-    if (typeof onReady === 'function') onReady(user);
+    if (typeof onReady === 'function') onReady(session.user);
   } catch (err) {
     hideAuthLoading();
     console.warn('[HAIBO Admin] Session guard failed:', err);
@@ -171,45 +226,57 @@ export async function guardAdminDashboard(onReady) {
 export async function guardAdminLogin(onFormReady) {
   if (!isFirebaseConfigured()) {
     document.body.innerHTML =
-      '<div style="padding:3rem;color:#fff;font-family:Poppins,sans-serif;text-align:center"><h1 style="color:#d98b2b">Firebase not configured</h1></div>';
+      '<div style="padding:3rem;color:#fff;font-family:Poppins,sans-serif;text-align:center"><h1 style="color:#d98b2b">Firebase not configured</h1><p>Add keys in frontend/js/firebase-config.js</p></div>';
     return;
   }
 
   if (isDashboardPage()) {
-    guardAdminDashboard(onFormReady);
+    await guardAdminDashboard(onFormReady);
     return;
   }
-
-  showAuthLoading('Checking session…');
 
   const params = new URLSearchParams(window.location.search);
   if (params.get('error') === 'unauthorized') showUnauthorizedMessage();
   else if (params.get('error') === 'session') {
-    const el = document.getElementById('login-error');
-    if (el) {
-      el.textContent = 'Session could not be verified. Please sign in again.';
-      el.style.color = '#f87171';
-    }
+    showAuthBanner('Previous session expired. Please sign in again.', 'warn');
   }
 
-  try {
-    const { user, isAdmin } = await resolveAdminSession();
+  showAuthLoading('Checking session…');
 
-    if (user && isAdmin) {
+  const revealLogin = () => {
+    hideAuthLoading();
+    if (typeof onFormReady === 'function') onFormReady();
+  };
+
+  try {
+    const session = await withTimeout(
+      resolveAdminSession(),
+      SESSION_TIMEOUT_MS,
+      'Session check'
+    );
+
+    if (session.user && session.isAdmin) {
       redirectToDashboard();
       return;
     }
 
-    if (user && !isAdmin) {
+    if (session.user && !session.isAdmin) {
       await adminLogout();
       showUnauthorizedMessage();
+    } else if (session.timedOut || session.error) {
+      showAuthBanner(
+        'Could not verify an existing session. Sign in below to continue.',
+        'warn'
+      );
     }
-
-    hideAuthLoading();
-    if (typeof onFormReady === 'function') onFormReady();
   } catch (err) {
-    hideAuthLoading();
-    if (typeof onFormReady === 'function') onFormReady();
+    console.warn('[HAIBO Admin] Login guard:', err);
+    showAuthBanner(
+      formatAuthError(err) || 'Authentication check failed. You can still sign in below.',
+      'warn'
+    );
+  } finally {
+    revealLogin();
   }
 }
 
