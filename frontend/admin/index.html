@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>HAIBO Admin Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin-auth-pending">
+  <div id="admin-auth-loading" class="admin-auth-loading" aria-live="polite" aria-busy="true">
+    <div class="admin-auth-loading__inner">
+      <div class="admin-auth-loading__spinner" aria-hidden="true"></div>
+      <p data-auth-loading-msg>Verifying admin session…</p>
+    </div>
+  </div>
+  <div class="admin-layout">
+    <aside class="admin-sidebar">
+      <div class="admin-brand">HAIBO Admin</div>
+      <button type="button" class="admin-nav__btn is-active" data-panel="hero">Hero</button>
+      <button type="button" class="admin-nav__btn" data-panel="destinations">Destinations</button>
+      <button type="button" class="admin-nav__btn" data-panel="search">Search</button>
+      <button type="button" class="admin-nav__btn" data-panel="about">About</button>
+      <button type="button" class="admin-nav__btn" data-panel="gallery">Gallery</button>
+      <button type="button" class="admin-nav__btn" data-panel="contact">Contact</button>
+      <button type="button" class="admin-nav__btn" data-panel="socials">Socials</button>
+      <button type="button" class="admin-nav__btn" data-panel="weather">Weather</button>
+      <button type="button" class="admin-nav__btn" data-panel="settings">Settings</button>
+      <button type="button" id="btn-logout" class="admin-nav__btn" style="margin-top:auto;color:#f87171">Logout</button>
+    </aside>
+
+    <main class="admin-main">
+      <div class="admin-topbar">
+        <h1 style="margin:0;font-size:1.35rem">Content Manager</h1>
+        <button type="button" id="btn-seed" class="admin-btn admin-btn--ghost">Import website defaults</button>
+      </div>
+
+      <section id="panel-hero" class="admin-panel is-active">
+        <form id="form-hero" class="admin-glass">
+          <h2>Hero section</h2>
+          <div class="admin-field"><label>Upload background</label><input type="file" id="hero-upload" accept="image/*" /></div>
+          <img id="hero-preview" class="admin-preview hidden" alt="" />
+          <div class="admin-grid-2">
+            <div class="admin-field"><label>Eyebrow</label><input name="eyebrow" /></div>
+            <div class="admin-field"><label>Background URL</label><input name="backgroundImageUrl" /></div>
+            <div class="admin-field"><label>Title</label><input name="title" /></div>
+            <div class="admin-field"><label>Title accent (gold)</label><input name="titleAccent" /></div>
+          </div>
+          <div class="admin-field"><label>Subtitle</label><textarea name="subtitle" rows="3"></textarea></div>
+          <div class="admin-grid-2">
+            <div class="admin-field"><label>Primary CTA text</label><input name="ctaPrimaryText" /></div>
+            <div class="admin-field"><label>Primary CTA link</label><input name="ctaPrimaryLink" /></div>
+            <div class="admin-field"><label>Secondary CTA text</label><input name="ctaSecondaryText" /></div>
+            <div class="admin-field"><label>Secondary CTA link</label><input name="ctaSecondaryLink" /></div>
+          </div>
+          <button type="submit" class="admin-btn admin-btn--primary">Save hero</button>
+        </form>
+      </section>
+
+      <section id="panel-destinations" class="admin-panel">
+        <div class="admin-glass">
+          <h2>Destinations</h2>
+          <button type="button" id="btn-new-dest" class="admin-btn admin-btn--primary">Add destination</button>
+          <div id="destinations-list" style="margin-top:1rem"></div>
+        </div>
+        <form id="form-destination" class="admin-glass" data-edit-id="">
+          <h2 id="dest-editor-title">Edit destination</h2>
+          <div class="admin-grid-2">
+            <div class="admin-field"><label>ID (slug)</label><input name="id" required placeholder="serengeti" /></div>
+            <div class="admin-field"><label>Order</label><input name="order" type="number" value="0" /></div>
+            <div class="admin-field"><label>Name</label><input name="name" required /></div>
+            <div class="admin-field"><label>Subtitle</label><input name="subtitle" /></div>
+            <div class="admin-field"><label>Region</label><input name="region" /></div>
+            <div class="admin-field"><label>Best time</label><input name="bestTime" /></div>
+          </div>
+          <div class="admin-field"><label>Card image upload</label><input type="file" id="dest-card-upload" accept="image/*" /></div>
+          <div class="admin-field"><label>Card image URL</label><input name="image" /></div>
+          <div class="admin-field"><label>Hero image upload</label><input type="file" id="dest-hero-upload" accept="image/*" /></div>
+          <div class="admin-field"><label>Hero image URL</label><input name="heroImage" /></div>
+          <div class="admin-field"><label>Description</label><textarea name="description" rows="4"></textarea></div>
+          <div class="admin-field"><label>Highlights (one per line)</label><textarea name="highlights" rows="4"></textarea></div>
+          <div class="admin-field"><label>Gallery URLs (one per line)</label><textarea name="gallery" rows="3"></textarea></div>
+          <div class="admin-field"><label>Packages (JSON)</label><textarea name="packagesJson" rows="8"></textarea></div>
+          <div class="admin-field"><label>Experience (JSON)</label><textarea name="experienceJson" rows="6"></textarea></div>
+          <label class="admin-check"><input name="active" type="checkbox" checked /> Active on website</label>
+          <button type="submit" class="admin-btn admin-btn--primary">Save destination</button>
+        </form>
+      </section>
+
+      <section id="panel-search" class="admin-panel">
+        <div class="admin-glass">
+          <h2>Safari search dropdown</h2>
+          <p class="admin-muted">Checked destinations appear in the home search form and redirect to their detail page.</p>
+          <div id="search-dest-checkboxes"></div>
+          <button type="button" id="btn-save-search" class="admin-btn admin-btn--primary" style="margin-top:1rem">Save search options</button>
+        </div>
+      </section>
+
+      <section id="panel-about" class="admin-panel">
+        <form id="form-about" class="admin-glass">
+          <h2>About section</h2>
+          <div class="admin-field"><label>Upload image</label><input type="file" id="about-upload" accept="image/*" /></div>
+          <img id="about-preview" class="admin-preview hidden" alt="" />
+          <div class="admin-field"><label>Image URL</label><input name="imageUrl" /></div>
+          <div class="admin-grid-2">
+            <div class="admin-field"><label>Eyebrow</label><input name="eyebrow" /></div>
+            <div class="admin-field"><label>Title</label><input name="title" /></div>
+          </div>
+          <div class="admin-field"><label>Body</label><textarea name="body" rows="4"></textarea></div>
+          <h3 style="font-size:0.95rem;color:#d98b2b">Feature cards</h3>
+          <div class="admin-grid-2">
+            <div class="admin-field"><label>Card 1 title</label><input name="featureTitle0" /></div>
+            <div class="admin-field"><label>Card 1 subtitle</label><input name="featureSub0" /></div>
+            <div class="admin-field"><label>Card 2 title</label><input name="featureTitle1" /></div>
+            <div class="admin-field"><label>Card 2 subtitle</label><input name="featureSub1" /></div>
+            <div class="admin-field"><label>Card 3 title</label><input name="featureTitle2" /></div>
+            <div class="admin-field"><label>Card 3 subtitle</label><input name="featureSub2" /></div>
+            <div class="admin-field"><label>Card 4 title</label><input name="featureTitle3" /></div>
+            <div class="admin-field"><label>Card 4 subtitle</label><input name="featureSub3" /></div>
+          </div>
+          <button type="submit" class="admin-btn admin-btn--primary">Save about</button>
+        </form>
+      </section>
+
+      <section id="panel-gallery" class="admin-panel">
+        <div class="admin-glass">
+          <h2>Gallery items</h2>
+          <div id="gallery-list"></div>
+        </div>
+        <form id="form-gallery-add" class="admin-glass">
+          <h2>Add gallery item</h2>
+          <div class="admin-grid-2">
+            <div class="admin-field"><label>Type</label><select name="type"><option value="image">Photo</option><option value="video">Video</option></select></div>
+            <div class="admin-field"><label>Order</label><input name="order" type="number" value="0" /></div>
+            <div class="admin-field"><label>Title</label><input name="title" /></div>
+            <div class="admin-field"><label>Tag</label><input name="tag" /></div>
+            <div class="admin-field"><label>Media URL</label><input name="src" required /></div>
+            <div class="admin-field"><label>Thumb URL (video)</label><input name="thumb" /></div>
+          </div>
+          <button type="submit" class="admin-btn admin-btn--primary">Add to gallery</button>
+        </form>
+      </section>
+
+      <section id="panel-contact" class="admin-panel">
+        <form id="form-contact" class="admin-glass">
+          <h2>Contact info</h2>
+          <div class="admin-grid-2">
+            <div class="admin-field"><label>Phone display</label><input name="phoneDisplay" /></div>
+            <div class="admin-field"><label>WhatsApp number</label><input name="whatsappNumber" /></div>
+            <div class="admin-field"><label>Email</label><input name="email" type="email" /></div>
+            <div class="admin-field"><label>Map URL</label><input name="mapUrl" /></div>
+          </div>
+          <div class="admin-field"><label>Address</label><input name="address" /></div>
+          <div class="admin-field"><label>Office hours</label><input name="officeHours" /></div>
+          <div class="admin-field"><label>Default WhatsApp message</label><textarea name="defaultTourMessage" rows="3"></textarea></div>
+          <button type="submit" class="admin-btn admin-btn--primary">Save contact</button>
+        </form>
+      </section>
+
+      <section id="panel-socials" class="admin-panel">
+        <form id="form-socials" class="admin-glass">
+          <h2>Social links</h2>
+          <div class="admin-field"><label>Instagram</label><input name="instagram" /></div>
+          <div class="admin-field"><label>Facebook</label><input name="facebook" /></div>
+          <div class="admin-field"><label>TikTok</label><input name="tiktok" /></div>
+          <div class="admin-field"><label>WhatsApp link</label><input name="whatsapp" /></div>
+          <button type="submit" class="admin-btn admin-btn--primary">Save socials</button>
+        </form>
+      </section>
+
+      <section id="panel-weather" class="admin-panel">
+        <div class="admin-glass">
+          <h2>Weather cards</h2>
+          <button type="button" id="btn-new-weather" class="admin-btn admin-btn--primary">Add card</button>
+          <div id="weather-list" style="margin-top:1rem"></div>
+        </div>
+        <form id="form-weather" class="admin-glass" data-edit-id="">
+          <h2>Weather card editor</h2>
+          <div class="admin-grid-2">
+            <div class="admin-field"><label>ID</label><input name="id" required /></div>
+            <div class="admin-field"><label>Short name</label><input name="shortName" /></div>
+            <div class="admin-field"><label>Full name</label><input name="name" /></div>
+            <div class="admin-field"><label>Lat</label><input name="lat" type="number" step="any" /></div>
+            <div class="admin-field"><label>Lon</label><input name="lon" type="number" step="any" /></div>
+            <div class="admin-field"><label>Display temp override</label><input name="displayTemp" placeholder="e.g. 28°C" /></div>
+            <div class="admin-field"><label>Display label override</label><input name="displayLabel" /></div>
+            <div class="admin-field"><label>Background image URL</label><input name="imageUrl" /></div>
+          </div>
+          <div class="admin-field"><label>Facts (one per line)</label><textarea name="facts" rows="3"></textarea></div>
+          <label class="admin-check"><input name="active" type="checkbox" checked /> Active</label>
+          <button type="submit" class="admin-btn admin-btn--primary">Save weather card</button>
+        </form>
+      </section>
+
+      <section id="panel-settings" class="admin-panel">
+        <form id="form-settings" class="admin-glass">
+          <h2>Website settings</h2>
+          <div class="admin-field"><label>Upload logo</label><input type="file" id="logo-upload" accept="image/*" /></div>
+          <img id="logo-preview" class="admin-preview hidden" alt="" />
+          <div class="admin-grid-2">
+            <div class="admin-field"><label>Logo URL</label><input name="logoUrl" /></div>
+            <div class="admin-field"><label>Brand name</label><input name="brandName" /></div>
+            <div class="admin-field"><label>Tagline</label><input name="tagline" /></div>
+          </div>
+          <div class="admin-field"><label>Footer description</label><textarea name="footerDescription" rows="3"></textarea></div>
+          <div class="admin-field"><label>Footer copyright</label><input name="footerCopyright" /></div>
+          <div class="admin-field"><label>Navbar links (JSON array)</label><textarea name="navLinksJson" rows="8"></textarea></div>
+          <button type="submit" class="admin-btn admin-btn--primary">Save settings</button>
+        </form>
+      </section>
+    </main>
+  </div>
+
+  <script src="../js/config.js"></script>
+  <script src="../js/firebase-config.js"></script>
+  <script src="../js/destinations-data.js"></script>
+  <script src="../js/gallery-data.js"></script>
+  <script src="../js/weather-widget.js"></script>
+  <script type="module" src="js/admin-main.mjs"></script>
+</body>
+</html>

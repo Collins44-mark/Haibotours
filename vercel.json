@@ -4,6 +4,14 @@
       "source": "/destinations/:slug",
       "destination": "/frontend/destination.html?id=:slug"
     },
+    {
+      "source": "/admin",
+      "destination": "/frontend/admin/index.html"
+    },
+    {
+      "source": "/admin/login",
+      "destination": "/frontend/admin/login.html"
+    },
     { "source": "/", "destination": "/frontend/index.html" },
     { "source": "/(.*)", "destination": "/frontend/$1" }
   ]

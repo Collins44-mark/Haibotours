@@ -14,6 +14,8 @@ const HAIBO_CONFIG = {
   social: {
     instagram: 'https://instagram.com/haibotours',
     facebook: 'https://facebook.com/haibotours',
+    tiktok: '',
+    whatsapp: '',
   },
 };
 

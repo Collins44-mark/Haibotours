@@ -1,18 +1,46 @@
+function getGalleryData() {
+  const g = window.HAIBO_CONTENT?.gallery;
+  if (g?.images?.length || g?.videos?.length) {
+    return {
+      images: (g.images || []).map((i) => ({
+        src: i.src || i.url,
+        title: i.title || '',
+        tag: i.tag || '',
+      })),
+      videos: (g.videos || []).map((v) => ({
+        src: v.src,
+        thumb: v.thumb || v.src,
+        title: v.title || '',
+        tag: v.tag || '',
+      })),
+    };
+  }
+  return {
+    images: typeof GALLERY_IMAGES !== 'undefined' ? GALLERY_IMAGES : [],
+    videos: typeof GALLERY_VIDEOS !== 'undefined' ? GALLERY_VIDEOS : [],
+  };
+}
+
 function renderGalleryPage() {
   const photosEl = document.getElementById('gallery-photos');
   const videosEl = document.getElementById('gallery-videos');
   if (!photosEl || !videosEl) return;
 
+  const { images, videos } = getGalleryData();
+  window.__HAIBO_GALLERY_IMAGES = images;
+  window.__HAIBO_GALLERY_VIDEOS = videos;
+
   const photoCount = document.getElementById('photo-count');
   const videoCount = document.getElementById('video-count');
 
-  if (photoCount) photoCount.textContent = `${GALLERY_IMAGES.length} photos`;
-  if (videoCount) videoCount.textContent = `${GALLERY_VIDEOS.length} videos`;
+  if (photoCount) photoCount.textContent = `${images.length} photos`;
+  if (videoCount) videoCount.textContent = `${videos.length} videos`;
 
-  photosEl.innerHTML = GALLERY_IMAGES.map(
-    (item, i) => `
+  photosEl.innerHTML = images
+    .map(
+      (item, i) => `
     <article class="gallery-media-card" data-type="image" data-index="${i}" tabindex="0" role="button" aria-label="View ${item.title}">
-      <img class="gallery-media-card__img" src="${item.src}" alt="${item.title}" loading="lazy">
+      <img class="gallery-media-card__img haibo-media" src="${item.src}" alt="${item.title}" loading="lazy">
       <div class="gallery-media-card__overlay"></div>
       <div class="gallery-media-card__body">
         <p class="gallery-media-card__tag">${item.tag}</p>
@@ -20,12 +48,14 @@ function renderGalleryPage() {
       </div>
     </article>
   `
-  ).join('');
+    )
+    .join('');
 
-  videosEl.innerHTML = GALLERY_VIDEOS.map(
-    (item, i) => `
+  videosEl.innerHTML = videos
+    .map(
+      (item, i) => `
     <article class="gallery-media-card gallery-video-card" data-type="video" data-index="${i}" tabindex="0" role="button" aria-label="Play ${item.title}">
-      <video class="gallery-media-card__video" src="${item.src}" poster="${item.thumb}" muted playsinline preload="metadata"></video>
+      <video class="gallery-media-card__video haibo-media" src="${item.src}" poster="${item.thumb}" muted playsinline preload="metadata"></video>
       <span class="gallery-play-btn" aria-hidden="true">▶</span>
       <div class="gallery-media-card__overlay"></div>
       <div class="gallery-media-card__body">
@@ -34,7 +64,8 @@ function renderGalleryPage() {
       </div>
     </article>
   `
-  ).join('');
+    )
+    .join('');
 
   initGalleryLightbox();
   initVideoCardHover();
@@ -61,13 +92,15 @@ function initGalleryLightbox() {
   if (!lightbox || !mediaWrap) return;
 
   function open(type, index) {
+    const images = window.__HAIBO_GALLERY_IMAGES || [];
+    const videos = window.__HAIBO_GALLERY_VIDEOS || [];
     mediaWrap.innerHTML = '';
     if (type === 'image') {
-      const item = GALLERY_IMAGES[index];
+      const item = images[index];
       mediaWrap.innerHTML = `<img src="${item.src.replace('w=800', 'w=1600')}" alt="${item.title}">`;
       caption.textContent = `${item.title} · ${item.tag}`;
     } else {
-      const item = GALLERY_VIDEOS[index];
+      const item = videos[index];
       mediaWrap.innerHTML = `<video src="${item.src}" controls autoplay playsinline style="max-width:90vw;max-height:85vh;border-radius:1rem;"></video>`;
       caption.textContent = `${item.title} · ${item.tag}`;
     }
@@ -101,8 +134,11 @@ function initGalleryLightbox() {
   });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  if (document.body.dataset.page === 'gallery') {
-    renderGalleryPage();
-  }
-});
+function bootGalleryPage() {
+  if (document.body.dataset.page !== 'gallery') return;
+  if (window.HAIBO_CONTENT_LOADED) renderGalleryPage();
+  else window.addEventListener('haiboContentReady', renderGalleryPage, { once: true });
+  window.addEventListener('haiboContentUpdated', renderGalleryPage);
+}
+
+document.addEventListener('DOMContentLoaded', bootGalleryPage);

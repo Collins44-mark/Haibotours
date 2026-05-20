@@ -1,0 +1,45 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /** Only users listed in admins/{uid} may write CMS data */
+    function isAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function isContentCollection(name) {
+      return name in [
+        'hero',
+        'about',
+        'contact',
+        'socials',
+        'settings',
+        'destinations',
+        'gallery',
+        'weatherCards'
+      ];
+    }
+
+    // Admin allowlist — readable only by the signed-in user for their own doc
+    match /admins/{userId} {
+      allow get: if isSignedIn() && request.auth.uid == userId;
+      allow list, create, update, delete: if false;
+    }
+
+    // Public website: anyone can read; only admins can write
+    match /{collection}/{document} {
+      allow read: if isContentCollection(collection);
+      allow create, update, delete: if isContentCollection(collection) && isAdmin();
+    }
+
+    // Deny everything else (no wildcard write)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

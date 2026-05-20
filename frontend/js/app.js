@@ -239,11 +239,16 @@ function initSearchBar() {
 
   const destSelect = bar.querySelector('[name="destination"]');
   if (destSelect && destSelect.tagName === 'SELECT') {
+    const enabledIds = window.HAIBO_CONTENT?.search?.enabledDestinationIds;
+    const list =
+      enabledIds?.length > 0
+        ? DESTINATIONS.filter((d) => enabledIds.includes(d.id))
+        : DESTINATIONS;
     destSelect.innerHTML =
       '<option value="" disabled selected>Select destination</option>' +
-      DESTINATIONS.map(
-        (d) => `<option value="${d.id}">${d.name} — ${d.subtitle}</option>`
-      ).join('');
+      list
+        .map((d) => `<option value="${d.id}">${d.name} — ${d.subtitle}</option>`)
+        .join('');
   }
 
   const dateInput = bar.querySelector('[name="travelDate"]');
@@ -258,7 +263,7 @@ function initSearchBar() {
     const slug = resolveDestinationSlug(destinationInput);
 
     if (!slug) {
-      showHaiboToast('No safari package found', 'HAIBO Tours');
+      showHaiboToast('No safari destination found', 'HAIBO Tours');
       return;
     }
 
@@ -481,8 +486,11 @@ function renderDestinationDetail() {
   `;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+function runHaiboApp() {
   applyLogo();
+  if (typeof window.applyHaiboContent === 'function') {
+    window.applyHaiboContent();
+  }
   initMobileMenu();
   initNewsletterForm();
   initSearchBar();
@@ -511,4 +519,42 @@ document.addEventListener('DOMContentLoaded', () => {
   } else if (!document.getElementById('whatsapp-float')) {
     initWhatsAppFloat();
   }
-});
+}
+
+function refreshHaiboLiveContent() {
+  if (typeof window.applyHaiboContent === 'function') {
+    window.applyHaiboContent();
+  }
+  applyLogo();
+
+  if (document.body.dataset.page === 'home') {
+    renderDestinationCards('home-destinations', 4);
+    initSearchBar();
+    if (typeof window.refreshHaiboWeatherWidget === 'function') {
+      window.refreshHaiboWeatherWidget();
+    }
+  }
+  if (document.body.dataset.page === 'destinations') {
+    renderDestinationCards('all-destinations');
+  }
+  if (document.body.dataset.page === 'destination-detail') {
+    renderDestinationDetail();
+  }
+  if (document.body.dataset.page === 'gallery' && typeof renderGalleryPage === 'function') {
+    renderGalleryPage();
+  }
+  if (document.body.dataset.page === 'contact') {
+    initContactPage();
+  }
+}
+
+function bootHaiboApp() {
+  if (window.HAIBO_CONTENT_LOADED) {
+    runHaiboApp();
+  } else {
+    window.addEventListener('haiboContentReady', runHaiboApp, { once: true });
+  }
+  window.addEventListener('haiboContentUpdated', refreshHaiboLiveContent);
+}
+
+document.addEventListener('DOMContentLoaded', bootHaiboApp);

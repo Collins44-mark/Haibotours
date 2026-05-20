@@ -49,4 +49,13 @@ Mobile layouts use `frontend/css/responsive.css`, `mobile-fixes.css` (no horizon
 
 ## Safari search
 
-On the home page, users pick destination, date, and travelers. Valid destinations redirect to `destination.html?id=…` (local) or `/destinations/slug` on Vercel. Unknown destinations show a toast: **No safari package found**.
+On the home page, users pick destination, date, and travelers. Valid destinations redirect to `destination.html?id=…` (local) or `/destinations/slug` on Vercel. Unknown destinations show a toast: **No safari destination found**.
+
+## Admin CMS (Firebase + Cloudinary)
+
+- **Admin:** `frontend/admin/login.html`
+- **Setup guide:** [firebase/FIREBASE_ADMIN_SETUP.md](firebase/FIREBASE_ADMIN_SETUP.md)
+- Configure `frontend/js/firebase-config.js`, add your Auth UID to Firestore `admins/{uid}`, deploy rules, then sign in.
+- **Security:** public Firestore read; writes only for users in `admins`; dashboard redirects unauthenticated visitors.
+- Images upload to Cloudinary; only URLs are stored in Firestore.
+- Public pages use Firestore **realtime listeners** — admin saves update the live site without redeploy.

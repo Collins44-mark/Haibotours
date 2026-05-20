@@ -2,7 +2,15 @@
  * HAIBO Weather Mini-Slider
  * Live data via Open-Meteo (free, no API key)
  */
-const WEATHER_PARKS = [
+function getWeatherParks() {
+  const cards = window.HAIBO_CONTENT?.weatherCards;
+  if (Array.isArray(cards) && cards.length > 0) {
+    return cards.filter((c) => c.active !== false && c.lat != null && c.lon != null);
+  }
+  return WEATHER_PARKS_STATIC;
+}
+
+const WEATHER_PARKS_STATIC = [
   {
     id: 'serengeti',
     name: 'Serengeti National Park',
@@ -156,8 +164,9 @@ class HaiboWeatherWidget {
   }
 
   async loadAllWeather() {
+    const parks = getWeatherParks();
     const results = await Promise.all(
-      WEATHER_PARKS.map(async (park, i) => {
+      parks.map(async (park, i) => {
         try {
           const w = await fetchParkWeather(park);
           return { ...park, weather: w };
@@ -170,7 +179,8 @@ class HaiboWeatherWidget {
   }
 
   renderDots() {
-    this.dotsContainer.innerHTML = WEATHER_PARKS.map(
+    const parks = getWeatherParks();
+    this.dotsContainer.innerHTML = parks.map(
       (_, i) =>
         `<button type="button" class="weather-dot${i === 0 ? ' is-active' : ''}" data-index="${i}" aria-label="Show park ${i + 1}"></button>`
     ).join('');
@@ -212,6 +222,9 @@ class HaiboWeatherWidget {
       `;
     }
 
+    const tempDisplay = park.displayTemp || `${weather.temp}°C`;
+    const iconDisplay = park.displayLabel || weather.label;
+
     return `
       <div class="weather-slide-header">
         <div>
@@ -219,8 +232,8 @@ class HaiboWeatherWidget {
           <div class="weather-slide-park">${labelPark}</div>
         </div>
         <div class="weather-temp-block">
-          <div class="weather-temp">${weather.temp}°C</div>
-          <div class="weather-icon" title="${weather.label}">${weather.icon}</div>
+          <div class="weather-temp">${tempDisplay}</div>
+          <div class="weather-icon" title="${iconDisplay}">${weather.icon}</div>
         </div>
       </div>
       <div class="weather-facts">
@@ -230,7 +243,8 @@ class HaiboWeatherWidget {
   }
 
   renderSlide(index, instant = false) {
-    const park = WEATHER_PARKS[index];
+    const parks = getWeatherParks();
+    const park = parks[index];
     const cached = this.weatherData[index];
     const weather = cached?.weather;
     const loading = this.root.classList.contains('is-loading');
@@ -248,7 +262,8 @@ class HaiboWeatherWidget {
     this.isAnimating = true;
 
     const currentEl = this.viewport.querySelector('.weather-slide.is-active');
-    const park = WEATHER_PARKS[nextIndex];
+    const parks = getWeatherParks();
+    const park = parks[nextIndex];
     const cached = this.weatherData[nextIndex];
     const weather = cached?.weather;
     const html = this.getSlideHtml(park, weather, false);
@@ -285,7 +300,8 @@ class HaiboWeatherWidget {
   }
 
   next() {
-    const nextIndex = (this.index + 1) % WEATHER_PARKS.length;
+    const parks = getWeatherParks();
+    const nextIndex = (this.index + 1) % parks.length;
     return this.transitionTo(nextIndex);
   }
 
@@ -310,7 +326,8 @@ class HaiboWeatherWidget {
     await this.loadAllWeather();
     const active = this.viewport.querySelector('.weather-slide.is-active');
     if (active && !this.isAnimating) {
-      const park = WEATHER_PARKS[this.index];
+      const parks = getWeatherParks();
+      const park = parks[this.index];
       const weather = this.weatherData[this.index]?.weather;
       active.innerHTML = this.getSlideHtml(park, weather, false);
     }
@@ -320,9 +337,22 @@ class HaiboWeatherWidget {
 function initWeatherWidget() {
   const root = document.getElementById('weather-widget');
   if (!root) return;
+  if (root._haiboWidget) {
+    root._haiboWidget.stopAutoplay();
+    root._haiboWidget = null;
+  }
   const widget = new HaiboWeatherWidget(root);
   widget.init();
+  root._haiboWidget = widget;
   setInterval(() => widget.refreshWeather(), 30 * 60 * 1000);
 }
 
-document.addEventListener('DOMContentLoaded', initWeatherWidget);
+window.refreshHaiboWeatherWidget = initWeatherWidget;
+
+function bootWeatherWidget() {
+  if (window.HAIBO_CONTENT_LOADED) initWeatherWidget();
+  else window.addEventListener('haiboContentReady', initWeatherWidget, { once: true });
+  window.addEventListener('haiboContentUpdated', initWeatherWidget);
+}
+
+document.addEventListener('DOMContentLoaded', bootWeatherWidget);
