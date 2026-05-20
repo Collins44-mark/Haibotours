@@ -29,15 +29,22 @@ Open [http://localhost:8080](http://localhost:8080)
 
 Use **one** of these setups (not both):
 
-**Option A — Root Directory (simplest)**  
-In the Vercel project: **Settings → General → Root Directory** → set to `frontend`.  
+**Option A — Root Directory `frontend` (recommended)**  
+In the Vercel project: **Settings → General → Root Directory** → `frontend`.  
 Framework Preset: **Other**. Leave **Build Command** and **Output Directory** empty.  
-Do **not** add a second `frontend` path in Output Directory.
+Routing is defined in **`frontend/vercel.json`** (not the repo-root file).
+
+| URL | Page |
+|-----|------|
+| `/admin-login` | Admin sign-in |
+| `/admin` | CMS dashboard (auth required) |
 
 **Option B — Repo root**  
-Leave Root Directory as `.` (repository root). The included `vercel.json` rewrites `/` to `frontend/index.html` and static assets to `frontend/`.
+Leave Root Directory as `.` (repository root). Use the repo-root **`vercel.json`** (paths include `/frontend/`).
 
 After changing settings, click **Redeploy** on the latest deployment.
+
+**Firebase Auth on production:** In Firebase Console → Authentication → Settings → Authorized domains, add your Vercel domain (e.g. `haibotours.vercel.app` and your custom domain).
 
 ### GitHub Pages
 

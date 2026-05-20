@@ -2,6 +2,7 @@ import {
   guardAdminLogin,
   handleAdminLogin,
   formatAuthError,
+  resolveDashboardPath,
 } from './admin-auth-guard.mjs';
 import { ensureAuthReady } from './admin-firebase.mjs';
 
@@ -23,7 +24,6 @@ if (!isFirebaseConfigured()) {
 
       try {
         await handleAdminLogin(e.target.email.value, e.target.password.value);
-        const { resolveDashboardPath } = await import('./admin-auth-guard.mjs');
         window.location.replace(resolveDashboardPath());
       } catch (ex) {
         err.textContent = formatAuthError(ex);

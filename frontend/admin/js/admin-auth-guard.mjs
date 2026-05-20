@@ -27,12 +27,17 @@ export function resolveDashboardPath() {
 }
 
 export function isLoginPage() {
-  const p = window.location.pathname;
-  return p.includes('admin-login') || /\/admin\/login\.html$/i.test(p);
+  const p = window.location.pathname.replace(/\/$/, '') || '/';
+  return (
+    p === '/admin-login' ||
+    p === '/admin/login' ||
+    /\/admin\/login\.html$/i.test(p) ||
+    /\/admin-login\.html$/i.test(p)
+  );
 }
 
 export function isDashboardPage() {
-  const p = window.location.pathname.replace(/\/$/, '');
+  const p = window.location.pathname.replace(/\/$/, '') || '/';
   return p === '/admin' || /\/admin\/index\.html$/i.test(p);
 }
 
