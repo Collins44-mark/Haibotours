@@ -13,11 +13,16 @@ import { formatAuthError } from './admin-errors.mjs';
 export const ADMIN_LOGIN_PATH = '/admin-login';
 export const ADMIN_DASHBOARD_PATH = '/admin';
 
-const AUTH_READY_TIMEOUT_MS = 8000;
-const ADMIN_CHECK_TIMEOUT_MS = 8000;
-const SESSION_TIMEOUT_MS = 12000;
+const AUTH_READY_TIMEOUT_MS = 15000;
+const ADMIN_CHECK_TIMEOUT_MS = 10000;
+const SIGN_IN_TIMEOUT_MS = 30000;
 const REDIRECT_GUARD_KEY = 'haibo_admin_redirect_guard';
 const JUST_LOGGED_IN_KEY = 'haibo_admin_just_logged_in';
+const AUTH_FAIL_KEY = 'haibo_admin_last_fail';
+
+/** Firestore allowlist collection (from firebase-config.js or fallback) */
+const ADMIN_COLLECTION =
+  typeof FIRESTORE_ADMIN_COLLECTION !== 'undefined' ? FIRESTORE_ADMIN_COLLECTION : 'admins';
 
 function isLocalDev() {
   const h = window.location.hostname;
@@ -90,6 +95,100 @@ export function showAuthBanner(message, type) {
   el.style.color = type === 'warn' ? '#fbbf24' : '#f87171';
 }
 
+function saveAuthFailure(reason, uid, detail) {
+  try {
+    sessionStorage.setItem(
+      AUTH_FAIL_KEY,
+      JSON.stringify({ reason, uid, detail, at: Date.now() })
+    );
+  } catch {
+    /* ignore */
+  }
+}
+
+function loadAuthFailure() {
+  try {
+    const raw = sessionStorage.getItem(AUTH_FAIL_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function clearAuthFailure() {
+  try {
+    sessionStorage.removeItem(AUTH_FAIL_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+function showStoredAuthFailure() {
+  const fail = loadAuthFailure();
+  if (!fail) return;
+  const uid = fail.uid ? ` Your UID: ${fail.uid}` : '';
+  if (fail.reason === 'not-in-admins') {
+    showUnauthorizedMessage(fail.uid, 'not-in-admins');
+  } else if (fail.reason === 'permission-denied') {
+    showUnauthorizedMessage(fail.uid, 'permission-denied');
+  } else if (fail.reason === 'session') {
+    showAuthBanner(
+      `Could not verify session on the dashboard.${uid} Sign in again. If this repeats, add admins/${fail.uid || 'YOUR_UID'} in Firestore (not only Authentication).`,
+      'warn'
+    );
+  } else if (fail.detail) {
+    showAuthBanner(fail.detail + uid, 'error');
+  }
+}
+
+/** Full-screen message on dashboard — avoids login ↔ admin redirect loops */
+function showDashboardAccessDenied(user, adminResult) {
+  hideAuthLoading();
+  document.body.classList.remove('admin-auth-pending');
+  const uid = user?.uid || adminResult?.uid || '';
+  const email = user?.email || '';
+  let help = '';
+
+  if (adminResult?.reason === 'permission-denied') {
+    help =
+      '<p>Firestore rules blocked reading <code>admins/' +
+      uid +
+      '</code>. Deploy <code>firebase/firestore.rules</code> to project <strong>haibo-tours</strong>.</p>';
+  } else if (adminResult?.reason === 'not-in-admins') {
+    help =
+      '<p><strong>Authentication ≠ Admin access.</strong> Adding a user under Firebase <em>Authentication</em> is not enough.</p>' +
+      '<ol style="text-align:left;margin:1rem auto;max-width:26rem;color:#ccc;line-height:1.6">' +
+      '<li>Firebase Console → <strong>Firestore Database</strong> (not Authentication)</li>' +
+      '<li>Collection: <code>admins</code></li>' +
+      '<li>Document ID: <code style="color:#ffb347">' +
+      uid +
+      '</code> (copy exactly from Authentication → Users → UID)</li>' +
+      '<li>Fields: optional (empty document is OK)</li>' +
+      '</ol>';
+  } else {
+    help = '<p>Could not verify admin access. Check network and Firestore rules.</p>';
+  }
+
+  document.querySelector('.admin-shell')?.remove();
+  document.body.innerHTML =
+    '<div style="padding:2.5rem 1.5rem;color:#fff;font-family:Poppins,sans-serif;max-width:32rem;margin:0 auto">' +
+    '<h1 style="color:#d98b2b;font-size:1.5rem">Admin access required</h1>' +
+    '<p style="color:#9ca3af;margin:0.5rem 0 1rem">Signed in as ' +
+    (email || 'unknown') +
+    '</p>' +
+    help +
+    '<p style="margin-top:1.5rem"><a href="' +
+    resolveLoginPath() +
+    '" style="color:#d98b2b">← Back to login</a></p>' +
+    '<button type="button" id="haibo-retry-admin-check" style="margin-top:1rem;padding:0.75rem 1.25rem;border-radius:999px;border:none;background:#d98b2b;color:#000;font-weight:600;cursor:pointer">Retry verification</button>' +
+    '</div>';
+
+  document.getElementById('haibo-retry-admin-check')?.addEventListener('click', () => {
+    window.location.reload();
+  });
+}
+
 function withTimeout(promise, ms, label) {
   return Promise.race([
     promise,
@@ -151,7 +250,7 @@ export async function checkIsAdminUser(user) {
     return { ok: false, reason: 'no-db' };
   }
   try {
-    const ref = doc(db, FIRESTORE_ADMIN_COLLECTION, user.uid);
+    const ref = doc(db, ADMIN_COLLECTION, user.uid);
     const snap = await withTimeout(getDoc(ref), ADMIN_CHECK_TIMEOUT_MS, 'Admin verification');
     if (snap.exists()) return { ok: true };
     return { ok: false, reason: 'not-in-admins', uid: user.uid };
@@ -201,8 +300,8 @@ export function markJustLoggedIn() {
 }
 
 export async function resolveAdminSession() {
-  const retries = justLoggedInRecently() ? 6 : 2;
-  const retryDelayMs = 450;
+  const retries = justLoggedInRecently() ? 8 : 3;
+  const retryDelayMs = 600;
   let lastError = null;
 
   for (let attempt = 0; attempt < retries; attempt++) {
@@ -263,7 +362,9 @@ export function showUnauthorizedMessage(uid, reason) {
     );
     return;
   }
-  const idHint = uid ? ` In Firebase Console → Firestore, create collection "admins" with document ID: ${uid}` : '';
+  const idHint = uid
+    ? ` Firestore Database → collection "admins" → document ID (exactly): ${uid}`
+    : ' Add admins/YOUR_UID in Firestore Database (not Authentication).';
   showAuthBanner(`This account is not authorized.${idHint}`, 'error');
 }
 
@@ -307,17 +408,15 @@ export async function guardAdminDashboard(onReady) {
   }, 15000);
 
   try {
-    const session = await withTimeout(
-      resolveAdminSession(),
-      SESSION_TIMEOUT_MS,
-      'Session check'
-    );
+    // No outer timeout — resolveAdminSession can take 20–40s after fresh login
+    const session = await resolveAdminSession();
 
     if (!session.user) {
+      saveAuthFailure('session', null, session.error || 'No signed-in user after login');
       hideAuthLoading();
-      if (!safeRedirect(resolveLoginPath() + (session.timedOut ? '?error=session' : ''))) {
+      if (!safeRedirect(resolveLoginPath() + '?error=session')) {
         document.body.innerHTML =
-          '<div style="padding:3rem;color:#fff;font-family:Poppins,sans-serif;text-align:center"><p>Session required.</p><p><a href="' +
+          '<div style="padding:3rem;color:#fff;font-family:Poppins,sans-serif;text-align:center"><p>Session required.</p><p class="admin-muted" style="color:#888">Enable cookies / site data for this domain.</p><p><a href="' +
           resolveLoginPath() +
           '" style="color:#d98b2b">Go to login</a></p></div>';
       }
@@ -330,19 +429,26 @@ export async function guardAdminDashboard(onReady) {
         session.user.uid,
         session.adminReason || session.error
       );
+      saveAuthFailure(
+        session.adminReason || 'not-in-admins',
+        session.user.uid,
+        'Missing or invalid admins document'
+      );
       try {
         sessionStorage.setItem('haibo_admin_last_uid', session.user.uid);
       } catch {
         /* ignore */
       }
-      await adminLogout();
-      hideAuthLoading();
-      const q =
-        session.adminReason === 'permission-denied' ? '?error=firestore' : '?error=unauthorized';
-      safeRedirect(resolveLoginPath() + q);
+      // Stay on dashboard URL — show fix instructions (do NOT logout/redirect loop)
+      showDashboardAccessDenied(session.user, {
+        ok: false,
+        reason: session.adminReason,
+        uid: session.uid,
+      });
       return;
     }
 
+    clearAuthFailure();
     revealDashboard(session.user);
   } catch (err) {
     console.error('[HAIBO Admin] Dashboard guard failed:', err);
@@ -351,11 +457,16 @@ export async function guardAdminDashboard(onReady) {
     if (auth?.currentUser) {
       const adminResult = await checkIsAdminUser(auth.currentUser);
       if (adminResult.ok) {
+        clearAuthFailure();
         revealDashboard(auth.currentUser);
         return;
       }
+      saveAuthFailure(adminResult.reason, auth.currentUser.uid, err.message);
+      showDashboardAccessDenied(auth.currentUser, adminResult);
+      return;
     }
-    window.location.assign(resolveLoginPath() + '?error=session');
+    saveAuthFailure('session', null, err.message);
+    safeRedirect(resolveLoginPath() + '?error=session');
   } finally {
     clearTimeout(safetyTimer);
   }
@@ -380,31 +491,38 @@ export async function guardAdminLogin(onFormReady) {
   } catch {
     /* ignore */
   }
+  showStoredAuthFailure();
+
   if (params.get('error') === 'unauthorized') showUnauthorizedMessage(hintUid, 'not-in-admins');
   else if (params.get('error') === 'firestore') {
     showUnauthorizedMessage(hintUid, 'permission-denied');
   } else if (params.get('error') === 'session') {
-    showAuthBanner('Previous session expired. Please sign in again.', 'warn');
+    showAuthBanner(
+      'Dashboard could not restore your session. Sign in again. Ensure Firestore has admins/YOUR_UID (see Authentication → Users for UID).',
+      'warn'
+    );
   }
 
   // Always show the login form immediately — never block on "Checking session…"
   hideAuthLoading();
   if (typeof onFormReady === 'function') onFormReady();
 
-  try {
-    const session = await withTimeout(
-      resolveAdminSession(),
-      SESSION_TIMEOUT_MS,
-      'Session check'
-    );
+  // Do not auto-redirect to dashboard when returning from a failed attempt (stops loops)
+  const skipAutoRedirect =
+    params.get('error') || params.get('noredirect') || loadAuthFailure();
 
-    if (session.user && session.isAdmin) {
-      window.location.href = resolveDashboardPath();
+  try {
+    const session = await resolveAdminSession();
+
+    if (session.user && session.isAdmin && !skipAutoRedirect) {
+      clearAuthFailure();
+      window.location.replace(resolveDashboardPath());
       return;
     }
 
     if (session.user && !session.isAdmin) {
       console.warn('[HAIBO Admin] User signed in but not admin:', session.user.uid);
+      saveAuthFailure(session.adminReason, session.uid || session.user.uid);
       await adminLogout();
       showUnauthorizedMessage(session.uid || session.user.uid, session.adminReason);
     }
@@ -414,24 +532,23 @@ export async function guardAdminLogin(onFormReady) {
 }
 
 export async function handleAdminLogin(email, password) {
-  const cred = await withTimeout(
-    adminLogin(email, password),
-    SESSION_TIMEOUT_MS,
-    'Sign in'
-  );
+  clearAuthFailure();
+  const cred = await withTimeout(adminLogin(email, password), SIGN_IN_TIMEOUT_MS, 'Sign in');
   const adminResult = await checkIsAdminUser(cred.user);
   if (!adminResult.ok) {
+    saveAuthFailure(adminResult.reason, cred.user.uid);
     await adminLogout();
     const msg =
       adminResult.reason === 'permission-denied'
-        ? 'Firestore blocked admin verification. Deploy firestore.rules from this project.'
-        : `Not authorized. In Firestore create document: admins/${cred.user.uid} (empty doc is OK).`;
+        ? 'Firestore blocked admin verification. Deploy firebase/firestore.rules to project haibo-tours.'
+        : `Not authorized. In Firestore Database (not Authentication) create: admins/${cred.user.uid} — document ID must match your Auth UID exactly.`;
     throw Object.assign(new Error('NOT_ADMIN'), {
       code: 'auth/not-authorized',
       friendlyMessage: msg,
     });
   }
   markJustLoggedIn();
+  clearAuthFailure();
   try {
     sessionStorage.removeItem(REDIRECT_GUARD_KEY);
     sessionStorage.setItem('haibo_admin_last_uid', cred.user.uid);

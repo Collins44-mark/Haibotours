@@ -757,6 +757,21 @@ body.admin-login-ready.admin-login-page #admin-auth-loading {
   min-height: 1.25rem;
 }
 
+.admin-login-help {
+  margin-top: 1rem;
+  font-size: 0.8rem;
+}
+
+.admin-login-help summary {
+  cursor: pointer;
+  color: var(--admin-gold);
+}
+
+.admin-login-help code {
+  color: var(--admin-gold-light);
+  font-size: 0.85em;
+}
+
 .admin-login-foot {
   margin-top: 1.5rem;
   text-align: center;

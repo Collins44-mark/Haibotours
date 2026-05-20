@@ -59,6 +59,14 @@
         <span>Sign in to dashboard</span>
       </button>
       <p id="login-error" class="admin-login-error" role="alert"></p>
+      <details class="admin-login-help admin-muted">
+        <summary>Admin access not working?</summary>
+        <p style="margin:0.75rem 0 0;font-size:0.8rem;line-height:1.5">
+          Firebase <strong>Authentication</strong> (email/password) is only step 1.
+          You also need a Firestore document: collection <code>admins</code>, document ID = your
+          <strong>User UID</strong> from Authentication → Users (not your email).
+        </p>
+      </details>
       <p class="admin-muted admin-login-foot"><a href="/">← Back to website</a></p>
     </form>
   </div>
