@@ -1,5 +1,7 @@
 /** Update with your real details */
 const HAIBO_CONFIG = {
+  /** Your Render API URL after deploy, e.g. https://haibo-tours-api.onrender.com */
+  apiBaseUrl: '',
   logoPath: 'assets/logo/logo.png',
   whatsappNumber: '255712345678',
   defaultTourMessage:

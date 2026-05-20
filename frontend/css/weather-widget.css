@@ -19,8 +19,43 @@
 @media (max-width: 1023px) {
   .weather-widget {
     position: relative;
-    margin: 2rem auto 0;
+    margin: 1.5rem auto 0;
     padding: 0 1rem;
+    width: min(100%, 320px);
+  }
+}
+
+@media (max-width: 480px) {
+  .weather-widget {
+    width: 100%;
+    max-width: none;
+    padding: 0 0.5rem;
+  }
+
+  .weather-widget-shell {
+    border-radius: 1.25rem;
+  }
+
+  .weather-widget-card,
+  .weather-widget-viewport {
+    min-height: 132px;
+  }
+
+  .weather-slide {
+    padding: 1rem 1.1rem 0.85rem;
+  }
+
+  .weather-temp {
+    font-size: 1.5rem !important;
+  }
+
+  .weather-icon {
+    font-size: 1.15rem !important;
+  }
+
+  .weather-fact {
+    font-size: 0.62rem;
+    padding: 0.25rem 0.45rem;
   }
 }
 

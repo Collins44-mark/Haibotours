@@ -108,20 +108,119 @@ function initContactPage() {
   }
 
   if (form) {
-    form.addEventListener('submit', (e) => {
+    let msgEl = form.querySelector('.form-message');
+    if (!msgEl) {
+      msgEl = document.createElement('p');
+      msgEl.className = 'form-message hidden';
+      form.appendChild(msgEl);
+    }
+
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const data = new FormData(form);
-      const body = [
-        `Name: ${data.get('name')}`,
-        `Email: ${data.get('email')}`,
-        `Phone: ${data.get('phone') || '—'}`,
-        `Interest: ${data.get('interest')}`,
-        '',
-        String(data.get('message')),
-      ].join('\n');
-      window.location.href = `mailto:${HAIBO_CONFIG.email}?subject=${encodeURIComponent('Safari Inquiry — ' + data.get('name'))}&body=${encodeURIComponent(body)}`;
+      const btn = form.querySelector('button[type="submit"]');
+      const originalText = btn?.textContent;
+
+      const payload = {
+        name: data.get('name'),
+        email: data.get('email'),
+        phone: data.get('phone') || null,
+        interest: data.get('interest'),
+        message: data.get('message'),
+        destinationSlug: data.get('destinationSlug') || null,
+        packageName: data.get('packageName') || null,
+        source: 'contact-page',
+      };
+
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Sending...';
+      }
+
+      try {
+        if (HAIBO_CONFIG.apiBaseUrl) {
+          const result = await submitInquiry(payload);
+          showFormMessage(msgEl, result.message, false);
+          form.reset();
+        } else {
+          const body = [
+            `Name: ${payload.name}`,
+            `Email: ${payload.email}`,
+            `Phone: ${payload.phone || '—'}`,
+            `Interest: ${payload.interest}`,
+            '',
+            String(payload.message),
+          ].join('\n');
+          window.location.href = `mailto:${HAIBO_CONFIG.email}?subject=${encodeURIComponent('Safari Inquiry — ' + payload.name)}&body=${encodeURIComponent(body)}`;
+        }
+      } catch (err) {
+        showFormMessage(msgEl, err.message || 'Could not send inquiry. Try WhatsApp or email.', true);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = originalText;
+        }
+      }
     });
   }
+}
+
+function initNewsletterForm() {
+  const form = document.getElementById('newsletter-form');
+  if (!form) return;
+
+  let msgEl = form.querySelector('.newsletter-message');
+  if (!msgEl) {
+    msgEl = document.createElement('p');
+    msgEl.className = 'newsletter-message hidden text-xs px-5 py-2 text-center w-full';
+    form.parentElement?.appendChild(msgEl);
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = new FormData(form).get('email');
+    const btn = form.querySelector('button[type="submit"]');
+
+    if (!HAIBO_CONFIG.apiBaseUrl) {
+      alert('Thank you for subscribing!');
+      form.reset();
+      return;
+    }
+
+    if (btn) btn.disabled = true;
+
+    try {
+      const result = await subscribeNewsletter(email);
+      msgEl.textContent = result.message;
+      msgEl.className = 'newsletter-message text-xs px-5 py-2 text-center w-full text-green-400';
+      form.reset();
+    } catch (err) {
+      msgEl.textContent = err.message || 'Subscription failed.';
+      msgEl.className = 'newsletter-message text-xs px-5 py-2 text-center w-full text-red-400';
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  });
+}
+
+function initSearchBar() {
+  const bar = document.getElementById('safari-search');
+  if (!bar || !HAIBO_CONFIG.apiBaseUrl) return;
+
+  bar.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = new FormData(bar);
+    try {
+      await submitSearch({
+        destination: data.get('destination'),
+        travelDate: data.get('travelDate') || null,
+        travelers: data.get('travelers') ? Number(data.get('travelers')) : null,
+      });
+      window.location.href = 'destinations.html';
+    } catch {
+      window.location.href = 'destinations.html';
+    }
+  });
 }
 
 function initMobileMenu() {
@@ -256,7 +355,7 @@ function renderDestinationDetail() {
       <div class="hero-inner w-full flex items-end px-8 md:px-20 pb-16 pt-32">
         <div class="max-w-4xl fade-up">
           <p class="orange uppercase tracking-[5px] text-sm mb-3">${dest.region}</p>
-          <h1 class="text-5xl md:text-7xl font-extrabold mb-4">${dest.name}</h1>
+          <h1 class="page-heading font-extrabold mb-4">${dest.name}</h1>
           <p class="text-xl text-gray-300 mb-6">${dest.subtitle}</p>
           <p class="text-gray-200 leading-8 max-w-2xl mb-8">${dest.description}</p>
           <div class="flex flex-wrap gap-3 mb-6">${highlightsHtml}</div>
@@ -311,6 +410,8 @@ function renderDestinationDetail() {
 document.addEventListener('DOMContentLoaded', () => {
   applyLogo();
   initMobileMenu();
+  initNewsletterForm();
+  initSearchBar();
 
   if (document.body.dataset.page === 'contact') {
     initWhatsAppFloat();

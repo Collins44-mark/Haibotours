@@ -11,6 +11,7 @@
 
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="css/site.css">
+  <link rel="stylesheet" href="css/responsive.css">
   <link rel="stylesheet" href="css/weather-widget.css">
   <link rel="stylesheet" href="css/cta-cinematic.css">
 
@@ -82,12 +83,12 @@
         Explore Tanzania
       </p>
 
-      <h1 class="text-5xl md:text-8xl font-extrabold leading-tight mb-6">
+      <h1 class="hero-title font-extrabold mb-6">
         Discover the soul of
         <span class="orange">Tanzania</span>
       </h1>
 
-      <p class="text-lg text-gray-200 leading-8 max-w-2xl mb-10">
+      <p class="hero-subtitle text-gray-200 max-w-2xl mb-10">
         Authentic safaris, luxury adventures, cultural journeys and unforgettable wildlife experiences across East Africa.
       </p>
 
@@ -128,22 +129,22 @@
   <!-- SEARCH BAR -->
   <div id="safaris" class="relative z-10 -mt-20 px-6 md:px-20">
 
-    <div class="glass rounded-[35px] p-8 grid md:grid-cols-4 gap-5">
+    <form id="safari-search" class="glass rounded-[35px] p-8 grid md:grid-cols-4 gap-5">
 
-      <input type="text" placeholder="Destination"
+      <input type="text" name="destination" placeholder="Destination"
       class="bg-transparent border border-white/10 rounded-2xl px-5 py-4 outline-none text-white placeholder-gray-400">
 
-      <input type="date"
+      <input type="date" name="travelDate"
       class="bg-transparent border border-white/10 rounded-2xl px-5 py-4 outline-none text-white">
 
-      <input type="number" placeholder="Travelers" min="1"
+      <input type="number" name="travelers" placeholder="Travelers" min="1"
       class="bg-transparent border border-white/10 rounded-2xl px-5 py-4 outline-none text-white placeholder-gray-400">
 
-      <a href="destinations.html" class="btn-main rounded-2xl py-4 text-center">
+      <button type="submit" class="btn-main rounded-2xl py-4">
         Search Now
-      </a>
+      </button>
 
-    </div>
+    </form>
 
   </div>
 
@@ -355,7 +356,7 @@
 
         <h3 class="text-2xl font-semibold mb-5">Newsletter</h3>
 
-        <form class="cta-cinematic cta-cinematic--compact rounded-full overflow-hidden" onsubmit="event.preventDefault(); alert('Thank you for subscribing!');">
+        <form id="newsletter-form" class="cta-cinematic cta-cinematic--compact rounded-full overflow-hidden">
 
           <div class="cta-cinematic__bg cta-bg-misty" aria-hidden="true"></div>
           <div class="cta-cinematic__overlay" aria-hidden="true"></div>
@@ -364,7 +365,7 @@
 
           <div class="cta-cinematic__content flex w-full">
 
-            <input type="email" required
+            <input type="email" name="email" required
             placeholder="Your Email"
             class="bg-transparent w-full px-5 py-4 outline-none text-white placeholder-gray-400">
 
@@ -391,6 +392,7 @@
   </footer>
 
   <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
   <script src="js/destinations-data.js"></script>
   <script src="js/weather-widget.js"></script>
   <script src="js/app.js"></script>

@@ -1,0 +1,446 @@
+/**
+ * HAIBO — mobile & tablet responsive layer
+ */
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+img,
+video {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Fluid typography */
+.hero-title {
+  font-size: clamp(2.25rem, 8vw, 5rem) !important;
+  line-height: 1.08;
+}
+
+.hero-subtitle {
+  font-size: clamp(1rem, 2.5vw, 1.125rem);
+  line-height: 1.75;
+}
+
+.section-title {
+  font-size: clamp(1.75rem, 5vw, 3rem) !important;
+}
+
+.page-heading {
+  font-size: clamp(2rem, 7vw, 4.5rem) !important;
+  line-height: 1.1;
+}
+
+/* Section spacing */
+.section-pad {
+  padding-left: clamp(1rem, 4vw, 5rem);
+  padding-right: clamp(1rem, 4vw, 5rem);
+}
+
+/* Navbar */
+@media (max-width: 1023px) {
+  nav .hidden.md\:flex {
+    display: none !important;
+  }
+}
+
+@media (max-width: 767px) {
+  nav {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+
+  nav img[data-haibo-logo] {
+    width: 2.75rem !important;
+    height: 2.75rem !important;
+  }
+
+  nav h1 {
+    font-size: 1.15rem !important;
+  }
+
+  nav .text-xs {
+    font-size: 0.6rem !important;
+    letter-spacing: 0.2em !important;
+  }
+
+  #menu-btn {
+    font-size: 1.5rem;
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* Hero home */
+@media (max-width: 767px) {
+  .hero-home,
+  .hero-inner {
+    min-height: auto !important;
+  }
+
+  #home.hero {
+    min-height: 100svh;
+    padding-top: 6.5rem;
+    padding-bottom: 2rem;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+
+  #home .max-w-3xl {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  #home .flex-wrap.gap-5 {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  #home .flex-wrap.gap-5 a,
+  #home .flex-wrap.gap-5 .btn-main,
+  #home .flex-wrap.gap-5 .glass {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+  }
+}
+
+/* Search bar */
+@media (max-width: 767px) {
+  #safaris {
+    margin-top: -2.5rem !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  #safari-search {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+    padding: 1.25rem !important;
+    border-radius: 1.5rem !important;
+  }
+
+  #safari-search input,
+  #safari-search button {
+    width: 100%;
+    font-size: 1rem;
+    min-height: 48px;
+  }
+}
+
+/* Destination cards — 2 columns on mobile */
+@media (max-width: 639px) {
+  #home-destinations,
+  #all-destinations {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.75rem !important;
+  }
+
+  .destination-card .h-\[380px\],
+  .destination-card .h-\[420px\],
+  .destination-card img {
+    height: 200px !important;
+    min-height: 200px !important;
+  }
+
+  .destination-card h3 {
+    font-size: 1rem !important;
+  }
+
+  .destination-card .text-xs {
+    font-size: 0.6rem !important;
+  }
+
+  .destination-card .absolute.bottom-6 {
+    bottom: 0.75rem !important;
+    left: 0.75rem !important;
+    right: 0.75rem !important;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  #home-destinations,
+  #all-destinations {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* Home gallery preview — 2 columns on mobile */
+@media (max-width: 767px) {
+  #gallery .gallery.grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.75rem !important;
+  }
+
+  #gallery .gallery.grid img {
+    height: 160px !important;
+    min-height: 160px !important;
+    border-radius: 1rem !important;
+  }
+
+  #gallery .gallery.grid img:last-child:nth-child(odd) {
+    grid-column: span 2;
+    height: 180px !important;
+    min-height: 180px !important;
+  }
+}
+
+/* About section */
+@media (max-width: 767px) {
+  #about .grid.md\:grid-cols-2 {
+    grid-template-columns: 1fr !important;
+    gap: 2rem !important;
+  }
+
+  #about .grid.grid-cols-2 {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.75rem !important;
+  }
+
+  .about-stat-icon {
+    width: 2.75rem;
+    height: 2.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .about-stat-icon svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .stats-card {
+    padding: 1rem !important;
+    border-radius: 1.25rem !important;
+  }
+
+  .stats-card .stats-card-title {
+    font-size: 0.8rem !important;
+  }
+
+  .stats-card .stats-card-sub {
+    font-size: 0.8rem !important;
+  }
+
+  #about img {
+    border-radius: 1.5rem !important;
+    max-height: 280px;
+    object-fit: cover;
+  }
+}
+
+/* Contact cards */
+@media (max-width: 767px) {
+  #contact-cards {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.75rem !important;
+  }
+
+  .contact-card {
+    padding: 1.25rem !important;
+  }
+
+  .contact-icon {
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  .contact-icon svg {
+    width: 1.15rem !important;
+    height: 1.15rem !important;
+  }
+
+  .contact-card p.text-lg {
+    font-size: 0.85rem !important;
+  }
+
+  .contact-card .text-xs {
+    font-size: 0.6rem !important;
+  }
+}
+
+@media (max-width: 380px) {
+  #contact-cards {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Contact page layout */
+@media (max-width: 1023px) {
+  .grid.lg\:grid-cols-2 {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Package cards */
+@media (max-width: 767px) {
+  .grid.md\:grid-cols-2.lg\:grid-cols-3 {
+    grid-template-columns: 1fr !important;
+  }
+
+  .package-card .text-4xl {
+    font-size: 1.75rem !important;
+  }
+}
+
+/* Destination detail — experience + gallery */
+@media (max-width: 1023px) {
+  .grid.lg\:grid-cols-2.gap-16 {
+    grid-template-columns: 1fr !important;
+    gap: 2rem !important;
+  }
+
+  .gallery.grid-cols-2 {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.75rem !important;
+  }
+
+  .gallery.grid-cols-2 img {
+    min-height: 140px !important;
+    height: 140px !important;
+  }
+
+  .gallery.grid-cols-2 img.md\:col-span-2 {
+    grid-column: span 2;
+    min-height: 180px !important;
+    height: 180px !important;
+  }
+}
+
+/* Page heroes */
+@media (max-width: 767px) {
+  .contact-hero,
+  .gallery-hero,
+  .page-hero {
+    min-height: auto !important;
+    padding-top: 6.5rem !important;
+    padding-bottom: 2rem !important;
+  }
+
+  .page-hero.hero .hero-inner {
+    min-height: auto !important;
+    padding-top: 6.5rem !important;
+    padding-bottom: 2rem !important;
+  }
+
+  .page-hero h1,
+  .contact-hero h1,
+  .gallery-hero h1 {
+    font-size: clamp(2rem, 9vw, 3.5rem) !important;
+  }
+}
+
+/* Footer */
+@media (max-width: 767px) {
+  footer .grid.md\:grid-cols-3 {
+    grid-template-columns: 1fr !important;
+    gap: 2rem !important;
+    text-align: center;
+  }
+
+  footer .flex.justify-between {
+    flex-direction: column;
+    text-align: center;
+    gap: 1rem;
+  }
+
+  #newsletter-form .cta-cinematic__content {
+    flex-direction: column !important;
+  }
+
+  #newsletter-form input,
+  #newsletter-form button {
+    width: 100%;
+    border-radius: 1rem !important;
+    min-height: 48px;
+  }
+
+  #newsletter-form {
+    border-radius: 1.25rem !important;
+  }
+}
+
+/* CTA blocks */
+@media (max-width: 767px) {
+  .cta-cinematic__content.p-10,
+  .cta-cinematic__content.p-12,
+  .cta-cinematic__content.p-16 {
+    padding: 1.5rem !important;
+  }
+
+  .flex.flex-wrap.justify-center.gap-4,
+  .flex.flex-wrap.justify-center.gap-5 {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .flex.flex-wrap.justify-center.gap-4 a,
+  .flex.flex-wrap.justify-center.gap-5 a {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+/* Social card */
+@media (max-width: 767px) {
+  .social-links {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .social-link {
+    justify-content: center;
+  }
+}
+
+/* WhatsApp button */
+@media (max-width: 767px) {
+  .whatsapp-float {
+    bottom: 1.25rem;
+    right: 1.25rem;
+    width: 3.25rem;
+    height: 3.25rem;
+  }
+
+  .whatsapp-float svg {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+}
+
+/* Section vertical padding */
+@media (max-width: 767px) {
+  .py-28 {
+    padding-top: 3.5rem !important;
+    padding-bottom: 3.5rem !important;
+  }
+
+  .py-24 {
+    padding-top: 3rem !important;
+    padding-bottom: 3rem !important;
+  }
+
+  .px-8 {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  .md\:px-20 {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+}
+
+/* Flex headers */
+@media (max-width: 767px) {
+  .flex.flex-col.md\:flex-row.justify-between {
+    align-items: flex-start !important;
+    gap: 1rem !important;
+  }
+}
