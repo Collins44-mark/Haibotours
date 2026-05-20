@@ -12,7 +12,6 @@ import {
 let app = null;
 let db = null;
 let auth = null;
-let authInitPromise = null;
 
 export function getHaiboApp() {
   if (!isFirebaseConfigured()) return null;
@@ -96,26 +95,19 @@ function waitAuthStateReady(authInstance, timeoutMs) {
 }
 
 /**
- * Resolves when Auth is initialized and initial persisted state is known.
+ * Each call is independent (no cached promise) so login never blocks forever.
  */
-export function ensureHaiboAuthReady(timeoutMs = 3000) {
-  if (!isFirebaseConfigured()) return Promise.resolve(null);
-
-  if (!authInitPromise) {
-    authInitPromise = (async () => {
-      try {
-        const instance = getHaiboAuth();
-        if (!instance) return null;
-        await waitAuthStateReady(instance, timeoutMs);
-        return instance;
-      } catch (err) {
-        console.warn('[HAIBO] Auth ready fallback:', err?.message || err);
-        return getHaiboAuth();
-      }
-    })();
+export async function ensureHaiboAuthReady(timeoutMs = 3000) {
+  if (!isFirebaseConfigured()) return null;
+  try {
+    const instance = getHaiboAuth();
+    if (!instance) return null;
+    await waitAuthStateReady(instance, timeoutMs);
+    return instance;
+  } catch (err) {
+    console.warn('[HAIBO] Auth ready fallback:', err?.message || err);
+    return getHaiboAuth();
   }
-
-  return authInitPromise;
 }
 
 window.getHaiboDb = getHaiboDb;

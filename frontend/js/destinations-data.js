@@ -469,8 +469,6 @@ function haiboEscapeHtml(str) {
 }
 
 function haiboResolveCardImage(dest) {
-  const img = dest?.image || dest?.imageUrl || '';
-  if (typeof haiboValidMediaUrl === 'function' && haiboValidMediaUrl(img)) return img;
   const key =
     typeof haiboNormalizeDestId === 'function'
       ? haiboNormalizeDestId(dest?.id)
@@ -480,6 +478,10 @@ function haiboResolveCardImage(dest) {
       ? haiboNormalizeDestId(d.id) === key
       : d.id === key
   );
+  const img = dest?.image || dest?.imageUrl || '';
+  if (typeof haiboIsAdminUploadedUrl === 'function' && haiboIsAdminUploadedUrl(img)) {
+    return img;
+  }
   return staticD?.image || img || '';
 }
 
@@ -488,7 +490,8 @@ function haiboPaintDestinationCards(containerId, limit) {
   const container = document.getElementById(containerId);
   if (!container) return false;
 
-  let list = window.HAIBO_DESTINATIONS_STATIC || DESTINATIONS;
+  const staticList = window.HAIBO_DESTINATIONS_STATIC || DESTINATIONS;
+  let list = staticList;
   try {
     if (typeof getHaiboDestinations === 'function') {
       const merged = getHaiboDestinations();
@@ -496,8 +499,29 @@ function haiboPaintDestinationCards(containerId, limit) {
     }
   } catch (err) {
     console.warn('HAIBO: using static destinations after error', err);
-    list = window.HAIBO_DESTINATIONS_STATIC || DESTINATIONS;
+    list = staticList;
   }
+  list = list.map((d) => {
+    const key =
+      typeof haiboNormalizeDestId === 'function'
+        ? haiboNormalizeDestId(d.id)
+        : d.id;
+    const base = staticList.find((s) =>
+      typeof haiboNormalizeDestId === 'function'
+        ? haiboNormalizeDestId(s.id) === key
+        : s.id === key
+    );
+    if (!base) return d;
+    return {
+      ...base,
+      ...d,
+      image: haiboResolveCardImage({ ...d, id: key }),
+      heroImage:
+        typeof haiboIsAdminUploadedUrl === 'function' && haiboIsAdminUploadedUrl(d.heroImage)
+          ? d.heroImage
+          : base.heroImage || base.image,
+    };
+  });
 
   if (!list.length) return false;
   if (limit) list = list.slice(0, limit);

@@ -487,7 +487,10 @@ function renderDestinationDetail() {
   const staticD =
     typeof haiboStaticDestination === 'function' ? haiboStaticDestination(dest.id) : null;
   let heroRaw = dest.heroImage;
-  if (typeof haiboValidMediaUrl === 'function' && !haiboValidMediaUrl(heroRaw)) {
+  if (
+    typeof haiboIsAdminUploadedUrl === 'function' &&
+    !haiboIsAdminUploadedUrl(heroRaw)
+  ) {
     heroRaw = staticD?.heroImage || staticD?.image || heroRaw;
   }
   const heroImg =
@@ -549,7 +552,15 @@ function renderDestinationDetail() {
         .join('')
     : '';
 
-  const galleryHtml = gallery
+  const galleryList = gallery.map((src, i) => {
+    const staticSrc = staticD?.gallery?.[i];
+    if (typeof haiboIsAdminUploadedUrl === 'function' && haiboIsAdminUploadedUrl(src)) {
+      return src;
+    }
+    return staticSrc || src;
+  });
+
+  const galleryHtml = galleryList
     .map((imgSrc, i) => {
       const alt = `${dest.name} safari photo ${i + 1} — Tanzania`;
       const cls = `haibo-media gallery-item rounded-[24px] object-cover w-full ${i === 0 ? 'md:col-span-2 md:row-span-2 h-[280px] md:h-full min-h-[280px]' : 'h-[220px] md:h-[240px]'}`;

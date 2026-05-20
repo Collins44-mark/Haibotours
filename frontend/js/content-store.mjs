@@ -120,6 +120,10 @@ function publish(isInitial) {
   applyDestinations();
   applyConfigFromContent();
 
+  if (typeof haiboBootDestinationGrids === 'function') {
+    haiboBootDestinationGrids();
+  }
+
   if (isInitial && !initialComplete) {
     initialComplete = true;
     window.HAIBO_CONTENT_LOADED = true;

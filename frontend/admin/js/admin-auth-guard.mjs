@@ -236,7 +236,7 @@ export async function guardAdminDashboard(onReady) {
 
     if (!session.user) {
       hideAuthLoading();
-      if (!redirectToLogin(session.timedOut ? 'error=session' : undefined)) {
+      if (!safeRedirect(resolveLoginPath() + (session.timedOut ? '?error=session' : ''))) {
         document.body.innerHTML =
           '<div style="padding:3rem;color:#fff;font-family:Poppins,sans-serif;text-align:center"><p>Session required.</p><p><a href="' +
           resolveLoginPath() +
@@ -249,7 +249,7 @@ export async function guardAdminDashboard(onReady) {
       console.warn('[HAIBO Admin] Signed-in user is not in admins collection:', session.user.uid);
       await adminLogout();
       hideAuthLoading();
-      redirectToLogin('error=unauthorized');
+      safeRedirect(resolveLoginPath() + '?error=unauthorized');
       return;
     }
 
@@ -265,7 +265,7 @@ export async function guardAdminDashboard(onReady) {
         return;
       }
     }
-    redirectToLogin('error=session');
+    safeRedirect(resolveLoginPath() + '?error=session');
   }
 }
 
@@ -287,20 +287,9 @@ export async function guardAdminLogin(onFormReady) {
     showAuthBanner('Previous session expired. Please sign in again.', 'warn');
   }
 
-  showAuthLoading('Checking session…');
-
-  let loginRevealed = false;
-  const revealLogin = () => {
-    if (loginRevealed) return;
-    loginRevealed = true;
-    hideAuthLoading();
-    if (typeof onFormReady === 'function') onFormReady();
-  };
-
-  const safetyTimer = setTimeout(() => {
-    console.warn('[HAIBO Admin] Login UI safety timeout — showing sign-in form');
-    revealLogin();
-  }, LOGIN_UI_SAFETY_MS);
+  // Always show the login form immediately — never block on "Checking session…"
+  hideAuthLoading();
+  if (typeof onFormReady === 'function') onFormReady();
 
   try {
     const session = await withTimeout(
@@ -310,13 +299,7 @@ export async function guardAdminLogin(onFormReady) {
     );
 
     if (session.user && session.isAdmin) {
-      const redirected = safeRedirect(resolveDashboardPath());
-      if (!redirected) {
-        showAuthBanner(
-          'You are signed in but the dashboard redirect was blocked. Click Sign in again or open /admin manually.',
-          'warn'
-        );
-      }
+      window.location.assign(resolveDashboardPath());
       return;
     }
 
@@ -324,26 +307,18 @@ export async function guardAdminLogin(onFormReady) {
       console.warn('[HAIBO Admin] User signed in but not admin:', session.user.uid);
       await adminLogout();
       showUnauthorizedMessage();
-    } else if (session.timedOut || session.error) {
-      showAuthBanner(
-        'Could not verify an existing session. Sign in below to continue.',
-        'warn'
-      );
     }
   } catch (err) {
-    console.error('[HAIBO Admin] Login guard:', err);
-    showAuthBanner(
-      formatAuthError(err) || 'Authentication check failed. You can still sign in below.',
-      'warn'
-    );
-  } finally {
-    clearTimeout(safetyTimer);
-    revealLogin();
+    console.error('[HAIBO Admin] Background session check:', err);
   }
 }
 
 export async function handleAdminLogin(email, password) {
-  const cred = await adminLogin(email, password);
+  const cred = await withTimeout(
+    adminLogin(email, password),
+    SESSION_TIMEOUT_MS,
+    'Sign in'
+  );
   const isAdmin = await checkIsAdminUser(cred.user);
   if (!isAdmin) {
     await adminLogout();

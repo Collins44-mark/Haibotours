@@ -100,6 +100,13 @@ function haiboValidMediaUrl(url) {
   );
 }
 
+/** Only real admin uploads override built-in Unsplash defaults */
+function haiboIsAdminUploadedUrl(url) {
+  if (!haiboValidMediaUrl(url)) return false;
+  const s = String(url).toLowerCase();
+  return s.includes('res.cloudinary.com') || s.includes('/image/upload/');
+}
+
 function haiboNormalizeDestId(id) {
   return String(id || '')
     .trim()
@@ -124,12 +131,11 @@ function haiboMergeDestination(live, staticDest) {
 
   const liveImage = haiboPickDestinationImage(live);
   const liveHero = live?.heroImage || live?.hero_image || '';
-  merged.image = haiboValidMediaUrl(liveImage)
-    ? liveImage
-    : base.image || haiboPickDestinationImage(base);
-  merged.heroImage = haiboValidMediaUrl(liveHero)
+  const baseImage = base.image || haiboPickDestinationImage(base);
+  merged.image = haiboIsAdminUploadedUrl(liveImage) ? liveImage : baseImage;
+  merged.heroImage = haiboIsAdminUploadedUrl(liveHero)
     ? liveHero
-    : base.heroImage || base.image || merged.image;
+    : base.heroImage || baseImage || merged.image;
 
   if (!Array.isArray(merged.packages) || !merged.packages.length) {
     merged.packages = base.packages || [];
@@ -210,11 +216,11 @@ function haiboMergeGalleryCollection(items) {
   const list = items || [];
   const images = list
     .filter((g) => (g.type === 'image' || !g.type) && g.active !== false)
-    .filter(haiboValidGalleryItem)
+    .filter((g) => haiboIsAdminUploadedUrl(g.src || g.url))
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   const videos = list
     .filter((g) => g.type === 'video' && g.active !== false)
-    .filter((g) => haiboValidMediaUrl(g.src))
+    .filter((g) => haiboIsAdminUploadedUrl(g.src))
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
   return {
@@ -225,8 +231,10 @@ function haiboMergeGalleryCollection(items) {
 
 function haiboNormalizeGalleryObject(gallery) {
   const defaults = haiboDefaultGallery();
-  const images = (gallery?.images || []).filter(haiboValidGalleryItem);
-  const videos = (gallery?.videos || []).filter((g) => haiboValidMediaUrl(g.src));
+  const images = (gallery?.images || []).filter((img) =>
+    haiboIsAdminUploadedUrl(img.src || img.url)
+  );
+  const videos = (gallery?.videos || []).filter((g) => haiboIsAdminUploadedUrl(g.src));
   return {
     images: images.length ? images : defaults.images,
     videos: videos.length ? videos : defaults.videos,
@@ -279,6 +287,7 @@ function mergeHaiboContentWithDefaults() {
 window.HAIBO_DEFAULTS = HAIBO_DEFAULTS;
 window.mergeHaiboContentWithDefaults = mergeHaiboContentWithDefaults;
 window.haiboValidMediaUrl = haiboValidMediaUrl;
+window.haiboIsAdminUploadedUrl = haiboIsAdminUploadedUrl;
 window.haiboMergeDestinationsList = haiboMergeDestinationsList;
 window.haiboMergeGalleryCollection = haiboMergeGalleryCollection;
 window.haiboNormalizeGalleryObject = haiboNormalizeGalleryObject;

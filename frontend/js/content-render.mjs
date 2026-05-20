@@ -35,10 +35,12 @@ function renderHero() {
   const h = window.HAIBO_CONTENT?.hero;
   if (!h) return;
 
+  const defaultHero = window.HAIBO_DEFAULTS?.hero?.backgroundImageUrl || '';
   const heroBg =
-    h.backgroundImageUrl ||
-    window.HAIBO_DEFAULTS?.hero?.backgroundImageUrl ||
-    '';
+    typeof haiboIsAdminUploadedUrl === 'function' &&
+    haiboIsAdminUploadedUrl(h.backgroundImageUrl)
+      ? h.backgroundImageUrl
+      : defaultHero;
   if (heroBg && (!haiboValidMediaUrl || haiboValidMediaUrl(heroBg))) {
     setBgImage('#home.hero-banner', heroBg);
     const home = document.getElementById('home');
@@ -66,7 +68,7 @@ function renderAbout() {
   setText('[data-haibo-about-title]', a.title);
   setText('[data-haibo-about-body]', a.body);
   const aboutImg =
-    a.imageUrl && (!haiboValidMediaUrl || haiboValidMediaUrl(a.imageUrl))
+    typeof haiboIsAdminUploadedUrl === 'function' && haiboIsAdminUploadedUrl(a.imageUrl)
       ? a.imageUrl
       : window.HAIBO_DEFAULTS?.about?.imageUrl;
   if (aboutImg) {
@@ -91,11 +93,18 @@ function renderAbout() {
 }
 
 function renderHomeGallery() {
+  const defaults =
+    typeof GALLERY_IMAGES !== 'undefined' ? GALLERY_IMAGES.slice(0, 3) : [];
   const raw = window.HAIBO_CONTENT?.gallery?.images || [];
-  const images = raw.filter(
-    (img) =>
-      !haiboValidMediaUrl || haiboValidMediaUrl(img.src || img.url)
-  );
+  const fromFirestore = raw.filter((img) => {
+    const src = img.src || img.url;
+    return (
+      typeof haiboIsAdminUploadedUrl === 'function'
+        ? haiboIsAdminUploadedUrl(src)
+        : haiboValidMediaUrl(src)
+    );
+  });
+  const images = fromFirestore.length ? fromFirestore : defaults;
   const grid = document.querySelector('#gallery .gallery.grid');
   if (!grid || !images.length) return;
 
