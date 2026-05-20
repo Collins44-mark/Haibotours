@@ -44,13 +44,21 @@ function applyConfigFromContent() {
 }
 
 function applyDestinations() {
+  if (typeof syncHaiboDestinations === 'function') {
+    syncHaiboDestinations();
+    return;
+  }
+  const staticList =
+    window.HAIBO_DESTINATIONS_STATIC ||
+    (typeof DESTINATIONS !== 'undefined' ? DESTINATIONS : []);
   const list = window.HAIBO_CONTENT.destinations;
   if (Array.isArray(list) && list.length > 0) {
-    window.DESTINATIONS = list
+    const live = list
       .filter((d) => d && d.id && d.active !== false)
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-  } else if (typeof DESTINATIONS !== 'undefined') {
-    window.DESTINATIONS = [...DESTINATIONS];
+    window.DESTINATIONS = live.length ? live : staticList;
+  } else {
+    window.DESTINATIONS = [...staticList];
   }
 }
 
@@ -65,8 +73,11 @@ function ensureDefaults() {
   if (typeof mergeHaiboContentWithDefaults === 'function') {
     mergeHaiboContentWithDefaults();
   } else {
-    if (!window.HAIBO_CONTENT.destinations?.length && typeof DESTINATIONS !== 'undefined') {
-      window.HAIBO_CONTENT.destinations = [...DESTINATIONS];
+    const staticDests =
+      window.HAIBO_DESTINATIONS_STATIC ||
+      (typeof DESTINATIONS !== 'undefined' ? DESTINATIONS.map((x) => ({ ...x })) : []);
+    if (!window.HAIBO_CONTENT.destinations?.length && staticDests.length) {
+      window.HAIBO_CONTENT.destinations = staticDests.map((x) => ({ ...x }));
     }
     if (
       !window.HAIBO_CONTENT.gallery?.images?.length &&
@@ -85,6 +96,15 @@ function ensureDefaults() {
 
 let initialPending = 0;
 let initialComplete = false;
+const INITIAL_LOAD_TIMEOUT_MS = 4500;
+let initialLoadTimer = null;
+
+function forceInitialPublish() {
+  if (initialComplete) return;
+  ensureDefaults();
+  initialPending = 0;
+  publish(true);
+}
 
 function publish(isInitial) {
   ensureDefaults();
@@ -117,6 +137,7 @@ function subscribeDoc(db, coll, key) {
     },
     (err) => {
       console.warn(`HAIBO listener error (${coll}):`, err);
+      ensureDefaults();
       if (!initialComplete) tickInitial();
     }
   );
@@ -134,6 +155,7 @@ function subscribeCollection(db, coll, handler) {
     },
     (err) => {
       console.warn(`HAIBO listener error (${coll}):`, err);
+      ensureDefaults();
       if (!initialComplete) tickInitial();
     }
   );
@@ -155,11 +177,11 @@ function startRealtimeListeners() {
   subscribeDoc(db, FIRESTORE_PATHS.settings, 'settings');
 
   subscribeCollection(db, FIRESTORE_PATHS.destinations, (items) => {
-    window.HAIBO_CONTENT.destinations = items.length
-      ? items
-      : typeof DESTINATIONS !== 'undefined'
-        ? [...DESTINATIONS]
-        : [];
+    const staticList =
+      window.HAIBO_DESTINATIONS_STATIC ||
+      (typeof DESTINATIONS !== 'undefined' ? DESTINATIONS.map((x) => ({ ...x })) : []);
+    const active = items.filter((d) => d && d.id && d.active !== false);
+    window.HAIBO_CONTENT.destinations = active.length ? items : staticList;
   });
 
   subscribeCollection(db, FIRESTORE_PATHS.gallery, (items) => {
@@ -190,11 +212,20 @@ function startRealtimeListeners() {
         ? WEATHER_PARKS_STATIC.map((p) => ({ ...p, active: true }))
         : [];
   });
+
+  initialLoadTimer = setTimeout(() => {
+    if (!initialComplete) {
+      console.warn('HAIBO: Firestore init timeout — showing local defaults.');
+      forceInitialPublish();
+    }
+  }, INITIAL_LOAD_TIMEOUT_MS);
 }
 
 export function initHaiboContentRealtime() {
+  ensureDefaults();
+  applyDestinations();
+
   if (!isFirebaseConfigured()) {
-    ensureDefaults();
     publish(true);
     return;
   }

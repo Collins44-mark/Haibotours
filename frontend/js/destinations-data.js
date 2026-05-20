@@ -350,10 +350,37 @@ const DESTINATIONS = [
   },
 ];
 
+/** Immutable local defaults — used when Firestore is empty or unavailable */
+window.HAIBO_DESTINATIONS_STATIC = DESTINATIONS.map((d) => ({ ...d }));
+window.DESTINATIONS = DESTINATIONS;
+
+function getHaiboDestinations() {
+  const staticList = window.HAIBO_DESTINATIONS_STATIC || DESTINATIONS;
+  const fromWindow = Array.isArray(window.DESTINATIONS) ? window.DESTINATIONS : [];
+  const fromContent = Array.isArray(window.HAIBO_CONTENT?.destinations)
+    ? window.HAIBO_CONTENT.destinations
+    : [];
+
+  const pick = (arr) =>
+    arr
+      .filter((d) => d && d.id && d.active !== false)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+  const live = pick(fromWindow.length ? fromWindow : fromContent);
+  return live.length ? live : staticList;
+}
+
+function syncHaiboDestinations() {
+  window.DESTINATIONS = getHaiboDestinations();
+}
+
+window.getHaiboDestinations = getHaiboDestinations;
+window.syncHaiboDestinations = syncHaiboDestinations;
+
 function getDestinationById(id) {
   if (!id) return null;
   const key = String(id).trim().toLowerCase();
-  return DESTINATIONS.find((d) => d.id === key) || null;
+  return getHaiboDestinations().find((d) => d.id === key) || null;
 }
 
 /** Match user input or slug to a destination id */
@@ -367,10 +394,11 @@ function resolveDestinationSlug(input) {
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '');
 
-  const exact = DESTINATIONS.find((d) => d.id === slug || d.id === raw);
+  const list = getHaiboDestinations();
+  const exact = list.find((d) => d.id === slug || d.id === raw);
   if (exact) return exact.id;
 
-  const byName = DESTINATIONS.find((d) => {
+  const byName = list.find((d) => {
     const name = d.name.toLowerCase();
     const nameSlug = name.replace(/\s+/g, '-');
     return (

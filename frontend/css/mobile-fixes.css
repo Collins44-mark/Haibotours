@@ -8,6 +8,19 @@ html {
   max-width: 100%;
 }
 
+html,
+body {
+  overscroll-behavior-x: none;
+}
+
+body.mobile-nav-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  left: 0;
+  right: 0;
+}
+
 body {
   overflow-x: hidden;
   width: 100%;

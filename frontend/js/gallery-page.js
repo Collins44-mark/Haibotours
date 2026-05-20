@@ -144,8 +144,13 @@ function initGalleryLightbox() {
 
 function bootGalleryPage() {
   if (document.body.dataset.page !== 'gallery') return;
-  if (window.HAIBO_CONTENT_LOADED) renderGalleryPage();
-  else window.addEventListener('haiboContentReady', renderGalleryPage, { once: true });
+  if (typeof mergeHaiboContentWithDefaults === 'function') {
+    mergeHaiboContentWithDefaults();
+  }
+  renderGalleryPage();
+  if (!window.HAIBO_CONTENT_LOADED) {
+    window.addEventListener('haiboContentReady', renderGalleryPage, { once: true });
+  }
   window.addEventListener('haiboContentUpdated', renderGalleryPage);
 }
 

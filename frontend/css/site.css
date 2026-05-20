@@ -194,14 +194,53 @@ body {
   margin-top: 0.25rem;
 }
 
+.mobile-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.35s ease, visibility 0.35s ease;
+}
+
+.mobile-menu-backdrop.is-visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+body.mobile-nav-open {
+  overflow: hidden;
+  touch-action: none;
+}
+
+nav.nav-blur {
+  z-index: 50;
+}
+
+#menu-btn.is-open {
+  color: #d98b2b;
+}
+
 #mobile-menu {
+  position: relative;
+  z-index: 51;
   max-height: 0;
   overflow: hidden;
-  transition: max-height 0.35s ease;
+  opacity: 0;
+  transition:
+    max-height 0.4s ease,
+    opacity 0.3s ease;
 }
 
 #mobile-menu.open {
-  max-height: 420px;
+  max-height: min(80vh, 420px);
+  overflow-y: auto;
+  opacity: 1;
 }
 
 nav a:hover {

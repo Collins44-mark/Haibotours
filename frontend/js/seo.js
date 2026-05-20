@@ -223,7 +223,12 @@
   }
 
   function destinationsListJsonLd() {
-    const list = typeof DESTINATIONS !== 'undefined' ? DESTINATIONS : [];
+    const list =
+      typeof getHaiboDestinations === 'function'
+        ? getHaiboDestinations()
+        : typeof DESTINATIONS !== 'undefined'
+          ? DESTINATIONS
+          : [];
     return {
       '@context': 'https://schema.org',
       '@type': 'ItemList',

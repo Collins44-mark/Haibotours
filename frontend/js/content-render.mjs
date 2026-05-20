@@ -70,9 +70,10 @@ function renderAbout() {
     });
   }
 
-  const cards = a.featureCards || [];
+  const defaultCards = window.HAIBO_DEFAULTS?.about?.featureCards || [];
+  const cards = a.featureCards?.length ? a.featureCards : defaultCards;
   document.querySelectorAll('[data-haibo-about-card]').forEach((card, i) => {
-    const c = cards[i];
+    const c = cards[i] || defaultCards[i];
     if (!c) return;
     const title = card.querySelector('[data-haibo-about-card-title]');
     const sub = card.querySelector('[data-haibo-about-card-sub]');

@@ -350,8 +350,13 @@ function initWeatherWidget() {
 window.refreshHaiboWeatherWidget = initWeatherWidget;
 
 function bootWeatherWidget() {
-  if (window.HAIBO_CONTENT_LOADED) initWeatherWidget();
-  else window.addEventListener('haiboContentReady', initWeatherWidget, { once: true });
+  if (typeof mergeHaiboContentWithDefaults === 'function') {
+    mergeHaiboContentWithDefaults();
+  }
+  initWeatherWidget();
+  if (!window.HAIBO_CONTENT_LOADED) {
+    window.addEventListener('haiboContentReady', initWeatherWidget, { once: true });
+  }
   window.addEventListener('haiboContentUpdated', initWeatherWidget);
 }
 

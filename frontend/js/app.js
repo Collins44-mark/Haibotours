@@ -167,7 +167,8 @@ function initContactPage() {
 
 function initNewsletterForm() {
   const form = document.getElementById('newsletter-form');
-  if (!form) return;
+  if (!form || form.dataset.haiboBound === '1') return;
+  form.dataset.haiboBound = '1';
 
   let msgEl = form.querySelector('.newsletter-message');
   if (!msgEl) {
@@ -233,17 +234,24 @@ function safariSearchRedirectUrl(slug) {
   return isLocal ? destinationDetailUrl(slug) : destinationPrettyUrl(slug);
 }
 
+function getDestinationsForUi() {
+  if (typeof getHaiboDestinations === 'function') return getHaiboDestinations();
+  if (Array.isArray(window.DESTINATIONS) && window.DESTINATIONS.length) return window.DESTINATIONS;
+  return typeof DESTINATIONS !== 'undefined' ? DESTINATIONS : [];
+}
+
 function initSearchBar() {
   const bar = document.getElementById('safari-search');
-  if (!bar || typeof DESTINATIONS === 'undefined') return;
+  if (!bar) return;
 
   const destSelect = bar.querySelector('[name="destination"]');
   if (destSelect && destSelect.tagName === 'SELECT') {
     const enabledIds = window.HAIBO_CONTENT?.search?.enabledDestinationIds;
+    const all = getDestinationsForUi();
     const list =
       enabledIds?.length > 0
-        ? DESTINATIONS.filter((d) => enabledIds.includes(d.id))
-        : DESTINATIONS;
+        ? all.filter((d) => enabledIds.includes(d.id))
+        : all;
     destSelect.innerHTML =
       '<option value="" disabled selected>Select destination</option>' +
       list
@@ -255,6 +263,9 @@ function initSearchBar() {
   if (dateInput) {
     dateInput.min = new Date().toISOString().split('T')[0];
   }
+
+  if (bar.dataset.haiboSearchBound === '1') return;
+  bar.dataset.haiboSearchBound = '1';
 
   bar.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -301,17 +312,44 @@ function initSearchBar() {
 }
 
 function initMobileMenu() {
+  if (window.__HAIBO_MOBILE_MENU_INIT) return;
   const menuBtn = document.getElementById('menu-btn');
   const mobileMenu = document.getElementById('mobile-menu');
   if (!menuBtn || !mobileMenu) return;
+  window.__HAIBO_MOBILE_MENU_INIT = true;
 
-  menuBtn.addEventListener('click', () => {
-    const open = mobileMenu.classList.toggle('open');
+  let backdrop = document.getElementById('mobile-menu-backdrop');
+  if (!backdrop) {
+    backdrop = document.createElement('div');
+    backdrop.id = 'mobile-menu-backdrop';
+    backdrop.className = 'mobile-menu-backdrop';
+    backdrop.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(backdrop);
+  }
+
+  function setMenuOpen(open) {
+    mobileMenu.classList.toggle('open', open);
+    menuBtn.classList.toggle('is-open', open);
+    document.body.classList.toggle('mobile-nav-open', open);
+    backdrop.classList.toggle('is-visible', open);
+    backdrop.setAttribute('aria-hidden', open ? 'false' : 'true');
     menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+
+  menuBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setMenuOpen(!mobileMenu.classList.contains('open'));
   });
 
+  backdrop.addEventListener('click', () => setMenuOpen(false));
+
   mobileMenu.querySelectorAll('a').forEach((link) => {
-    link.addEventListener('click', () => mobileMenu.classList.remove('open'));
+    link.addEventListener('click', () => setMenuOpen(false));
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && mobileMenu.classList.contains('open')) setMenuOpen(false);
   });
 }
 
@@ -359,8 +397,11 @@ function renderDestinationCards(containerId, limit) {
   const container = document.getElementById(containerId);
   if (!container) return;
 
-  const list = limit ? DESTINATIONS.slice(0, limit) : DESTINATIONS;
-  container.innerHTML = list.map(renderDestinationCard).join('');
+  const all = getDestinationsForUi();
+  const list = limit ? all.slice(0, limit) : all;
+  container.innerHTML = list.length
+    ? list.map(renderDestinationCard).join('')
+    : '';
 }
 
 function getQueryParam(name) {
@@ -578,11 +619,28 @@ function refreshHaiboLiveContent() {
   }
 }
 
+function primeHaiboLocalContent() {
+  if (typeof mergeHaiboContentWithDefaults === 'function') {
+    mergeHaiboContentWithDefaults();
+  }
+  if (typeof syncHaiboDestinations === 'function') {
+    syncHaiboDestinations();
+  }
+}
+
 function bootHaiboApp() {
-  if (window.HAIBO_CONTENT_LOADED) {
-    runHaiboApp();
-  } else {
-    window.addEventListener('haiboContentReady', runHaiboApp, { once: true });
+  primeHaiboLocalContent();
+  runHaiboApp();
+
+  if (!window.HAIBO_CONTENT_LOADED) {
+    window.addEventListener(
+      'haiboContentReady',
+      () => {
+        primeHaiboLocalContent();
+        refreshHaiboLiveContent();
+      },
+      { once: true }
+    );
   }
   window.addEventListener('haiboContentUpdated', refreshHaiboLiveContent);
 }

@@ -113,9 +113,12 @@ function mergeHaiboContentWithDefaults() {
     c.settings = { ...d.settings, ...(c.settings || {}) };
   }
 
-  if (!Array.isArray(c.destinations) || c.destinations.length === 0) {
-    c.destinations =
-      typeof DESTINATIONS !== 'undefined' ? DESTINATIONS.map((x) => ({ ...x })) : [];
+  const staticDests =
+    window.HAIBO_DESTINATIONS_STATIC ||
+    (typeof DESTINATIONS !== 'undefined' ? DESTINATIONS.map((x) => ({ ...x })) : []);
+  const activeDests = (c.destinations || []).filter((d) => d && d.id && d.active !== false);
+  if (!Array.isArray(c.destinations) || activeDests.length === 0) {
+    c.destinations = staticDests.map((x) => ({ ...x }));
   }
 
   const hasGallery =
