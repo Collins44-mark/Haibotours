@@ -10,9 +10,26 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/admin/css/admin.css">
+  <style>
+    /* Login form visible immediately — do not wait for ES modules */
+    body.admin-login-page .admin-login-wrap {
+      visibility: visible !important;
+      pointer-events: auto !important;
+    }
+    body.admin-login-page #admin-auth-loading {
+      display: none !important;
+    }
+    body.admin-login-page.admin-auth-pending .admin-login-wrap {
+      visibility: visible !important;
+      pointer-events: auto !important;
+    }
+    body.admin-login-page.admin-auth-pending #admin-auth-loading {
+      display: none !important;
+    }
+  </style>
 </head>
-<body class="admin-auth-pending admin-login-page">
-  <div id="admin-auth-loading" class="admin-auth-loading" aria-live="polite" aria-busy="true">
+<body class="admin-login-ready admin-login-page">
+  <div id="admin-auth-loading" class="admin-auth-loading" hidden aria-live="polite" aria-busy="false">
     <div class="admin-auth-loading__inner">
       <div class="admin-auth-loading__spinner" aria-hidden="true"></div>
       <p data-auth-loading-msg>Checking session…</p>
@@ -47,6 +64,20 @@
   </div>
 
   <script src="/js/firebase-config.js"></script>
+  <script>
+    (function () {
+      function showLoginNow() {
+        document.body.classList.remove('admin-auth-pending');
+        document.body.classList.add('admin-login-ready');
+        var el = document.getElementById('admin-auth-loading');
+        if (el) {
+          el.hidden = true;
+          el.setAttribute('aria-busy', 'false');
+        }
+      }
+      showLoginNow();
+    })();
+  </script>
   <script type="module" src="/admin/js/admin-login.mjs"></script>
 </body>
 </html>

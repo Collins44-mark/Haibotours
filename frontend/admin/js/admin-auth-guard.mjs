@@ -47,9 +47,11 @@ export function isDashboardPage() {
 }
 
 export function showAuthLoading(message) {
+  if (isLoginPage()) return;
   const el = document.getElementById('admin-auth-loading');
   if (el) {
     el.hidden = false;
+    el.style.display = '';
     el.setAttribute('aria-busy', 'true');
     const msg = el.querySelector('[data-auth-loading-msg]');
     if (msg) msg.textContent = message || 'Checking session…';
@@ -317,7 +319,7 @@ export async function guardAdminLogin(onFormReady) {
     );
 
     if (session.user && session.isAdmin) {
-      window.location.assign(resolveDashboardPath());
+      window.location.href = resolveDashboardPath();
       return;
     }
 

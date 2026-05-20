@@ -48,9 +48,23 @@ body.admin-authenticated .admin-shell {
   transition: opacity 0.35s ease;
 }
 
+/* Login page: form visible by default (spinner only on dashboard) */
+body.admin-login-page .admin-login-wrap {
+  visibility: visible;
+  pointer-events: auto;
+}
+
+body.admin-login-page #admin-auth-loading {
+  display: none;
+}
+
 body.admin-auth-pending.admin-login-page .admin-login-wrap {
-  visibility: hidden;
-  pointer-events: none;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+body.admin-auth-pending.admin-login-page #admin-auth-loading {
+  display: none;
 }
 
 body.admin-login-ready.admin-login-page .admin-login-wrap {
