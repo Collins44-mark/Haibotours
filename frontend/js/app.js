@@ -256,8 +256,8 @@ function renderDestinationCard(dest) {
   const href = destinationDetailUrl(dest.id);
   return `
     <a href="${href}" class="destination-card glass rounded-[30px] overflow-hidden">
-      <div class="relative">
-        <img src="${dest.image}" alt="${dest.name} — ${dest.subtitle}" class="h-[380px] md:h-[420px] w-full object-cover">
+      <div class="relative dest-card-media">
+        <img src="${dest.image}" alt="${dest.name} — ${dest.subtitle}" class="haibo-media h-[380px] md:h-[420px] w-full object-cover">
         <div class="absolute inset-0 overlay-dark"></div>
         <div class="absolute bottom-6 left-6 right-6">
           <p class="text-xs orange uppercase tracking-[3px] mb-1">${dest.region}</p>
@@ -343,7 +343,7 @@ function renderDestinationDetail() {
   const galleryHtml = dest.gallery
     .map(
       (img, i) => `
-    <img src="${img}" alt="${dest.name} gallery ${i + 1}" class="gallery-item rounded-[24px] object-cover w-full ${i === 0 ? 'md:col-span-2 md:row-span-2 h-[280px] md:h-full min-h-[280px]' : 'h-[220px] md:h-[240px]'}">
+    <img src="${img}" alt="${dest.name} gallery ${i + 1}" class="haibo-media gallery-item rounded-[24px] object-cover w-full ${i === 0 ? 'md:col-span-2 md:row-span-2 h-[280px] md:h-full min-h-[280px]' : 'h-[220px] md:h-[240px]'}">
   `
     )
     .join('');
