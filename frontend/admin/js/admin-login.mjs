@@ -39,7 +39,7 @@ async function bootAdminLogin() {
       try {
         await handleAdminLogin(e.target.email.value, e.target.password.value);
         if (btnLabel) btnLabel.textContent = 'Redirecting…';
-        window.location.assign(resolveDashboardPath());
+        window.location.replace(resolveDashboardPath());
       } catch (ex) {
         console.error('[HAIBO Admin] Sign-in failed:', ex?.code, ex?.message);
         err.textContent = formatAuthError(ex);
