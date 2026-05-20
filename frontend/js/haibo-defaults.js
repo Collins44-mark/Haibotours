@@ -241,7 +241,56 @@ function haiboNormalizeGalleryObject(gallery) {
   };
 }
 
+function haiboGetStaticWeatherParks() {
+  return (
+    window.WEATHER_PARKS_STATIC ||
+    (typeof WEATHER_PARKS_STATIC !== 'undefined' ? WEATHER_PARKS_STATIC : [])
+  );
+}
+
+function haiboMergeWeatherCard(live, staticPark) {
+  const base = staticPark ? { ...staticPark } : {};
+  const merged = { ...base, ...live };
+  if (merged.lat == null) merged.lat = base.lat;
+  if (merged.lon == null) merged.lon = base.lon;
+  if (!Array.isArray(merged.facts) || !merged.facts.length) {
+    merged.facts = base.facts || [];
+  }
+  if (!merged.shortName && base.shortName) merged.shortName = base.shortName;
+  if (!merged.name && base.name) merged.name = base.name;
+  merged.id = haiboNormalizeDestId(merged.id || base.id) || merged.id;
+  return merged;
+}
+
+/** Always show all default parks; Firestore only overrides when lat/lon are valid */
+function haiboMergeWeatherCardsList(liveItems) {
+  const staticList = haiboGetStaticWeatherParks();
+  if (!staticList.length) return [];
+
+  const active = (liveItems || []).filter((w) => w && w.active !== false);
+  const liveById = new Map();
+  active.forEach((w) => {
+    const key = haiboNormalizeDestId(w.id);
+    if (key) liveById.set(key, w);
+  });
+
+  const merged = staticList.map((staticP, index) => {
+    const key = haiboNormalizeDestId(staticP.id);
+    const live = liveById.get(key);
+    if (live) liveById.delete(key);
+    const row = live ? haiboMergeWeatherCard(live, staticP) : { ...staticP, active: true };
+    if (row.order == null) row.order = index;
+    return row;
+  });
+
+  const hasCoords = (w) => w.lat != null && w.lon != null;
+  if (!merged.some(hasCoords)) return staticList.map((p) => ({ ...p, active: true }));
+
+  return merged.filter(hasCoords);
+}
+
 function mergeHaiboContentWithDefaults() {
+  if (!window.HAIBO_CONTENT) return;
   const c = window.HAIBO_CONTENT;
   const d = typeof HAIBO_DEFAULTS !== 'undefined' ? HAIBO_DEFAULTS : {};
 
@@ -271,12 +320,7 @@ function mergeHaiboContentWithDefaults() {
   c.destinations = haiboMergeDestinationsList(c.destinations);
   c.gallery = haiboNormalizeGalleryObject(c.gallery);
 
-  if (!Array.isArray(c.weatherCards) || c.weatherCards.length === 0) {
-    c.weatherCards =
-      typeof WEATHER_PARKS_STATIC !== 'undefined'
-        ? WEATHER_PARKS_STATIC.map((p) => ({ ...p, active: true }))
-        : [];
-  }
+  c.weatherCards = haiboMergeWeatherCardsList(c.weatherCards);
 
   if (!c.settings?.searchEnabledIds?.length && c.destinations?.length) {
     if (!c.settings) c.settings = {};
@@ -294,3 +338,4 @@ window.haiboNormalizeGalleryObject = haiboNormalizeGalleryObject;
 window.haiboStaticDestination = haiboStaticDestination;
 window.haiboPickDestinationImage = haiboPickDestinationImage;
 window.haiboNormalizeDestId = haiboNormalizeDestId;
+window.haiboMergeWeatherCardsList = haiboMergeWeatherCardsList;

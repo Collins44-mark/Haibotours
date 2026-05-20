@@ -660,6 +660,11 @@ function runHaiboApp() {
     if (typeof window.haiboEnhanceImages === 'function') {
       window.haiboEnhanceImages(document.getElementById('home-destinations'));
     }
+    if (typeof window.refreshHaiboWeatherWidget === 'function') {
+      window.refreshHaiboWeatherWidget();
+    } else if (typeof initWeatherWidget === 'function') {
+      initWeatherWidget();
+    }
   }
 
   if (document.body.dataset.page === 'destinations') {

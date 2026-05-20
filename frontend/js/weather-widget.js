@@ -2,14 +2,6 @@
  * HAIBO Weather Mini-Slider
  * Live data via Open-Meteo (free, no API key)
  */
-function getWeatherParks() {
-  const cards = window.HAIBO_CONTENT?.weatherCards;
-  if (Array.isArray(cards) && cards.length > 0) {
-    return cards.filter((c) => c.active !== false && c.lat != null && c.lon != null);
-  }
-  return WEATHER_PARKS_STATIC;
-}
-
 const WEATHER_PARKS_STATIC = [
   {
     id: 'serengeti',
@@ -76,6 +68,22 @@ const WEATHER_PARKS_STATIC = [
     facts: ['Summit Trek', 'Alpine Zone', 'Cloud Forest'],
   },
 ];
+
+window.WEATHER_PARKS_STATIC = WEATHER_PARKS_STATIC;
+
+function getWeatherParks() {
+  if (typeof haiboMergeWeatherCardsList === 'function') {
+    return haiboMergeWeatherCardsList(window.HAIBO_CONTENT?.weatherCards);
+  }
+  const cards = window.HAIBO_CONTENT?.weatherCards;
+  if (Array.isArray(cards) && cards.length > 0) {
+    const live = cards.filter((c) => c && c.active !== false && c.lat != null && c.lon != null);
+    if (live.length) return live;
+  }
+  return WEATHER_PARKS_STATIC;
+}
+
+window.getWeatherParks = getWeatherParks;
 
 const WMO_ICONS = {
   0: { icon: '☀️', label: 'Clear' },
@@ -350,6 +358,22 @@ function initWeatherWidget() {
 window.refreshHaiboWeatherWidget = initWeatherWidget;
 
 function bootWeatherWidget() {
+  if (!document.getElementById('weather-widget')) return;
+
+  if (!window.HAIBO_CONTENT) {
+    window.HAIBO_CONTENT = {
+      hero: null,
+      about: null,
+      contact: null,
+      socials: null,
+      settings: null,
+      destinations: [],
+      gallery: { images: [], videos: [] },
+      weatherCards: WEATHER_PARKS_STATIC.map((p) => ({ ...p, active: true })),
+      search: { enabledDestinationIds: [] },
+    };
+  }
+
   if (typeof mergeHaiboContentWithDefaults === 'function') {
     mergeHaiboContentWithDefaults();
   }

@@ -96,8 +96,10 @@ function ensureDefaults() {
         videos: typeof GALLERY_VIDEOS !== 'undefined' ? [...GALLERY_VIDEOS] : [],
       };
     }
-    if (!window.HAIBO_CONTENT.weatherCards?.length && typeof WEATHER_PARKS_STATIC !== 'undefined') {
-      window.HAIBO_CONTENT.weatherCards = WEATHER_PARKS_STATIC.map((p) => ({ ...p, active: true }));
+    if (typeof haiboMergeWeatherCardsList === 'function') {
+      window.HAIBO_CONTENT.weatherCards = haiboMergeWeatherCardsList(
+        window.HAIBO_CONTENT.weatherCards
+      );
     }
   }
 }
@@ -213,12 +215,10 @@ function startRealtimeListeners() {
   });
 
   subscribeCollection(db, FIRESTORE_PATHS.weatherCards, (items) => {
-    const active = items.filter((w) => w.active !== false);
-    window.HAIBO_CONTENT.weatherCards = active.length
-      ? active
-      : typeof WEATHER_PARKS_STATIC !== 'undefined'
-        ? WEATHER_PARKS_STATIC.map((p) => ({ ...p, active: true }))
-        : [];
+    window.HAIBO_CONTENT.weatherCards =
+      typeof haiboMergeWeatherCardsList === 'function'
+        ? haiboMergeWeatherCardsList(items)
+        : items.filter((w) => w && w.active !== false);
   });
 
   initialLoadTimer = setTimeout(() => {

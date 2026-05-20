@@ -200,9 +200,10 @@ export async function resolveAdminSession() {
   }
 }
 
-export function showUnauthorizedMessage() {
+export function showUnauthorizedMessage(uid) {
+  const idHint = uid ? ` Create document: admins/${uid}` : '';
   showAuthBanner(
-    'This account is not authorized. Add your Firebase Auth UID to the admins collection in Firestore.',
+    `This account is not authorized.${idHint} (Firestore collection "admins", document ID = your Firebase Auth UID).`,
     'error'
   );
 }
@@ -226,6 +227,21 @@ export async function guardAdminDashboard(onReady) {
     hideAuthLoading();
     if (typeof onReady === 'function') onReady(user);
   };
+
+  const safetyTimer = setTimeout(() => {
+    console.warn('[HAIBO Admin] Dashboard load safety timeout');
+    const auth = getAdminAuth();
+    if (auth?.currentUser) {
+      revealDashboard(auth.currentUser);
+    } else {
+      hideAuthLoading();
+      document.body.innerHTML =
+        '<div style="padding:3rem;color:#fff;font-family:Poppins,sans-serif;text-align:center;max-width:28rem;margin:0 auto">' +
+        '<h2 style="color:#d98b2b">Session check timed out</h2>' +
+        '<p style="margin:1rem 0;color:#aaa">Could not verify your login. Check the network and Firestore rules.</p>' +
+        `<p><a href="${resolveLoginPath()}" style="color:#d98b2b">Back to login</a></p></div>`;
+    }
+  }, 10000);
 
   try {
     const session = await withTimeout(
@@ -265,7 +281,9 @@ export async function guardAdminDashboard(onReady) {
         return;
       }
     }
-    safeRedirect(resolveLoginPath() + '?error=session');
+    window.location.assign(resolveLoginPath() + '?error=session');
+  } finally {
+    clearTimeout(safetyTimer);
   }
 }
 
@@ -282,7 +300,7 @@ export async function guardAdminLogin(onFormReady) {
   }
 
   const params = new URLSearchParams(window.location.search);
-  if (params.get('error') === 'unauthorized') showUnauthorizedMessage();
+  if (params.get('error') === 'unauthorized') showUnauthorizedMessage(null);
   else if (params.get('error') === 'session') {
     showAuthBanner('Previous session expired. Please sign in again.', 'warn');
   }
@@ -306,7 +324,7 @@ export async function guardAdminLogin(onFormReady) {
     if (session.user && !session.isAdmin) {
       console.warn('[HAIBO Admin] User signed in but not admin:', session.user.uid);
       await adminLogout();
-      showUnauthorizedMessage();
+      showUnauthorizedMessage(session.user.uid);
     }
   } catch (err) {
     console.error('[HAIBO Admin] Background session check:', err);
@@ -324,8 +342,7 @@ export async function handleAdminLogin(email, password) {
     await adminLogout();
     throw Object.assign(new Error('NOT_ADMIN'), {
       code: 'auth/not-authorized',
-      friendlyMessage:
-        'This account is not authorized. Add your Firebase Auth UID to the admins collection.',
+      friendlyMessage: `Not authorized. In Firestore create: admins/${cred.user.uid}`,
     });
   }
   try {
