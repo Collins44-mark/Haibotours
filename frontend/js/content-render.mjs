@@ -24,7 +24,7 @@ function optimizeImg(url, width) {
 }
 
 function setBgImage(sel, url) {
-  if (!url) return;
+  if (!url || (typeof haiboValidMediaUrl === 'function' && !haiboValidMediaUrl(url))) return;
   const optimized = optimizeImg(url, 1920);
   document.querySelectorAll(sel).forEach((el) => {
     el.style.setProperty('--hero-bg-image', `url('${optimized}')`);
@@ -35,10 +35,14 @@ function renderHero() {
   const h = window.HAIBO_CONTENT?.hero;
   if (!h) return;
 
-  if (h.backgroundImageUrl) {
-    setBgImage('#home.hero-banner', h.backgroundImageUrl);
+  const heroBg =
+    h.backgroundImageUrl ||
+    window.HAIBO_DEFAULTS?.hero?.backgroundImageUrl ||
+    '';
+  if (heroBg && (!haiboValidMediaUrl || haiboValidMediaUrl(heroBg))) {
+    setBgImage('#home.hero-banner', heroBg);
     const home = document.getElementById('home');
-    if (home) home.style.setProperty('--hero-bg-image', `url('${h.backgroundImageUrl}')`);
+    if (home) home.style.setProperty('--hero-bg-image', `url('${heroBg}')`);
   }
   setText('[data-haibo-hero-eyebrow]', h.eyebrow);
   setText('[data-haibo-hero-title]', h.title);
@@ -61,9 +65,13 @@ function renderAbout() {
   setText('[data-haibo-about-eyebrow]', a.eyebrow);
   setText('[data-haibo-about-title]', a.title);
   setText('[data-haibo-about-body]', a.body);
-  if (a.imageUrl) {
+  const aboutImg =
+    a.imageUrl && (!haiboValidMediaUrl || haiboValidMediaUrl(a.imageUrl))
+      ? a.imageUrl
+      : window.HAIBO_DEFAULTS?.about?.imageUrl;
+  if (aboutImg) {
     document.querySelectorAll('[data-haibo-about-image]').forEach((img) => {
-      img.src = optimizeImg(a.imageUrl, 1000);
+      img.src = optimizeImg(aboutImg, 1000);
       img.alt = a.imageAlt || 'Luxury Tanzania safari experience with HAIBO Tours';
       img.loading = 'lazy';
       img.decoding = 'async';
@@ -83,9 +91,13 @@ function renderAbout() {
 }
 
 function renderHomeGallery() {
-  const images = window.HAIBO_CONTENT?.gallery?.images;
+  const raw = window.HAIBO_CONTENT?.gallery?.images || [];
+  const images = raw.filter(
+    (img) =>
+      !haiboValidMediaUrl || haiboValidMediaUrl(img.src || img.url)
+  );
   const grid = document.querySelector('#gallery .gallery.grid');
-  if (!grid || !images?.length) return;
+  if (!grid || !images.length) return;
 
   const slice = images.slice(0, 3);
   grid.innerHTML = slice

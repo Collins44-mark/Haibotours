@@ -26,7 +26,9 @@ function applyConfigFromContent() {
   const s = window.HAIBO_CONTENT.socials || {};
   const st = window.HAIBO_CONTENT.settings || {};
 
-  if (st?.logoUrl) HAIBO_CONFIG.logoPath = st.logoUrl;
+  if (st?.logoUrl && typeof haiboValidMediaUrl === 'function' && haiboValidMediaUrl(st.logoUrl)) {
+    HAIBO_CONFIG.logoPath = st.logoUrl;
+  }
   if (c.phoneDisplay) HAIBO_CONFIG.phoneDisplay = c.phoneDisplay;
   if (c.email) HAIBO_CONFIG.email = c.email;
   if (c.whatsappNumber) HAIBO_CONFIG.whatsappNumber = c.whatsappNumber;
@@ -76,10 +78,16 @@ function ensureDefaults() {
     const staticDests =
       window.HAIBO_DESTINATIONS_STATIC ||
       (typeof DESTINATIONS !== 'undefined' ? DESTINATIONS.map((x) => ({ ...x })) : []);
-    if (!window.HAIBO_CONTENT.destinations?.length && staticDests.length) {
+    if (typeof haiboMergeDestinationsList === 'function') {
+      window.HAIBO_CONTENT.destinations = haiboMergeDestinationsList(
+        window.HAIBO_CONTENT.destinations
+      );
+    } else if (!window.HAIBO_CONTENT.destinations?.length && staticDests.length) {
       window.HAIBO_CONTENT.destinations = staticDests.map((x) => ({ ...x }));
     }
-    if (
+    if (typeof haiboNormalizeGalleryObject === 'function') {
+      window.HAIBO_CONTENT.gallery = haiboNormalizeGalleryObject(window.HAIBO_CONTENT.gallery);
+    } else if (
       !window.HAIBO_CONTENT.gallery?.images?.length &&
       !window.HAIBO_CONTENT.gallery?.videos?.length
     ) {
@@ -177,31 +185,20 @@ function startRealtimeListeners() {
   subscribeDoc(db, FIRESTORE_PATHS.settings, 'settings');
 
   subscribeCollection(db, FIRESTORE_PATHS.destinations, (items) => {
-    const staticList =
-      window.HAIBO_DESTINATIONS_STATIC ||
-      (typeof DESTINATIONS !== 'undefined' ? DESTINATIONS.map((x) => ({ ...x })) : []);
-    const active = items.filter((d) => d && d.id && d.active !== false);
-    window.HAIBO_CONTENT.destinations = active.length ? items : staticList;
+    window.HAIBO_CONTENT.destinations =
+      typeof haiboMergeDestinationsList === 'function'
+        ? haiboMergeDestinationsList(items)
+        : items;
   });
 
   subscribeCollection(db, FIRESTORE_PATHS.gallery, (items) => {
-    const images = items
-      .filter((g) => g.type === 'image' || !g.type)
-      .filter((g) => g.active !== false)
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    const videos = items
-      .filter((g) => g.type === 'video')
-      .filter((g) => g.active !== false)
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-
-    if (images.length || videos.length) {
-      window.HAIBO_CONTENT.gallery = { images, videos };
-    } else {
-      window.HAIBO_CONTENT.gallery = {
-        images: typeof GALLERY_IMAGES !== 'undefined' ? [...GALLERY_IMAGES] : [],
-        videos: typeof GALLERY_VIDEOS !== 'undefined' ? [...GALLERY_VIDEOS] : [],
-      };
-    }
+    window.HAIBO_CONTENT.gallery =
+      typeof haiboMergeGalleryCollection === 'function'
+        ? haiboMergeGalleryCollection(items)
+        : {
+            images: typeof GALLERY_IMAGES !== 'undefined' ? [...GALLERY_IMAGES] : [],
+            videos: typeof GALLERY_VIDEOS !== 'undefined' ? [...GALLERY_VIDEOS] : [],
+          };
   });
 
   subscribeCollection(db, FIRESTORE_PATHS.weatherCards, (items) => {

@@ -368,15 +368,25 @@ function initWhatsAppFloat(customMessage) {
   document.body.appendChild(link);
 }
 
+function resolveDestinationImage(dest) {
+  const staticD =
+    typeof haiboStaticDestination === 'function' ? haiboStaticDestination(dest.id) : null;
+  if (typeof haiboValidMediaUrl === 'function' && haiboValidMediaUrl(dest.image)) {
+    return dest.image;
+  }
+  return staticD?.image || dest.image || '';
+}
+
 function renderDestinationCard(dest) {
   const href = destinationDetailUrl(dest.id);
+  const imageUrl = resolveDestinationImage(dest);
   const img =
     typeof window.haiboImgTag === 'function'
-      ? window.haiboImgTag(dest.image, `${dest.name} safari — ${dest.subtitle}`, {
+      ? window.haiboImgTag(imageUrl, `${dest.name} safari — ${dest.subtitle}`, {
           width: 900,
           class: 'haibo-media h-[380px] md:h-[420px] w-full object-cover',
         })
-      : `<img src="${dest.image}" alt="${dest.name} safari — ${dest.subtitle}" loading="lazy" decoding="async" class="haibo-media h-[380px] md:h-[420px] w-full object-cover">`;
+      : `<img src="${imageUrl}" alt="${dest.name} safari — ${dest.subtitle}" loading="lazy" decoding="async" class="haibo-media h-[380px] md:h-[420px] w-full object-cover">`;
   return `
     <a href="${href}" class="destination-card glass rounded-[30px] overflow-hidden">
       <div class="relative dest-card-media">
@@ -386,7 +396,7 @@ function renderDestinationCard(dest) {
           <p class="text-xs orange uppercase tracking-[3px] mb-1">${dest.region}</p>
           <h3 class="text-2xl font-semibold mb-1">${dest.name}</h3>
           <p class="text-gray-300">${dest.subtitle}</p>
-          <p class="text-sm text-gray-400 mt-3">From ${dest.packages[0]?.price || 'Contact us'}</p>
+          <p class="text-sm text-gray-400 mt-3">From ${dest.packages?.[0]?.price || 'Contact us'}</p>
         </div>
       </div>
     </a>
@@ -431,10 +441,16 @@ function renderDestinationDetail() {
     document.title = `${dest.name} Safari Packages | HAIBO Tours & Safaris`;
   }
 
+  const staticD =
+    typeof haiboStaticDestination === 'function' ? haiboStaticDestination(dest.id) : null;
+  let heroRaw = dest.heroImage;
+  if (typeof haiboValidMediaUrl === 'function' && !haiboValidMediaUrl(heroRaw)) {
+    heroRaw = staticD?.heroImage || staticD?.image || heroRaw;
+  }
   const heroImg =
     typeof window.haiboOptimizeImage === 'function'
-      ? window.haiboOptimizeImage(dest.heroImage, { width: 1920 })
-      : dest.heroImage;
+      ? window.haiboOptimizeImage(heroRaw, { width: 1920 })
+      : heroRaw;
 
   const waMessage = `Hello HAIBO Tours! I'm interested in the ${dest.name} (${dest.subtitle}) package. Please share details and availability.`;
   initWhatsAppFloat(waMessage);

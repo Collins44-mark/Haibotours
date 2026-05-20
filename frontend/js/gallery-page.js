@@ -1,6 +1,6 @@
 function getGalleryData() {
-  const g = window.HAIBO_CONTENT?.gallery;
-  if (g?.images?.length || g?.videos?.length) {
+  if (typeof haiboNormalizeGalleryObject === 'function') {
+    const g = haiboNormalizeGalleryObject(window.HAIBO_CONTENT?.gallery);
     return {
       images: (g.images || []).map((i) => ({
         src: i.src || i.url,

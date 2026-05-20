@@ -356,17 +356,16 @@ window.DESTINATIONS = DESTINATIONS;
 
 function getHaiboDestinations() {
   const staticList = window.HAIBO_DESTINATIONS_STATIC || DESTINATIONS;
+  const fromContent = window.HAIBO_CONTENT?.destinations;
+  if (typeof haiboMergeDestinationsList === 'function' && Array.isArray(fromContent)) {
+    return haiboMergeDestinationsList(fromContent);
+  }
   const fromWindow = Array.isArray(window.DESTINATIONS) ? window.DESTINATIONS : [];
-  const fromContent = Array.isArray(window.HAIBO_CONTENT?.destinations)
-    ? window.HAIBO_CONTENT.destinations
-    : [];
-
   const pick = (arr) =>
     arr
       .filter((d) => d && d.id && d.active !== false)
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-
-  const live = pick(fromWindow.length ? fromWindow : fromContent);
+  const live = pick(fromWindow);
   return live.length ? live : staticList;
 }
 

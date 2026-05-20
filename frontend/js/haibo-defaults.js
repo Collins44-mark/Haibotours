@@ -87,18 +87,111 @@ function haiboDocHasContent(doc, requiredKeys) {
   return requiredKeys.some((k) => doc[k] != null && String(doc[k]).trim() !== '');
 }
 
+/** True when URL is usable for img/background (http, path, or site asset) */
+function haiboValidMediaUrl(url) {
+  if (url == null) return false;
+  const s = String(url).trim();
+  if (s.length < 8) return false;
+  return (
+    s.startsWith('http://') ||
+    s.startsWith('https://') ||
+    s.startsWith('/') ||
+    s.startsWith('assets/')
+  );
+}
+
+function haiboStaticDestination(id) {
+  const list = window.HAIBO_DESTINATIONS_STATIC || [];
+  return list.find((d) => d.id === id) || null;
+}
+
+function haiboMergeDestination(live, staticDest) {
+  const base = staticDest ? { ...staticDest } : {};
+  const merged = { ...base, ...live };
+  if (!haiboValidMediaUrl(merged.image)) merged.image = base.image || merged.image;
+  if (!haiboValidMediaUrl(merged.heroImage)) {
+    merged.heroImage = base.heroImage || base.image || merged.heroImage;
+  }
+  if (!Array.isArray(merged.packages) || !merged.packages.length) {
+    merged.packages = base.packages || [];
+  }
+  if (!Array.isArray(merged.galleryImages) || !merged.galleryImages.length) {
+    merged.galleryImages = base.galleryImages || [];
+  }
+  if (!Array.isArray(merged.experiences) || !merged.experiences.length) {
+    merged.experiences = base.experiences || [];
+  }
+  return merged;
+}
+
+function haiboMergeDestinationsList(liveItems) {
+  const staticList =
+    window.HAIBO_DESTINATIONS_STATIC ||
+    (typeof DESTINATIONS !== 'undefined' ? DESTINATIONS.map((x) => ({ ...x })) : []);
+  const active = (liveItems || []).filter((d) => d && d.id && d.active !== false);
+  if (!active.length) return staticList.map((x) => ({ ...x }));
+
+  const staticById = Object.fromEntries(staticList.map((d) => [d.id, d]));
+  const merged = active
+    .map((d) => haiboMergeDestination(d, staticById[d.id]))
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+  const withCardImages = merged.filter((d) => haiboValidMediaUrl(d.image));
+  return withCardImages.length ? merged : staticList.map((x) => ({ ...x }));
+}
+
+function haiboValidGalleryItem(item) {
+  return haiboValidMediaUrl(item?.src || item?.url);
+}
+
+function haiboDefaultGallery() {
+  return {
+    images: typeof GALLERY_IMAGES !== 'undefined' ? [...GALLERY_IMAGES] : [],
+    videos: typeof GALLERY_VIDEOS !== 'undefined' ? [...GALLERY_VIDEOS] : [],
+  };
+}
+
+/** Merge Firestore gallery collection docs with local GALLERY_* defaults */
+function haiboMergeGalleryCollection(items) {
+  const defaults = haiboDefaultGallery();
+  const list = items || [];
+  const images = list
+    .filter((g) => (g.type === 'image' || !g.type) && g.active !== false)
+    .filter(haiboValidGalleryItem)
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  const videos = list
+    .filter((g) => g.type === 'video' && g.active !== false)
+    .filter((g) => haiboValidMediaUrl(g.src))
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+  return {
+    images: images.length ? images : defaults.images,
+    videos: videos.length ? videos : defaults.videos,
+  };
+}
+
+function haiboNormalizeGalleryObject(gallery) {
+  const defaults = haiboDefaultGallery();
+  const images = (gallery?.images || []).filter(haiboValidGalleryItem);
+  const videos = (gallery?.videos || []).filter((g) => haiboValidMediaUrl(g.src));
+  return {
+    images: images.length ? images : defaults.images,
+    videos: videos.length ? videos : defaults.videos,
+  };
+}
+
 function mergeHaiboContentWithDefaults() {
   const c = window.HAIBO_CONTENT;
   const d = typeof HAIBO_DEFAULTS !== 'undefined' ? HAIBO_DEFAULTS : {};
 
-  if (!haiboDocHasContent(c.hero, ['title', 'backgroundImageUrl'])) {
-    c.hero = { ...d.hero, ...(c.hero || {}) };
-    if (!c.hero.backgroundImageUrl) c.hero.backgroundImageUrl = d.hero.backgroundImageUrl;
-    if (!c.hero.title) c.hero.title = d.hero.title;
+  c.hero = { ...d.hero, ...(c.hero || {}) };
+  if (!haiboValidMediaUrl(c.hero.backgroundImageUrl)) {
+    c.hero.backgroundImageUrl = d.hero.backgroundImageUrl;
   }
 
-  if (!haiboDocHasContent(c.about, ['title', 'body'])) {
-    c.about = { ...d.about, ...(c.about || {}) };
+  c.about = { ...d.about, ...(c.about || {}) };
+  if (!haiboValidMediaUrl(c.about.imageUrl)) {
+    c.about.imageUrl = d.about.imageUrl;
   }
 
   if (!haiboDocHasContent(c.contact, ['email', 'phoneDisplay'])) {
@@ -109,26 +202,13 @@ function mergeHaiboContentWithDefaults() {
     c.socials = { ...d.socials, ...(c.socials || {}) };
   }
 
-  if (!haiboDocHasContent(c.settings, ['brandName', 'logoUrl'])) {
-    c.settings = { ...d.settings, ...(c.settings || {}) };
+  c.settings = { ...d.settings, ...(c.settings || {}) };
+  if (!haiboValidMediaUrl(c.settings.logoUrl)) {
+    c.settings.logoUrl = d.settings.logoUrl;
   }
 
-  const staticDests =
-    window.HAIBO_DESTINATIONS_STATIC ||
-    (typeof DESTINATIONS !== 'undefined' ? DESTINATIONS.map((x) => ({ ...x })) : []);
-  const activeDests = (c.destinations || []).filter((d) => d && d.id && d.active !== false);
-  if (!Array.isArray(c.destinations) || activeDests.length === 0) {
-    c.destinations = staticDests.map((x) => ({ ...x }));
-  }
-
-  const hasGallery =
-    (c.gallery?.images?.length || 0) > 0 || (c.gallery?.videos?.length || 0) > 0;
-  if (!hasGallery) {
-    c.gallery = {
-      images: typeof GALLERY_IMAGES !== 'undefined' ? [...GALLERY_IMAGES] : [],
-      videos: typeof GALLERY_VIDEOS !== 'undefined' ? [...GALLERY_VIDEOS] : [],
-    };
-  }
+  c.destinations = haiboMergeDestinationsList(c.destinations);
+  c.gallery = haiboNormalizeGalleryObject(c.gallery);
 
   if (!Array.isArray(c.weatherCards) || c.weatherCards.length === 0) {
     c.weatherCards =
@@ -145,3 +225,8 @@ function mergeHaiboContentWithDefaults() {
 
 window.HAIBO_DEFAULTS = HAIBO_DEFAULTS;
 window.mergeHaiboContentWithDefaults = mergeHaiboContentWithDefaults;
+window.haiboValidMediaUrl = haiboValidMediaUrl;
+window.haiboMergeDestinationsList = haiboMergeDestinationsList;
+window.haiboMergeGalleryCollection = haiboMergeGalleryCollection;
+window.haiboNormalizeGalleryObject = haiboNormalizeGalleryObject;
+window.haiboStaticDestination = haiboStaticDestination;
