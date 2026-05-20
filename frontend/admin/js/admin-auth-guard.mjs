@@ -6,18 +6,34 @@ import {
   getAdminAuth,
   getAdminDb,
 } from './admin-firebase.mjs';
+import { adminLogin } from './admin-firebase.mjs';
 import { formatAuthError } from './admin-errors.mjs';
 
-const LOGIN_PATH = 'login.html';
-const DASHBOARD_PATH = 'index.html';
+/** Canonical routes (Vercel rewrites) */
+export const ADMIN_LOGIN_PATH = '/admin-login';
+export const ADMIN_DASHBOARD_PATH = '/admin';
 
-export function isAdminRoute() {
-  const path = window.location.pathname;
-  return path.includes('/admin');
+function isLocalDev() {
+  const h = window.location.hostname;
+  return h === 'localhost' || h === '127.0.0.1' || window.location.protocol === 'file:';
+}
+
+export function resolveLoginPath() {
+  return isLocalDev() ? '/admin/login.html' : ADMIN_LOGIN_PATH;
+}
+
+export function resolveDashboardPath() {
+  return isLocalDev() ? '/admin/index.html' : ADMIN_DASHBOARD_PATH;
 }
 
 export function isLoginPage() {
-  return window.location.pathname.includes('login');
+  const p = window.location.pathname;
+  return p.includes('admin-login') || /\/admin\/login\.html$/i.test(p);
+}
+
+export function isDashboardPage() {
+  const p = window.location.pathname.replace(/\/$/, '');
+  return p === '/admin' || /\/admin\/index\.html$/i.test(p);
 }
 
 export function showAuthLoading(message) {
@@ -28,6 +44,7 @@ export function showAuthLoading(message) {
   const msg = el.querySelector('[data-auth-loading-msg]');
   if (msg) msg.textContent = message || 'Checking session…';
   document.body.classList.add('admin-auth-pending');
+  document.body.classList.remove('admin-authenticated');
 }
 
 export function hideAuthLoading() {
@@ -39,20 +56,20 @@ export function hideAuthLoading() {
   document.body.classList.remove('admin-auth-pending');
 }
 
+export function markAuthenticated() {
+  document.body.classList.add('admin-authenticated');
+  document.body.classList.remove('admin-auth-pending');
+}
+
 export function redirectToLogin(query) {
-  const base = LOGIN_PATH + (query ? `?${query}` : '');
-  if (!window.location.pathname.endsWith(LOGIN_PATH)) {
-    window.location.replace(base);
-  }
+  const dest = resolveLoginPath() + (query ? `?${query}` : '');
+  if (!isLoginPage()) window.location.replace(dest);
 }
 
 export function redirectToDashboard() {
-  if (!window.location.pathname.endsWith(DASHBOARD_PATH)) {
-    window.location.replace(DASHBOARD_PATH);
-  }
+  if (!isDashboardPage()) window.location.replace(resolveDashboardPath());
 }
 
-/** Returns whether admins/{uid} exists (server rules use the same check for writes). */
 export async function checkIsAdminUser(user) {
   if (!user) return false;
   const db = getAdminDb();
@@ -67,9 +84,6 @@ export async function checkIsAdminUser(user) {
   }
 }
 
-/**
- * Resolves once Firebase Auth has restored persistence and fired the first state.
- */
 export function waitForAuthState() {
   const auth = getAdminAuth();
   if (!auth) return Promise.resolve({ user: null, ready: true });
@@ -92,9 +106,6 @@ export function waitForAuthState() {
   });
 }
 
-/**
- * Full admin session: signed-in + admins/{uid} document.
- */
 export async function resolveAdminSession() {
   await ensureAuthReady();
   const { user } = await waitForAuthState();
@@ -107,16 +118,22 @@ export function showUnauthorizedMessage() {
   const el = document.getElementById('login-error');
   if (el) {
     el.textContent =
-      'This account is not authorized for admin access. Ask the site owner to add your user ID to the admins collection in Firebase.';
+      'This account is not authorized. Add your Firebase Auth UID to the admins collection in Firestore.';
     el.style.color = '#f87171';
   }
 }
 
-/**
- * Protect dashboard: redirect guests to login; sign out non-admin accounts.
- */
 export async function guardAdminDashboard(onReady) {
-  if (!isFirebaseConfigured()) return;
+  if (!isFirebaseConfigured()) {
+    document.body.innerHTML =
+      '<div style="padding:3rem;color:#fff;font-family:Poppins,sans-serif;text-align:center"><h1 style="color:#d98b2b">Firebase not configured</h1><p>Edit frontend/js/firebase-config.js</p></div>';
+    return;
+  }
+
+  if (isLoginPage()) {
+    redirectToDashboard();
+    return;
+  }
 
   showAuthLoading('Verifying admin session…');
 
@@ -136,6 +153,7 @@ export async function guardAdminDashboard(onReady) {
       return;
     }
 
+    markAuthenticated();
     hideAuthLoading();
     if (typeof onReady === 'function') onReady(user);
   } catch (err) {
@@ -145,18 +163,23 @@ export async function guardAdminDashboard(onReady) {
   }
 }
 
-/**
- * Login page: restore session; redirect authenticated admins to dashboard.
- */
 export async function guardAdminLogin(onFormReady) {
-  if (!isFirebaseConfigured()) return;
+  if (!isFirebaseConfigured()) {
+    document.body.innerHTML =
+      '<div style="padding:3rem;color:#fff;font-family:Poppins,sans-serif;text-align:center"><h1 style="color:#d98b2b">Firebase not configured</h1></div>';
+    return;
+  }
+
+  if (isDashboardPage()) {
+    guardAdminDashboard(onFormReady);
+    return;
+  }
 
   showAuthLoading('Checking session…');
 
   const params = new URLSearchParams(window.location.search);
-  if (params.get('error') === 'unauthorized') {
-    showUnauthorizedMessage();
-  } else if (params.get('error') === 'session') {
+  if (params.get('error') === 'unauthorized') showUnauthorizedMessage();
+  else if (params.get('error') === 'session') {
     const el = document.getElementById('login-error');
     if (el) {
       el.textContent = 'Session could not be verified. Please sign in again.';
@@ -185,8 +208,6 @@ export async function guardAdminLogin(onFormReady) {
   }
 }
 
-import { adminLogin } from './admin-firebase.mjs';
-
 export async function handleAdminLogin(email, password) {
   const cred = await adminLogin(email, password);
   const isAdmin = await checkIsAdminUser(cred.user);
@@ -195,7 +216,7 @@ export async function handleAdminLogin(email, password) {
     throw Object.assign(new Error('NOT_ADMIN'), {
       code: 'auth/not-authorized',
       friendlyMessage:
-        'This account is not authorized. Add your Firebase Auth UID to the admins collection (see setup guide).',
+        'This account is not authorized. Add your Firebase Auth UID to the admins collection.',
     });
   }
   return cred;

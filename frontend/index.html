@@ -4,9 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="HAIBO Tours & Safaris — authentic safaris, luxury adventures, and unforgettable wildlife experiences across Tanzania and East Africa."/>
+  <meta name="theme-color" content="#0f0f0f" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="haibo-seo-page" content="home" />
   <title>HAIBO Tours & Safaris</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
   <script src="https://cdn.tailwindcss.com"></script>
@@ -17,19 +22,21 @@
   <link rel="stylesheet" href="css/safari-search.css">
   <link rel="stylesheet" href="css/weather-widget.css">
   <link rel="stylesheet" href="css/cta-cinematic.css">
+  <link rel="stylesheet" href="css/seo-perf.css">
 </head>
 
 <body data-page="home">
+  <a class="skip-link" href="#main-content">Skip to main content</a>
 
   <!-- NAVBAR -->
-  <nav class="fixed w-full z-50 nav-blur px-6 md:px-8 py-5">
+  <nav class="fixed w-full z-50 nav-blur px-6 md:px-8 py-5" role="navigation" aria-label="Main navigation">
 
     <div class="flex justify-between items-center">
 
       <a href="#home" class="flex items-center gap-3">
         <img data-haibo-logo src="assets/logo/logo.png" alt="HAIBO Tours logo" class="w-14 h-14 rounded-xl object-cover">
         <div>
-          <h1 class="text-2xl font-bold tracking-wide">HAIBO</h1>
+          <p class="brand-title text-2xl font-bold tracking-wide">HAIBO</p>
           <p class="text-xs orange tracking-[4px]">TOURS & SAFARIS</p>
         </div>
       </a>
@@ -66,7 +73,7 @@
 
   </nav>
 
-
+  <main id="main-content">
   <!-- HERO -->
   <section id="home" class="hero hero-banner hero-home flex flex-col lg:block items-center lg:items-stretch px-8 md:px-20">
 
@@ -267,13 +274,13 @@
 
     <div class="gallery grid md:grid-cols-3 gap-6">
 
-      <img src="https://images.unsplash.com/photo-1523805009345-7448845a9e53?q=80&w=1974&auto=format&fit=crop" alt="Wildlife safari"
-      class="haibo-media rounded-[30px] h-[300px] md:h-[500px] object-cover w-full">
+      <img src="https://images.unsplash.com/photo-1523805009345-7448845a9e53?q=80&w=1974&auto=format&fit=crop" alt="Wildlife safari in Tanzania — elephants on the savanna" loading="lazy" decoding="async"
+        class="haibo-media rounded-[30px] h-[300px] md:h-[500px] object-cover w-full">
 
-      <img src="https://images.unsplash.com/photo-1516939884455-1445c8652f83?q=80&w=1974&auto=format&fit=crop" alt="African landscape"
-      class="haibo-media rounded-[30px] h-[300px] md:h-[500px] object-cover w-full">
+      <img src="https://images.unsplash.com/photo-1516939884455-1445c8652f83?q=80&w=1974&auto=format&fit=crop" alt="African landscape at golden hour — HAIBO Tours" loading="lazy" decoding="async"
+        class="haibo-media rounded-[30px] h-[300px] md:h-[500px] object-cover w-full">
 
-      <img src="https://images.unsplash.com/photo-1521295121783-8a321d551ad2?q=80&w=1974&auto=format&fit=crop" alt="Safari sunset"
+      <img src="https://images.unsplash.com/photo-1521295121783-8a321d551ad2?q=80&w=1974&auto=format&fit=crop" alt="Safari sunset over Tanzania plains" loading="lazy" decoding="async"
       class="haibo-media rounded-[30px] h-[300px] md:h-[500px] object-cover w-full">
 
     </div>
@@ -324,6 +331,7 @@
 
   </section>
 
+  </main>
 
   <!-- FOOTER -->
   <footer class="bg-[#0b0b0b] px-8 md:px-20 py-20">
@@ -396,11 +404,14 @@
   </footer>
 
   <script src="js/config.js"></script>
+  <script src="js/seo-config.js"></script>
+  <script src="js/seo.js" defer></script>
   <script src="js/firebase-config.js"></script>
   <script src="js/api.js"></script>
   <script src="js/destinations-data.js"></script>
   <script src="js/gallery-data.js"></script>
   <script src="js/weather-widget.js"></script>
+  <script src="js/haibo-defaults.js"></script>
   <script type="module" src="js/content-store.mjs"></script>
   <script type="module" src="js/content-render.mjs"></script>
   <script src="js/app.js"></script>

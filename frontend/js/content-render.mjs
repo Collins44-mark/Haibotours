@@ -16,10 +16,18 @@ function setHtml(sel, html) {
   });
 }
 
+function optimizeImg(url, width) {
+  if (typeof window.haiboOptimizeImage === 'function') {
+    return window.haiboOptimizeImage(url, { width: width || 1200 });
+  }
+  return url;
+}
+
 function setBgImage(sel, url) {
   if (!url) return;
+  const optimized = optimizeImg(url, 1920);
   document.querySelectorAll(sel).forEach((el) => {
-    el.style.setProperty('--hero-bg-image', `url('${url}')`);
+    el.style.setProperty('--hero-bg-image', `url('${optimized}')`);
   });
 }
 
@@ -55,8 +63,10 @@ function renderAbout() {
   setText('[data-haibo-about-body]', a.body);
   if (a.imageUrl) {
     document.querySelectorAll('[data-haibo-about-image]').forEach((img) => {
-      img.src = a.imageUrl;
-      img.alt = a.imageAlt || 'Safari experience in Tanzania';
+      img.src = optimizeImg(a.imageUrl, 1000);
+      img.alt = a.imageAlt || 'Luxury Tanzania safari experience with HAIBO Tours';
+      img.loading = 'lazy';
+      img.decoding = 'async';
     });
   }
 
@@ -78,12 +88,20 @@ function renderHomeGallery() {
 
   const slice = images.slice(0, 3);
   grid.innerHTML = slice
-    .map(
-      (img) => `
-      <img src="${img.src || img.url}" alt="${img.title || 'Gallery'}"
-        class="haibo-media rounded-[30px] h-[300px] md:h-[500px] object-cover w-full">
-    `
-    )
+    .map((img, i) => {
+      const src = optimizeImg(img.src || img.url, 900);
+      const alt = img.title
+        ? `${img.title} — Tanzania safari gallery`
+        : 'Tanzania safari wildlife photo';
+      if (typeof window.haiboImgTag === 'function') {
+        return window.haiboImgTag(src, alt, {
+          width: 900,
+          priority: i === 0,
+          class: 'haibo-media rounded-[30px] h-[300px] md:h-[500px] object-cover w-full',
+        });
+      }
+      return `<img src="${src}" alt="${alt}" loading="${i === 0 ? 'eager' : 'lazy'}" decoding="async" class="haibo-media rounded-[30px] h-[300px] md:h-[500px] object-cover w-full">`;
+    })
     .join('');
 }
 
@@ -94,8 +112,9 @@ function renderHomeCta() {
   setText('[data-haibo-home-cta-title]', c.title);
   setText('[data-haibo-home-cta-body]', c.body);
   if (c.backgroundImageUrl) {
+    const bg = optimizeImg(c.backgroundImageUrl, 1600);
     document.querySelectorAll('[data-haibo-home-cta-bg]').forEach((el) => {
-      el.style.backgroundImage = `url('${c.backgroundImageUrl}')`;
+      el.style.backgroundImage = `url('${bg}')`;
       el.className = 'cta-cinematic__bg';
     });
   } else if (c.backgroundClass) {
@@ -175,5 +194,10 @@ export function applyHaiboContent() {
 
 window.applyHaiboContent = applyHaiboContent;
 
-window.addEventListener('haiboContentReady', () => applyHaiboContent());
-window.addEventListener('haiboContentUpdated', () => applyHaiboContent());
+function afterContentRender() {
+  applyHaiboContent();
+  if (typeof window.haiboEnhanceImages === 'function') window.haiboEnhanceImages();
+}
+
+window.addEventListener('haiboContentReady', afterContentRender);
+window.addEventListener('haiboContentUpdated', afterContentRender);

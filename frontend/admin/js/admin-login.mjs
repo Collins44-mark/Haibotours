@@ -23,7 +23,8 @@ if (!isFirebaseConfigured()) {
 
       try {
         await handleAdminLogin(e.target.email.value, e.target.password.value);
-        window.location.replace('index.html');
+        const { resolveDashboardPath } = await import('./admin-auth-guard.mjs');
+        window.location.replace(resolveDashboardPath());
       } catch (ex) {
         err.textContent = formatAuthError(ex);
         err.style.color = '#f87171';

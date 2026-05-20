@@ -47,6 +47,16 @@ Set publish directory to **`/frontend`**.
 
 Mobile layouts use `frontend/css/responsive.css`, `mobile-fixes.css` (no horizontal scroll), and `safari-search.css` on the home page.
 
+## SEO & performance
+
+- Dynamic meta titles, descriptions, canonical URLs, Open Graph, and Twitter cards (`js/seo.js`)
+- JSON-LD: `TravelAgency`, `WebSite`, `TouristTrip`, `BreadcrumbList`, `ItemList`
+- `robots.txt` and `sitemap.xml` (regenerate: `node scripts/generate-sitemap.js https://your-domain.com`)
+- Cloudinary/Unsplash images auto-optimized to WebP (`f_auto` / `fm=webp`), lazy loading
+- Set production domain in `js/config.js` → `siteUrl`
+
+Submit sitemap in [Google Search Console](https://search.google.com/search-console).
+
 ## Safari search
 
 On the home page, users pick destination, date, and travelers. Valid destinations redirect to `destination.html?id=…` (local) or `/destinations/slug` on Vercel. Unknown destinations show a toast: **No safari destination found**.

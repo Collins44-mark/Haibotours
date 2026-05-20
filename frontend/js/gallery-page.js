@@ -36,11 +36,16 @@ function renderGalleryPage() {
   if (photoCount) photoCount.textContent = `${images.length} photos`;
   if (videoCount) videoCount.textContent = `${videos.length} videos`;
 
+  const imgSrc = (src, w) =>
+    typeof window.haiboOptimizeImage === 'function'
+      ? window.haiboOptimizeImage(src, { width: w || 900 })
+      : src;
+
   photosEl.innerHTML = images
     .map(
       (item, i) => `
     <article class="gallery-media-card" data-type="image" data-index="${i}" tabindex="0" role="button" aria-label="View ${item.title}">
-      <img class="gallery-media-card__img haibo-media" src="${item.src}" alt="${item.title}" loading="lazy">
+      <img class="gallery-media-card__img haibo-media" src="${imgSrc(item.src, 900)}" alt="${item.title} — Tanzania safari photo" loading="lazy" decoding="async" width="900" height="600">
       <div class="gallery-media-card__overlay"></div>
       <div class="gallery-media-card__body">
         <p class="gallery-media-card__tag">${item.tag}</p>
@@ -69,6 +74,9 @@ function renderGalleryPage() {
 
   initGalleryLightbox();
   initVideoCardHover();
+  if (typeof window.haiboEnhanceImages === 'function') {
+    window.haiboEnhanceImages(document.getElementById('gallery-photos'));
+  }
 }
 
 function initVideoCardHover() {

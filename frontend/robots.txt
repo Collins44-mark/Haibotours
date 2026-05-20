@@ -1,0 +1,15 @@
+# HAIBO Tours & Safaris
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /admin-login
+Disallow: /frontend/admin/
+
+# Google
+User-agent: Googlebot
+Allow: /
+
+User-agent: Googlebot-Image
+Allow: /
+
+Sitemap: https://haibotours.com/sitemap.xml

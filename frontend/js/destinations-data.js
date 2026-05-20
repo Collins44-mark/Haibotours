@@ -385,9 +385,16 @@ function resolveDestinationSlug(input) {
   return byName ? byName.id : null;
 }
 
-/** Works on static hosts, GitHub Pages, and local dev */
+/** SEO-friendly URLs on production; query param on local dev */
 function destinationDetailUrl(id) {
-  return `destination.html?id=${encodeURIComponent(id)}`;
+  const isLocal =
+    typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1' ||
+      window.location.protocol === 'file:');
+  return isLocal
+    ? `destination.html?id=${encodeURIComponent(id)}`
+    : destinationPrettyUrl(id);
 }
 
 function destinationDetailUrlFallback(id) {

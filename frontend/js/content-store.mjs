@@ -1,5 +1,5 @@
 /**
- * Firestore realtime listeners — live website updates
+ * Firestore realtime listeners — live website updates + always-on local fallbacks
  */
 import { doc, onSnapshot, collection } from `https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-firestore.js`;
 import { getHaiboDb } from './firebase-app.mjs';
@@ -49,37 +49,45 @@ function applyDestinations() {
     window.DESTINATIONS = list
       .filter((d) => d && d.id && d.active !== false)
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  } else if (typeof DESTINATIONS !== 'undefined') {
+    window.DESTINATIONS = [...DESTINATIONS];
   }
 }
 
 function syncSearchIds() {
   const ids = window.HAIBO_CONTENT.settings?.searchEnabledIds;
+  const destIds = (window.HAIBO_CONTENT.destinations || []).map((d) => d.id);
   window.HAIBO_CONTENT.search.enabledDestinationIds =
-    ids?.length > 0 ? ids : window.HAIBO_CONTENT.destinations.map((d) => d.id);
+    ids?.length > 0 ? ids : destIds;
 }
 
-function buildDefaultContent() {
-  window.HAIBO_CONTENT.destinations =
-    typeof DESTINATIONS !== 'undefined' ? [...DESTINATIONS] : [];
-  window.HAIBO_CONTENT.gallery.images =
-    typeof GALLERY_IMAGES !== 'undefined' ? [...GALLERY_IMAGES] : [];
-  window.HAIBO_CONTENT.gallery.videos =
-    typeof GALLERY_VIDEOS !== 'undefined' ? [...GALLERY_VIDEOS] : [];
-  window.HAIBO_CONTENT.weatherCards =
-    typeof WEATHER_PARKS_STATIC !== 'undefined'
-      ? WEATHER_PARKS_STATIC.map((p) => ({ ...p, active: true }))
-      : typeof WEATHER_PARKS !== 'undefined'
-        ? WEATHER_PARKS.map((p) => ({ ...p, active: true }))
-        : [];
-  syncSearchIds();
-  applyDestinations();
-  applyConfigFromContent();
+function ensureDefaults() {
+  if (typeof mergeHaiboContentWithDefaults === 'function') {
+    mergeHaiboContentWithDefaults();
+  } else {
+    if (!window.HAIBO_CONTENT.destinations?.length && typeof DESTINATIONS !== 'undefined') {
+      window.HAIBO_CONTENT.destinations = [...DESTINATIONS];
+    }
+    if (
+      !window.HAIBO_CONTENT.gallery?.images?.length &&
+      !window.HAIBO_CONTENT.gallery?.videos?.length
+    ) {
+      window.HAIBO_CONTENT.gallery = {
+        images: typeof GALLERY_IMAGES !== 'undefined' ? [...GALLERY_IMAGES] : [],
+        videos: typeof GALLERY_VIDEOS !== 'undefined' ? [...GALLERY_VIDEOS] : [],
+      };
+    }
+    if (!window.HAIBO_CONTENT.weatherCards?.length && typeof WEATHER_PARKS_STATIC !== 'undefined') {
+      window.HAIBO_CONTENT.weatherCards = WEATHER_PARKS_STATIC.map((p) => ({ ...p, active: true }));
+    }
+  }
 }
 
 let initialPending = 0;
 let initialComplete = false;
 
 function publish(isInitial) {
+  ensureDefaults();
   syncSearchIds();
   applyDestinations();
   applyConfigFromContent();
@@ -135,7 +143,7 @@ function subscribeCollection(db, coll, handler) {
 function startRealtimeListeners() {
   const db = getHaiboDb();
   if (!db) {
-    buildDefaultContent();
+    ensureDefaults();
     publish(true);
     return;
   }
@@ -147,10 +155,11 @@ function startRealtimeListeners() {
   subscribeDoc(db, FIRESTORE_PATHS.settings, 'settings');
 
   subscribeCollection(db, FIRESTORE_PATHS.destinations, (items) => {
-    if (items.length) window.HAIBO_CONTENT.destinations = items;
-    else if (!initialComplete && typeof DESTINATIONS !== 'undefined') {
-      window.HAIBO_CONTENT.destinations = [...DESTINATIONS];
-    }
+    window.HAIBO_CONTENT.destinations = items.length
+      ? items
+      : typeof DESTINATIONS !== 'undefined'
+        ? [...DESTINATIONS]
+        : [];
   });
 
   subscribeCollection(db, FIRESTORE_PATHS.gallery, (items) => {
@@ -165,29 +174,27 @@ function startRealtimeListeners() {
 
     if (images.length || videos.length) {
       window.HAIBO_CONTENT.gallery = { images, videos };
-    } else if (!initialComplete) {
-      window.HAIBO_CONTENT.gallery.images =
-        typeof GALLERY_IMAGES !== 'undefined' ? [...GALLERY_IMAGES] : [];
-      window.HAIBO_CONTENT.gallery.videos =
-        typeof GALLERY_VIDEOS !== 'undefined' ? [...GALLERY_VIDEOS] : [];
+    } else {
+      window.HAIBO_CONTENT.gallery = {
+        images: typeof GALLERY_IMAGES !== 'undefined' ? [...GALLERY_IMAGES] : [],
+        videos: typeof GALLERY_VIDEOS !== 'undefined' ? [...GALLERY_VIDEOS] : [],
+      };
     }
   });
 
   subscribeCollection(db, FIRESTORE_PATHS.weatherCards, (items) => {
     const active = items.filter((w) => w.active !== false);
-    if (active.length) window.HAIBO_CONTENT.weatherCards = active;
-    else if (!initialComplete && typeof WEATHER_PARKS_STATIC !== 'undefined') {
-      window.HAIBO_CONTENT.weatherCards = WEATHER_PARKS_STATIC.map((p) => ({
-        ...p,
-        active: true,
-      }));
-    }
+    window.HAIBO_CONTENT.weatherCards = active.length
+      ? active
+      : typeof WEATHER_PARKS_STATIC !== 'undefined'
+        ? WEATHER_PARKS_STATIC.map((p) => ({ ...p, active: true }))
+        : [];
   });
 }
 
 export function initHaiboContentRealtime() {
   if (!isFirebaseConfigured()) {
-    buildDefaultContent();
+    ensureDefaults();
     publish(true);
     return;
   }
@@ -195,7 +202,7 @@ export function initHaiboContentRealtime() {
     startRealtimeListeners();
   } catch (err) {
     console.warn('HAIBO: Firebase realtime failed, using defaults.', err);
-    buildDefaultContent();
+    ensureDefaults();
     publish(true);
   }
 }

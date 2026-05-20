@@ -1,5 +1,7 @@
 /** Update with your real details */
 const HAIBO_CONFIG = {
+  /** Production URL for canonical links, sitemap, and Open Graph */
+  siteUrl: 'https://haibotours.com',
   /** Your Render API URL after deploy, e.g. https://haibo-tours-api.onrender.com */
   apiBaseUrl: '',
   logoPath: 'assets/logo/logo.png',

@@ -12,20 +12,135 @@ import {
 } from './admin-db.mjs';
 import { handleAdminLogout } from './admin-auth-guard.mjs';
 import { formatAdminError } from './admin-errors.mjs';
-import { bindImageUpload } from './admin-cloudinary.mjs';
+import { createUploadZone, getRecentUploads } from './admin-cloudinary.mjs';
 
 /** HAIBO Admin — section managers */
 let state = {
   destinations: [],
   gallery: [],
   weatherCards: [],
+  heroDoc: null,
 };
+
+const PANEL_TITLES = {
+  dashboard: 'Dashboard',
+  hero: 'Hero section',
+  destinations: 'Destinations',
+  search: 'Safari search',
+  about: 'About',
+  gallery: 'Gallery',
+  contact: 'Contact',
+  socials: 'Social links',
+  weather: 'Weather',
+  settings: 'Settings',
+};
+
+function defaults() {
+  return typeof HAIBO_DEFAULTS !== 'undefined' ? HAIBO_DEFAULTS : {};
+}
+
+function mergeDoc(fallback, remote) {
+  if (!remote) return { ...fallback };
+  return { ...fallback, ...remote };
+}
 
 function showPanel(id) {
   document.querySelectorAll('.admin-panel').forEach((p) => p.classList.remove('is-active'));
   document.querySelectorAll('.admin-nav__btn').forEach((b) => b.classList.remove('is-active'));
   document.getElementById(`panel-${id}`)?.classList.add('is-active');
   document.querySelector(`[data-panel="${id}"]`)?.classList.add('is-active');
+  const title = document.getElementById('admin-page-title');
+  if (title) title.textContent = PANEL_TITLES[id] || 'CMS';
+}
+
+function countPackages(dests) {
+  return dests.reduce((n, d) => n + (Array.isArray(d.packages) ? d.packages.length : 0), 0);
+}
+
+async function renderDashboard() {
+  const dests =
+    state.destinations.length > 0
+      ? state.destinations
+      : typeof DESTINATIONS !== 'undefined'
+        ? DESTINATIONS
+        : [];
+  const hero = state.heroDoc || (await dbGetDoc(FIRESTORE_PATHS.hero));
+  const hasHero = Boolean(hero?.backgroundImageUrl);
+  const pkgCount = countPackages(dests);
+
+  const statsEl = document.getElementById('dashboard-stats');
+  if (statsEl) {
+    statsEl.innerHTML = `
+      <article class="admin-stat-card">
+        <div class="admin-stat-card__icon">📍</div>
+        <div class="admin-stat-card__value">${dests.length}</div>
+        <div class="admin-stat-card__label">Destinations</div>
+        <div class="admin-stat-card__meta">${state.destinations.length ? 'From Firestore' : 'Showing site defaults'}</div>
+      </article>
+      <article class="admin-stat-card">
+        <div class="admin-stat-card__icon">📦</div>
+        <div class="admin-stat-card__value">${pkgCount}</div>
+        <div class="admin-stat-card__label">Safari packages</div>
+        <div class="admin-stat-card__meta">Across all destinations</div>
+      </article>
+      <article class="admin-stat-card">
+        <div class="admin-stat-card__icon">🖼</div>
+        <div class="admin-stat-card__value">${hasHero ? 'Live' : 'Default'}</div>
+        <div class="admin-stat-card__label">Hero media</div>
+        <div class="admin-stat-card__meta">${hasHero ? 'Custom background set' : 'Using built-in hero image'}</div>
+      </article>
+      <article class="admin-stat-card">
+        <div class="admin-stat-card__icon">☁</div>
+        <div class="admin-stat-card__value">${state.gallery.length}</div>
+        <div class="admin-stat-card__label">Gallery items</div>
+        <div class="admin-stat-card__meta">${state.gallery.length ? 'In Firestore' : 'Defaults on public site'}</div>
+      </article>
+    `;
+  }
+  renderRecentUploads();
+}
+
+function renderRecentUploads() {
+  const list = document.getElementById('recent-uploads-list');
+  if (!list) return;
+  const items = getRecentUploads();
+  if (!items.length) {
+    list.innerHTML =
+      '<li class="admin-muted">Upload images in Hero, About, or Destinations to see them here.</li>';
+    return;
+  }
+  list.innerHTML = items
+    .map(
+      (u) => `
+    <li>
+      <img src="${u.url}" alt="" width="40" height="40" />
+      <div>
+        <strong>${u.folder || 'upload'}</strong><br />
+        <span class="admin-muted">${new Date(u.at).toLocaleString()}</span>
+      </div>
+    </li>`
+    )
+    .join('');
+}
+
+function initMobileSidebar() {
+  const sidebar = document.getElementById('admin-sidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  const toggle = document.getElementById('btn-menu');
+
+  const close = () => {
+    sidebar?.classList.remove('is-open');
+    backdrop?.classList.remove('is-visible');
+  };
+
+  toggle?.addEventListener('click', () => {
+    sidebar?.classList.toggle('is-open');
+    backdrop?.classList.toggle('is-visible');
+  });
+  backdrop?.addEventListener('click', close);
+  document.querySelectorAll('.admin-nav__btn[data-panel]').forEach((btn) => {
+    btn.addEventListener('click', close);
+  });
 }
 
 async function seedAllDefaults() {
@@ -185,16 +300,20 @@ async function loadAllAdminData() {
   state.destinations = await dbList(FIRESTORE_PATHS.destinations);
   state.gallery = await dbList(FIRESTORE_PATHS.gallery);
   state.weatherCards = await dbList(FIRESTORE_PATHS.weatherCards);
+  state.heroDoc = await dbGetDoc(FIRESTORE_PATHS.hero);
   renderDestinationsList();
   renderGalleryList();
   renderWeatherList();
   renderSearchDestCheckboxes();
+  renderDashboard();
 }
 
 async function loadHeroForm() {
-  const d = await dbGetDoc(FIRESTORE_PATHS.hero);
+  const raw = await dbGetDoc(FIRESTORE_PATHS.hero);
+  state.heroDoc = raw;
+  const d = mergeDoc(defaults().hero || {}, raw);
   const f = document.getElementById('form-hero');
-  if (!d || !f) return;
+  if (!f) return;
   f.eyebrow.value = d.eyebrow || '';
   f.title.value = d.title || '';
   f.titleAccent.value = d.titleAccent || '';
@@ -226,12 +345,13 @@ async function saveHeroForm(e) {
     ctaSecondaryLink: f.ctaSecondaryLink.value,
   });
   adminToast('Hero saved', 'success');
+  await loadHeroForm();
 }
 
 async function loadAboutForm() {
-  const d = await dbGetDoc(FIRESTORE_PATHS.about);
+  const d = mergeDoc(defaults().about || {}, await dbGetDoc(FIRESTORE_PATHS.about));
   const f = document.getElementById('form-about');
-  if (!d || !f) return;
+  if (!f) return;
   f.eyebrow.value = d.eyebrow || '';
   f.title.value = d.title || '';
   f.body.value = d.body || '';
@@ -260,9 +380,10 @@ async function saveAboutForm(e) {
 }
 
 async function loadContactForm() {
-  const d = await dbGetDoc(FIRESTORE_PATHS.contact);
+  const base = { ...HAIBO_CONFIG, ...(defaults().contact || {}) };
+  const d = mergeDoc(base, await dbGetDoc(FIRESTORE_PATHS.contact));
   const f = document.getElementById('form-contact');
-  if (!d || !f) return;
+  if (!f) return;
   Object.keys(d).forEach((k) => {
     if (f[k]) f[k].value = d[k];
   });
@@ -284,9 +405,9 @@ async function saveContactForm(e) {
 }
 
 async function loadSocialsForm() {
-  const d = await dbGetDoc(FIRESTORE_PATHS.socials);
+  const d = mergeDoc(defaults().socials || {}, await dbGetDoc(FIRESTORE_PATHS.socials));
   const f = document.getElementById('form-socials');
-  if (!d || !f) return;
+  if (!f) return;
   ['instagram', 'facebook', 'tiktok', 'whatsapp'].forEach((k) => {
     if (f[k]) f[k].value = d[k] || '';
   });
@@ -300,9 +421,9 @@ async function saveSocialsForm(e) {
 }
 
 async function loadSettingsForm() {
-  const d = await dbGetDoc(FIRESTORE_PATHS.settings);
+  const d = mergeDoc(defaults().settings || {}, await dbGetDoc(FIRESTORE_PATHS.settings));
   const f = document.getElementById('form-settings');
-  if (!d || !f) return;
+  if (!f) return;
   if (f.logoUrl) f.logoUrl.value = d.logoUrl || '';
   if (f.brandName) f.brandName.value = d.brandName || '';
   if (f.tagline) f.tagline.value = d.tagline || '';
@@ -618,8 +739,14 @@ async function saveSearchSettings() {
 }
 
 function initAdminAppHandlers() {
-  document.querySelectorAll('.admin-nav__btn').forEach((btn) => {
+  initMobileSidebar();
+  window.addEventListener('haiboAdminUpload', () => renderRecentUploads());
+
+  document.querySelectorAll('.admin-nav__btn[data-panel]').forEach((btn) => {
     btn.addEventListener('click', () => showPanel(btn.dataset.panel));
+  });
+  document.querySelectorAll('[data-goto]').forEach((btn) => {
+    btn.addEventListener('click', () => showPanel(btn.dataset.goto));
   });
 
   document.getElementById('btn-logout')?.addEventListener('click', async () => {
@@ -643,46 +770,32 @@ function initAdminAppHandlers() {
   document.getElementById('btn-new-dest')?.addEventListener('click', () => openDestinationEditor(''));
   document.getElementById('btn-new-weather')?.addEventListener('click', () => openWeatherEditor(''));
 
-  bindImageUpload(
-    document.getElementById('hero-upload'),
-    document.getElementById('hero-preview'),
-    'hero',
-    (url) => {
-      document.querySelector('#form-hero [name="backgroundImageUrl"]').value = url;
-    }
-  );
-  bindImageUpload(
-    document.getElementById('about-upload'),
-    document.getElementById('about-preview'),
-    'about',
-    (url) => {
-      document.querySelector('#form-about [name="imageUrl"]').value = url;
-    }
-  );
-  bindImageUpload(
-    document.getElementById('dest-card-upload'),
-    null,
-    'destinations',
-    (url) => {
-      document.querySelector('#form-destination [name="image"]').value = url;
-    }
-  );
-  bindImageUpload(
-    document.getElementById('dest-hero-upload'),
-    null,
-    'destinations',
-    (url) => {
-      document.querySelector('#form-destination [name="heroImage"]').value = url;
-    }
-  );
-  bindImageUpload(
-    document.getElementById('logo-upload'),
-    document.getElementById('logo-preview'),
-    'settings',
-    (url) => {
-      document.querySelector('#form-settings [name="logoUrl"]').value = url;
-    }
-  );
+  const bindZone = (inputId, previewId, folder, onUrl) => {
+    const input = document.getElementById(inputId);
+    const preview = document.getElementById(previewId);
+    const progress = input?.closest('.admin-upload-zone')?.querySelector('.admin-upload-progress');
+    createUploadZone(input, { previewEl: preview, progressEl: progress, folder, onUrl });
+  };
+
+  bindZone('hero-upload', 'hero-preview', 'hero', (url) => {
+    document.querySelector('#form-hero [name="backgroundImageUrl"]').value = url;
+  });
+  bindZone('about-upload', 'about-preview', 'about', (url) => {
+    document.querySelector('#form-about [name="imageUrl"]').value = url;
+  });
+  bindZone('dest-card-upload', 'dest-card-preview', 'destinations', (url) => {
+    document.querySelector('#form-destination [name="image"]').value = url;
+  });
+  bindZone('dest-hero-upload', 'dest-hero-preview', 'destinations', (url) => {
+    document.querySelector('#form-destination [name="heroImage"]').value = url;
+  });
+  bindZone('logo-upload', 'logo-preview', 'settings', (url) => {
+    document.querySelector('#form-settings [name="logoUrl"]').value = url;
+  });
+  bindZone('gallery-upload', 'gallery-upload-preview', 'gallery', (url) => {
+    const src = document.querySelector('#form-gallery-add [name="src"]');
+    if (src) src.value = url;
+  });
 
   loadHeroForm();
   loadAboutForm();

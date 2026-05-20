@@ -306,7 +306,8 @@ function initMobileMenu() {
   if (!menuBtn || !mobileMenu) return;
 
   menuBtn.addEventListener('click', () => {
-    mobileMenu.classList.toggle('open');
+    const open = mobileMenu.classList.toggle('open');
+    menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
   });
 
   mobileMenu.querySelectorAll('a').forEach((link) => {
@@ -331,10 +332,17 @@ function initWhatsAppFloat(customMessage) {
 
 function renderDestinationCard(dest) {
   const href = destinationDetailUrl(dest.id);
+  const img =
+    typeof window.haiboImgTag === 'function'
+      ? window.haiboImgTag(dest.image, `${dest.name} safari — ${dest.subtitle}`, {
+          width: 900,
+          class: 'haibo-media h-[380px] md:h-[420px] w-full object-cover',
+        })
+      : `<img src="${dest.image}" alt="${dest.name} safari — ${dest.subtitle}" loading="lazy" decoding="async" class="haibo-media h-[380px] md:h-[420px] w-full object-cover">`;
   return `
     <a href="${href}" class="destination-card glass rounded-[30px] overflow-hidden">
       <div class="relative dest-card-media">
-        <img src="${dest.image}" alt="${dest.name} — ${dest.subtitle}" class="haibo-media h-[380px] md:h-[420px] w-full object-cover">
+        ${img}
         <div class="absolute inset-0 overlay-dark"></div>
         <div class="absolute bottom-6 left-6 right-6">
           <p class="text-xs orange uppercase tracking-[3px] mb-1">${dest.region}</p>
@@ -376,7 +384,16 @@ function renderDestinationDetail() {
     return;
   }
 
-  document.title = `${dest.name} — HAIBO Tours & Safaris`;
+  if (typeof window.haiboApplyDestinationSEO === 'function') {
+    window.haiboApplyDestinationSEO(dest);
+  } else {
+    document.title = `${dest.name} Safari Packages | HAIBO Tours & Safaris`;
+  }
+
+  const heroImg =
+    typeof window.haiboOptimizeImage === 'function'
+      ? window.haiboOptimizeImage(dest.heroImage, { width: 1920 })
+      : dest.heroImage;
 
   const waMessage = `Hello HAIBO Tours! I'm interested in the ${dest.name} (${dest.subtitle}) package. Please share details and availability.`;
   initWhatsAppFloat(waMessage);
@@ -420,17 +437,20 @@ function renderDestinationDetail() {
     : '';
 
   const galleryHtml = dest.gallery
-    .map(
-      (img, i) => `
-    <img src="${img}" alt="${dest.name} gallery ${i + 1}" class="haibo-media gallery-item rounded-[24px] object-cover w-full ${i === 0 ? 'md:col-span-2 md:row-span-2 h-[280px] md:h-full min-h-[280px]' : 'h-[220px] md:h-[240px]'}">
-  `
-    )
+    .map((imgSrc, i) => {
+      const alt = `${dest.name} safari photo ${i + 1} — Tanzania`;
+      const cls = `haibo-media gallery-item rounded-[24px] object-cover w-full ${i === 0 ? 'md:col-span-2 md:row-span-2 h-[280px] md:h-full min-h-[280px]' : 'h-[220px] md:h-[240px]'}`;
+      if (typeof window.haiboImgTag === 'function') {
+        return window.haiboImgTag(imgSrc, alt, { width: i === 0 ? 1200 : 800, class: cls });
+      }
+      return `<img src="${imgSrc}" alt="${alt}" loading="lazy" decoding="async" class="${cls}">`;
+    })
     .join('');
 
   const highlightsHtml = dest.highlights.map((h) => `<span class="glass px-4 py-2 rounded-full text-sm">${h}</span>`).join('');
 
   document.getElementById('detail-root').innerHTML = `
-    <section class="page-hero hero hero-banner flex items-end" style="--hero-bg-image: url('${dest.heroImage}')">
+    <section class="page-hero hero hero-banner flex items-end" style="--hero-bg-image: url('${heroImg}')">
       <div class="hero-inner w-full flex items-end px-8 md:px-20">
         <div class="max-w-4xl fade-up">
           <p class="orange uppercase tracking-[5px] text-sm mb-3">${dest.region}</p>
@@ -484,6 +504,10 @@ function renderDestinationDetail() {
       </div>
     </section>
   `;
+
+  if (typeof window.haiboEnhanceImages === 'function') {
+    window.haiboEnhanceImages(document.getElementById('detail-root'));
+  }
 }
 
 function runHaiboApp() {
@@ -507,11 +531,17 @@ function runHaiboApp() {
   if (document.body.dataset.page === 'home') {
     initWhatsAppFloat();
     renderDestinationCards('home-destinations', 4);
+    if (typeof window.haiboEnhanceImages === 'function') {
+      window.haiboEnhanceImages(document.getElementById('home-destinations'));
+    }
   }
 
   if (document.body.dataset.page === 'destinations') {
     initWhatsAppFloat();
     renderDestinationCards('all-destinations');
+    if (typeof window.haiboEnhanceImages === 'function') {
+      window.haiboEnhanceImages(document.getElementById('all-destinations'));
+    }
   }
 
   if (document.body.dataset.page === 'destination-detail') {
