@@ -90,6 +90,15 @@ p,
     -webkit-backdrop-filter: blur(3px);
   }
 
+  .hero-banner::before,
+  .cta-cinematic__bg {
+    transform: scale(1.03);
+  }
+
+  .cta-cinematic:hover .cta-cinematic__bg {
+    transform: scale(1.03);
+  }
+
   /* Reduce hover / float animations (less jank) */
   .destination-card:hover,
   .destination-card:hover img,
@@ -233,19 +242,17 @@ p,
   }
 
   /* ── Hero (home) ── */
-  .hero-home,
-  .hero-inner {
-    min-height: auto !important;
-  }
-
-  #home.hero {
+  #home.hero-banner {
     min-height: min(92svh, 720px);
-    padding-top: 5.25rem;
-    padding-bottom: 1.75rem;
     flex-direction: column !important;
     align-items: center !important;
     text-align: center;
     justify-content: center;
+  }
+
+  .page-hero.hero-banner .hero-inner {
+    align-items: flex-end;
+    justify-content: flex-end;
   }
 
   #home .max-w-3xl {
@@ -270,26 +277,31 @@ p,
     font-size: 1rem !important;
   }
 
-  /* Page heroes */
-  .contact-hero,
-  .gallery-hero,
-  .page-hero {
-    min-height: auto !important;
-    padding-top: 5.5rem !important;
-    padding-bottom: 2rem !important;
+  /* Page heroes — min-heights from hero-overlays.css; gutter only */
+  .page-hero.hero-banner:not(#home) {
+    min-height: clamp(18rem, 48svh, 26rem);
     align-items: flex-end;
   }
 
-  .page-hero.hero .hero-inner {
-    min-height: auto !important;
-    padding-top: 5.5rem !important;
-    padding-bottom: 2rem !important;
+  .page-hero.hero-banner .hero-inner {
+    padding-top: 5rem !important;
+    padding-bottom: 1.75rem !important;
   }
 
-  .contact-hero,
-  .gallery-hero {
+  .contact-hero.hero-banner,
+  .gallery-hero.hero-banner {
+    min-height: clamp(17rem, 46svh, 24rem);
     padding-left: max(1rem, env(safe-area-inset-left));
     padding-right: max(1rem, env(safe-area-inset-right));
+    text-align: center;
+    justify-content: center;
+  }
+
+  .contact-hero.hero-banner > *,
+  .gallery-hero.hero-banner > * {
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
   }
 
   /* Weather widget below hero copy */
@@ -694,22 +706,18 @@ p,
   }
 
   /* Hero */
-  #home.hero {
+  #home.hero-banner {
     min-height: 85vh;
-    padding-top: 6rem;
-    padding-bottom: 2.5rem;
+    min-height: 85svh;
   }
 
-  .page-hero,
-  .page-hero .hero-inner {
-    min-height: 42vh !important;
-    padding-top: 6.5rem !important;
+  .page-hero.hero-banner {
+    min-height: clamp(20rem, 48vh, 30rem);
   }
 
-  .contact-hero,
-  .gallery-hero {
-    min-height: 40vh;
-    padding-top: 6.5rem;
+  .contact-hero.hero-banner,
+  .gallery-hero.hero-banner {
+    min-height: clamp(18rem, 44vh, 28rem);
   }
 
   /* Grids: 2 columns on tablet */

@@ -351,8 +351,8 @@ function renderDestinationDetail() {
   const highlightsHtml = dest.highlights.map((h) => `<span class="glass px-4 py-2 rounded-full text-sm">${h}</span>`).join('');
 
   document.getElementById('detail-root').innerHTML = `
-    <section class="page-hero hero flex items-end" style="background-image: url('${dest.heroImage}')">
-      <div class="hero-inner w-full flex items-end px-8 md:px-20 pb-16 pt-32">
+    <section class="page-hero hero hero-banner flex items-end" style="--hero-bg-image: url('${dest.heroImage}')">
+      <div class="hero-inner w-full flex items-end px-8 md:px-20">
         <div class="max-w-4xl fade-up">
           <p class="orange uppercase tracking-[5px] text-sm mb-3">${dest.region}</p>
           <h1 class="page-heading font-extrabold mb-4">${dest.name}</h1>

@@ -1,0 +1,162 @@
+/**
+ * HAIBO — global hero / banner / card media overlays
+ * Background layer + full-bleed dark overlay (inset: 0)
+ */
+
+/* ─── Hero & page banners ─── */
+.hero-banner {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background-color: #0a0a0a;
+}
+
+.hero-banner::before,
+.hero-banner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Background image */
+.hero-banner::before {
+  z-index: 0;
+  background-image: var(--hero-bg-image, none);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transform: scale(1.02);
+  will-change: transform;
+}
+
+/* Dark luxury overlay — full bleed */
+.hero-banner::after {
+  z-index: 1;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.58) 0%,
+    rgba(0, 0, 0, 0.38) 42%,
+    rgba(0, 0, 0, 0.52) 72%,
+    rgba(0, 0, 0, 0.72) 100%
+  );
+}
+
+.hero-banner > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Home hero background */
+.hero-home {
+  --hero-bg-image: url('https://images.unsplash.com/photo-1516426122078-c23e76319801?q=80&w=2070&auto=format&fit=crop');
+}
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  background-color: #0a0a0a;
+}
+
+.hero-inner {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  min-height: 100%;
+  flex: 1 1 auto;
+  display: flex;
+  background: none !important;
+  box-sizing: border-box;
+}
+
+.page-hero.hero-banner {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-end;
+  min-height: clamp(22rem, 55vh, 36rem);
+}
+
+.page-hero--simple.hero-banner {
+  justify-content: flex-end;
+}
+
+.page-hero.hero-banner .hero-inner {
+  align-items: flex-end;
+  padding-top: clamp(5.5rem, 12vh, 8rem);
+  padding-bottom: clamp(2rem, 5vh, 4rem);
+}
+
+#home.hero-banner {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100svh;
+  padding-top: clamp(5rem, 10vh, 7rem);
+  padding-bottom: clamp(1.5rem, 4vh, 2.5rem);
+}
+
+/* Contact & gallery heroes */
+.contact-hero.hero-banner {
+  --hero-bg-image: url('https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?q=80&w=2070&auto=format&fit=crop');
+  display: flex;
+  align-items: center;
+  min-height: clamp(20rem, 52vh, 32rem);
+  padding-top: clamp(5.5rem, 14vh, 7.5rem);
+  padding-bottom: clamp(2rem, 5vh, 4rem);
+}
+
+.gallery-hero.hero-banner {
+  --hero-bg-image: url('https://images.unsplash.com/photo-1516426122078-c23e76319801?q=80&w=2070&auto=format&fit=crop');
+  display: flex;
+  align-items: center;
+  min-height: clamp(18rem, 48vh, 30rem);
+  padding-top: clamp(5.5rem, 14vh, 8.5rem);
+  padding-bottom: clamp(2rem, 5vh, 4rem);
+}
+
+/* ─── Destination card image overlay ─── */
+.dest-card-media {
+  position: relative;
+  overflow: hidden;
+}
+
+.dest-card-media .overlay-dark {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.15) 0%,
+    rgba(0, 0, 0, 0.35) 40%,
+    rgba(0, 0, 0, 0.82) 100%
+  );
+}
+
+.dest-card-media .absolute.bottom-6 {
+  z-index: 2;
+}
+
+/* ─── Gallery media cards ─── */
+.gallery-media-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.gallery-media-card__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.gallery-media-card__body {
+  z-index: 2;
+}
+
+.gallery-media-card__img,
+.gallery-media-card__video {
+  position: relative;
+  z-index: 0;
+}

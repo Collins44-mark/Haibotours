@@ -1,12 +1,4 @@
-.contact-hero {
-  min-height: 52vh;
-  display: flex;
-  align-items: center;
-  padding-top: 7rem;
-  background:
-    linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.72)),
-    url('https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?q=80&w=2070&auto=format&fit=crop') center / cover no-repeat;
-}
+/* Contact page — hero uses hero-banner in hero-overlays.css */
 
 .contact-icon {
   width: 3.25rem;

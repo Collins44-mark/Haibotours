@@ -12,21 +12,8 @@ body {
   overflow-x: hidden;
 }
 
-.hero {
-  min-height: 100vh;
-  background-size: cover;
-  background-position: center;
-  position: relative;
-}
-
-.hero-inner {
-  background: linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.65));
-  min-height: 100vh;
-}
-
 .page-hero {
-  min-height: 55vh;
-  padding-top: 120px;
+  /* Heights handled in hero-overlays.css */
 }
 
 .glass {
@@ -137,7 +124,16 @@ body {
 }
 
 .overlay-dark {
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.75), transparent);
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.12) 0%,
+    rgba(0, 0, 0, 0.4) 45%,
+    rgba(0, 0, 0, 0.85) 100%
+  );
 }
 
 .gallery img,
