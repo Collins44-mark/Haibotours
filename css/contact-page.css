@@ -1,0 +1,99 @@
+.contact-hero {
+  min-height: 52vh;
+  display: flex;
+  align-items: center;
+  padding-top: 7rem;
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.72)),
+    url('https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?q=80&w=2070&auto=format&fit=crop') center / cover no-repeat;
+}
+
+.contact-icon {
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 1rem;
+  background: linear-gradient(135deg, #d98b2b, #ffb347);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+  flex-shrink: 0;
+  box-shadow: 0 6px 20px rgba(217, 139, 43, 0.35);
+}
+
+.contact-icon svg {
+  width: 1.5rem;
+  height: 1.5rem;
+  stroke: #1a1a1a;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.contact-icon svg.icon-fill {
+  fill: #1a1a1a;
+  stroke: none;
+}
+
+.contact-card {
+  transition: transform 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease;
+}
+
+.contact-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+  border-color: rgba(217, 139, 43, 0.35);
+}
+
+.social-card {
+  text-align: center;
+}
+
+.social-card__title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #d98b2b;
+  margin-bottom: 1.5rem;
+}
+
+.social-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.social-link {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.85rem 1.35rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: transform 0.35s ease, background 0.35s ease, border-color 0.35s ease;
+}
+
+.social-link:hover {
+  transform: translateY(-3px);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(217, 139, 43, 0.45);
+}
+
+.social-link svg {
+  width: 1.35rem;
+  height: 1.35rem;
+  flex-shrink: 0;
+}
+
+.social-link--instagram:hover {
+  border-color: rgba(221, 42, 123, 0.5);
+}
+
+.social-link--facebook:hover {
+  border-color: rgba(24, 119, 242, 0.5);
+}

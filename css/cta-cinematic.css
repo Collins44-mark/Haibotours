@@ -1,0 +1,207 @@
+/* Cinematic safari backgrounds — inside CTA/contact cards only */
+
+.cta-cinematic {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow:
+    0 8px 40px rgba(0, 0, 0, 0.45),
+    0 0 48px rgba(217, 139, 43, 0.12);
+  isolation: isolate;
+}
+
+.cta-cinematic--float {
+  animation: ctaFloat 6s ease-in-out infinite;
+}
+
+.cta-cinematic--float:hover {
+  animation-play-state: paused;
+}
+
+@keyframes ctaFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.cta-cinematic__bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
+  transform: scale(1.02);
+  transition: transform 8s ease;
+}
+
+.cta-cinematic:hover .cta-cinematic__bg {
+  transform: scale(1.08);
+}
+
+.cta-cinematic__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    145deg,
+    rgba(0, 0, 0, 0.62) 0%,
+    rgba(139, 90, 43, 0.28) 45%,
+    rgba(0, 0, 0, 0.55) 100%
+  );
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.cta-cinematic__vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.55);
+  background: radial-gradient(ellipse at center, transparent 35%, rgba(0, 0, 0, 0.35) 100%);
+}
+
+.cta-cinematic__glow {
+  position: absolute;
+  inset: -1px;
+  z-index: 3;
+  pointer-events: none;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 0 30px rgba(217, 139, 43, 0.15);
+}
+
+.cta-cinematic__content {
+  position: relative;
+  z-index: 4;
+}
+
+/* Safari background images */
+.cta-bg-kili {
+  background-image: url('https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?q=80&w=1974&auto=format&fit=crop');
+}
+
+.cta-bg-serengeti {
+  background-image: url('https://images.unsplash.com/photo-1521295121783-8a321d551ad2?q=80&w=1974&auto=format&fit=crop');
+}
+
+.cta-bg-serengeti-plains {
+  background-image: url('https://images.unsplash.com/photo-1516426122078-c23e76319801?q=80&w=2070&auto=format&fit=crop');
+}
+
+.cta-bg-safari {
+  background-image: url('https://images.unsplash.com/photo-1508672019048-805c876b67e2?q=80&w=1974&auto=format&fit=crop');
+}
+
+.cta-bg-acacia {
+  background-image: url('https://images.unsplash.com/photo-1516939884455-1445c8652f83?q=80&w=1974&auto=format&fit=crop');
+}
+
+.cta-bg-misty {
+  background-image: url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=1974&auto=format&fit=crop');
+}
+
+.cta-bg-wildlife {
+  background-image: url('https://images.unsplash.com/photo-1523805009345-7448845a9e53?q=80&w=1974&auto=format&fit=crop');
+}
+
+.cta-bg-sunset {
+  background-image: url('https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?q=80&w=1974&auto=format&fit=crop');
+}
+
+.cta-bg-zanzibar {
+  background-image: url('https://images.unsplash.com/photo-1573843981267-be1999ff37cd?q=80&w=1974&auto=format&fit=crop');
+}
+
+.cta-bg-zanzibar-beach {
+  background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1974&auto=format&fit=crop');
+}
+
+.cta-bg-ngorongoro {
+  background-image: url('https://images.unsplash.com/photo-1580674285054-bed31e145f59?q=80&w=1974&auto=format&fit=crop');
+}
+
+.cta-bg-tarangire {
+  background-image: url('https://images.unsplash.com/photo-1564760055775-d506ef2a0de4?q=80&w=1974&auto=format&fit=crop');
+}
+
+.cta-bg-tarangire-elephants {
+  background-image: url('https://images.unsplash.com/photo-1564760055775-d506ef2a0de4?q=80&w=1974&auto=format&fit=crop');
+}
+
+.cta-bg-mikumi-lion {
+  background-image: url('https://images.unsplash.com/photo-1546182990-d14afede6ed9?q=80&w=1974&auto=format&fit=crop');
+}
+
+.cta-bg-ruaha-lions {
+  background-image: url('https://images.unsplash.com/photo-1614027160141-7e3a6654e999?q=80&w=1974&auto=format&fit=crop');
+}
+
+.cta-bg-lake-manyara {
+  background-image: url('https://images.unsplash.com/photo-1551632811-561732d0250a?q=80&w=1974&auto=format&fit=crop');
+}
+
+.cta-bg-ruaha {
+  background-image: url('https://images.unsplash.com/photo-1549366021-9f761d450615?q=80&w=1974&auto=format&fit=crop');
+}
+
+.cta-bg-mikumi {
+  background-image: url('https://images.unsplash.com/photo-1523805009345-7448845a9e53?q=80&w=1974&auto=format&fit=crop');
+}
+
+.cta-bg-arusha {
+  background-image: url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=1974&auto=format&fit=crop');
+}
+
+/* Contact info cards */
+.cta-cinematic.contact-card {
+  transition: transform 0.45s ease, box-shadow 0.45s ease;
+}
+
+.cta-cinematic.contact-card:hover {
+  transform: translateY(-6px);
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.5),
+    0 0 56px rgba(217, 139, 43, 0.22);
+}
+
+.cta-cinematic.contact-card .contact-icon {
+  position: relative;
+  z-index: 1;
+}
+
+.cta-cinematic.package-card {
+  transition: transform 0.45s ease, box-shadow 0.45s ease;
+}
+
+.cta-cinematic.package-card:hover {
+  transform: translateY(-6px);
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.5),
+    0 0 56px rgba(217, 139, 43, 0.22);
+}
+
+.cta-cinematic.package-card.popular {
+  border-color: rgba(217, 139, 43, 0.55);
+}
+
+/* Newsletter compact bar */
+.cta-cinematic--compact .cta-cinematic__overlay {
+  backdrop-filter: blur(10px);
+}
+
+.cta-cinematic--compact .cta-cinematic__content {
+  display: flex;
+  width: 100%;
+  align-items: stretch;
+}
+
+/* Form inputs on cinematic cards */
+.cta-cinematic select {
+  background: rgba(0, 0, 0, 0.35) !important;
+}
