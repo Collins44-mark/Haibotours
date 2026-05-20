@@ -1,4 +1,4 @@
-import { db } from './admin-firebase.mjs';
+import { getAdminDb } from './admin-firebase.mjs';
 import {
   doc,
   setDoc,
@@ -12,9 +12,12 @@ import { formatFirestoreError } from './admin-errors.mjs';
 
 export const ADMIN_DOC = 'main';
 
-function requireDb() {
-  if (!db) throw Object.assign(new Error('Firestore unavailable'), { code: 'firestore/unavailable' });
-  return db;
+export function requireDb() {
+  const database = getAdminDb();
+  if (!database) {
+    throw Object.assign(new Error('Firestore unavailable'), { code: 'firestore/unavailable' });
+  }
+  return database;
 }
 
 async function withFirestore(action) {

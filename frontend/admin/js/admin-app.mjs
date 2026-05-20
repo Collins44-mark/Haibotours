@@ -1,4 +1,3 @@
-import { db } from './admin-firebase.mjs';
 import { doc } from `https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-firestore.js`;
 import {
   dbSetDoc,
@@ -6,6 +5,7 @@ import {
   dbList,
   dbDeleteDoc,
   getDbBatch,
+  requireDb,
   adminToast,
   slugify,
   ADMIN_DOC,
@@ -233,6 +233,7 @@ async function seedAllDefaults() {
     updatedAt: Date.now(),
   });
 
+  const db = requireDb();
   const batch = getDbBatch();
   DESTINATIONS.forEach((d, i) => {
     batch.set(

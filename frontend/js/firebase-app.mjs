@@ -17,7 +17,8 @@ let authInitPromise = null;
 export function getHaiboApp() {
   if (!isFirebaseConfigured()) return null;
   if (!app) {
-    app = getApps().length ? getApp() : initializeApp(FIREBASE_CONFIG);
+    const existing = getApps();
+    app = existing.length ? getApp(existing[0].name) : initializeApp(FIREBASE_CONFIG);
   }
   return app;
 }
@@ -28,7 +29,7 @@ export function getHaiboDb() {
   return db;
 }
 
-/** Auth with local persistence — safe for admin session restore */
+/** Auth with local persistence — one instance per app */
 export function getHaiboAuth() {
   if (!isFirebaseConfigured()) return null;
   if (auth) return auth;
@@ -51,7 +52,7 @@ export function getHaiboAuth() {
       if (err?.code === 'auth/already-initialized') {
         auth = getAuth(haiboApp);
       } else {
-        console.warn('[HAIBO] Auth init:', err);
+        console.error('[HAIBO] Auth init failed:', err?.code, err?.message);
         throw err;
       }
     }
@@ -60,36 +61,58 @@ export function getHaiboAuth() {
   return auth;
 }
 
+function waitAuthStateReady(authInstance, timeoutMs) {
+  if (!authInstance) return Promise.resolve(null);
+
+  if (typeof authInstance.authStateReady === 'function') {
+    return Promise.race([
+      authInstance.authStateReady().then(() => authInstance),
+      new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('authStateReady timed out')), timeoutMs);
+      }),
+    ]);
+  }
+
+  return new Promise((resolve) => {
+    let settled = false;
+    const done = () => {
+      if (settled) return;
+      settled = true;
+      resolve(authInstance);
+    };
+    const unsub = authInstance.onAuthStateChanged(() => {
+      unsub();
+      done();
+    });
+    setTimeout(() => {
+      try {
+        unsub();
+      } catch {
+        /* ignore */
+      }
+      done();
+    }, timeoutMs);
+  });
+}
+
 /**
- * Resolves when Auth is ready (never blocks indefinitely).
+ * Resolves when Auth is initialized and initial persisted state is known.
  */
-export function ensureHaiboAuthReady(timeoutMs = 6000) {
+export function ensureHaiboAuthReady(timeoutMs = 3000) {
   if (!isFirebaseConfigured()) return Promise.resolve(null);
 
   if (!authInitPromise) {
-    authInitPromise = new Promise((resolve) => {
-      let done = false;
-      const finish = (instance) => {
-        if (done) return;
-        done = true;
-        resolve(instance);
-      };
-
-      const timer = setTimeout(() => {
-        console.warn('[HAIBO] Auth init timeout — continuing with best-effort auth');
-        finish(getHaiboAuth());
-      }, timeoutMs);
-
+    authInitPromise = (async () => {
       try {
         const instance = getHaiboAuth();
-        clearTimeout(timer);
-        finish(instance);
+        if (!instance) return null;
+        await waitAuthStateReady(instance, timeoutMs);
+        return instance;
       } catch (err) {
-        clearTimeout(timer);
-        console.warn('[HAIBO] Auth init error:', err);
-        finish(null);
+        console.warn('[HAIBO] Auth ready fallback:', err?.message || err);
+        return getHaiboAuth();
       }
-    });
+    })();
   }
 
   return authInitPromise;

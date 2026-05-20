@@ -19,11 +19,7 @@ export function getAdminAuth() {
 }
 
 export async function ensureAuthReady() {
-  return ensureHaiboAuthReady(6000);
-}
-
-export function getAuthInstance() {
-  return getHaiboAuth();
+  return ensureHaiboAuthReady(3000);
 }
 
 export function watchAdminAuth(callback) {
@@ -48,8 +44,7 @@ export async function adminLogout() {
   return signOut(auth);
 }
 
-/** Used by admin-db / admin-app (Firestore writes after auth) */
-export const db = getHaiboDb();
-export const auth = getHaiboAuth();
-
-getHaiboApp();
+/** Lazy — do not initialize Firebase at module import time */
+export function getAuthInstance() {
+  return getHaiboAuth();
+}
