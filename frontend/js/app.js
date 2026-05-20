@@ -235,9 +235,19 @@ function safariSearchRedirectUrl(slug) {
 }
 
 function getDestinationsForUi() {
-  if (typeof getHaiboDestinations === 'function') return getHaiboDestinations();
+  const staticList =
+    window.HAIBO_DESTINATIONS_STATIC ||
+    (typeof DESTINATIONS !== 'undefined' ? DESTINATIONS : []);
+  try {
+    if (typeof getHaiboDestinations === 'function') {
+      const merged = getHaiboDestinations();
+      if (merged.length) return merged;
+    }
+  } catch (err) {
+    console.warn('HAIBO getDestinationsForUi:', err);
+  }
   if (Array.isArray(window.DESTINATIONS) && window.DESTINATIONS.length) return window.DESTINATIONS;
-  return typeof DESTINATIONS !== 'undefined' ? DESTINATIONS : [];
+  return staticList;
 }
 
 function initSearchBar() {
@@ -418,14 +428,33 @@ function renderDestinationCard(dest) {
 }
 
 function renderDestinationCards(containerId, limit) {
+  if (typeof haiboPaintDestinationCards === 'function') {
+    const ok = haiboPaintDestinationCards(containerId, limit);
+    if (ok) {
+      const container = document.getElementById(containerId);
+      if (container && typeof window.haiboEnhanceImages === 'function') {
+        window.haiboEnhanceImages(container);
+      }
+      return;
+    }
+  }
+
   const container = document.getElementById(containerId);
   if (!container) return;
 
-  const all = getDestinationsForUi();
+  let all = [];
+  try {
+    all = getDestinationsForUi();
+  } catch (err) {
+    console.warn('HAIBO renderDestinationCards:', err);
+  }
+  if (!all.length) {
+    all = window.HAIBO_DESTINATIONS_STATIC || (typeof DESTINATIONS !== 'undefined' ? DESTINATIONS : []);
+  }
   const list = limit ? all.slice(0, limit) : all;
-  container.innerHTML = list.length
-    ? list.map(renderDestinationCard).join('')
-    : '';
+  if (!list.length) return;
+  container.innerHTML = list.map(renderDestinationCard).join('');
+  container.dataset.haiboRendered = '1';
 }
 
 function getQueryParam(name) {
@@ -469,9 +498,18 @@ function renderDestinationDetail() {
   const waMessage = `Hello HAIBO Tours! I'm interested in the ${dest.name} (${dest.subtitle}) package. Please share details and availability.`;
   initWhatsAppFloat(waMessage);
 
-  const packages = dest.packages?.length ? dest.packages : staticD?.packages || [];
-  const gallery = dest.gallery?.length ? dest.gallery : staticD?.gallery || [];
-  const highlights = dest.highlights?.length ? dest.highlights : staticD?.highlights || [];
+  const packages =
+    Array.isArray(dest.packages) && dest.packages.length
+      ? dest.packages
+      : staticD?.packages || [];
+  const gallery =
+    Array.isArray(dest.gallery) && dest.gallery.length
+      ? dest.gallery
+      : staticD?.gallery || [];
+  const highlights =
+    Array.isArray(dest.highlights) && dest.highlights.length
+      ? dest.highlights
+      : staticD?.highlights || [];
 
   const destBg = getDestinationCtaBg(dest.id);
   const packagesHtml = packages
@@ -636,6 +674,7 @@ function refreshHaiboLiveContent() {
 
   if (document.body.dataset.page === 'home') {
     renderDestinationCards('home-destinations', 4);
+    if (typeof haiboBootDestinationGrids === 'function') haiboBootDestinationGrids();
     initSearchBar();
     if (typeof window.refreshHaiboWeatherWidget === 'function') {
       window.refreshHaiboWeatherWidget();
@@ -643,6 +682,7 @@ function refreshHaiboLiveContent() {
   }
   if (document.body.dataset.page === 'destinations') {
     renderDestinationCards('all-destinations');
+    if (typeof haiboBootDestinationGrids === 'function') haiboBootDestinationGrids();
   }
   if (document.body.dataset.page === 'destination-detail') {
     renderDestinationDetail();

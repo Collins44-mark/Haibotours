@@ -382,13 +382,21 @@ function getDestinationById(id) {
     typeof haiboNormalizeDestId === 'function'
       ? haiboNormalizeDestId(id)
       : String(id).trim().toLowerCase();
-  return (
-    getHaiboDestinations().find((d) =>
+  const match = (list) =>
+    list.find((d) =>
       typeof haiboNormalizeDestId === 'function'
         ? haiboNormalizeDestId(d.id) === key
         : d.id === key
-    ) || null
-  );
+    ) || null;
+
+  try {
+    const live = getHaiboDestinations();
+    const found = match(live);
+    if (found) return found;
+  } catch {
+    /* fall through to static */
+  }
+  return match(window.HAIBO_DESTINATIONS_STATIC || DESTINATIONS);
 }
 
 /** Match user input or slug to a destination id */
@@ -451,4 +459,90 @@ function getDestinationIdFromLocation() {
   if (pathMatch) return decodeURIComponent(pathMatch[1]).toLowerCase();
 
   return null;
+}
+
+function haiboEscapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/"/g, '&quot;');
+}
+
+function haiboResolveCardImage(dest) {
+  const img = dest?.image || dest?.imageUrl || '';
+  if (typeof haiboValidMediaUrl === 'function' && haiboValidMediaUrl(img)) return img;
+  const key =
+    typeof haiboNormalizeDestId === 'function'
+      ? haiboNormalizeDestId(dest?.id)
+      : String(dest?.id || '').toLowerCase();
+  const staticD = (window.HAIBO_DESTINATIONS_STATIC || DESTINATIONS).find((d) =>
+    typeof haiboNormalizeDestId === 'function'
+      ? haiboNormalizeDestId(d.id) === key
+      : d.id === key
+  );
+  return staticD?.image || img || '';
+}
+
+/** Paint destination cards from local data — runs even if Firebase/CMS fails */
+function haiboPaintDestinationCards(containerId, limit) {
+  const container = document.getElementById(containerId);
+  if (!container) return false;
+
+  let list = window.HAIBO_DESTINATIONS_STATIC || DESTINATIONS;
+  try {
+    if (typeof getHaiboDestinations === 'function') {
+      const merged = getHaiboDestinations();
+      if (merged.length) list = merged;
+    }
+  } catch (err) {
+    console.warn('HAIBO: using static destinations after error', err);
+    list = window.HAIBO_DESTINATIONS_STATIC || DESTINATIONS;
+  }
+
+  if (!list.length) return false;
+  if (limit) list = list.slice(0, limit);
+
+  container.innerHTML = list
+    .map((dest) => {
+      const href = destinationDetailUrl(dest.id);
+      const imageUrl = haiboResolveCardImage(dest);
+      const bg = imageUrl.replace(/'/g, '%27');
+      const img = imageUrl
+        ? `<img src="${haiboEscapeHtml(imageUrl)}" alt="${haiboEscapeHtml(`${dest.name} safari — ${dest.subtitle}`)}" loading="lazy" decoding="async" class="haibo-media dest-card-img w-full h-[380px] md:h-[420px] object-cover" width="900" height="520">`
+        : '';
+      const price = Array.isArray(dest.packages) && dest.packages[0]?.price
+        ? dest.packages[0].price
+        : 'Contact us';
+      return `
+    <a href="${haiboEscapeHtml(href)}" class="destination-card glass rounded-[30px] overflow-hidden">
+      <div class="relative dest-card-media"${bg ? ` style="background-image:url('${bg}')"` : ''}>
+        ${img}
+        <div class="absolute inset-0 overlay-dark"></div>
+        <div class="absolute bottom-6 left-6 right-6">
+          <p class="text-xs orange uppercase tracking-[3px] mb-1">${haiboEscapeHtml(dest.region)}</p>
+          <h3 class="text-2xl font-semibold mb-1">${haiboEscapeHtml(dest.name)}</h3>
+          <p class="text-gray-300">${haiboEscapeHtml(dest.subtitle)}</p>
+          <p class="text-sm text-gray-400 mt-3">From ${haiboEscapeHtml(price)}</p>
+        </div>
+      </div>
+    </a>`;
+    })
+    .join('');
+
+  container.dataset.haiboRendered = '1';
+  return true;
+}
+
+function haiboBootDestinationGrids() {
+  haiboPaintDestinationCards('all-destinations');
+  haiboPaintDestinationCards('home-destinations', 4);
+}
+
+window.haiboPaintDestinationCards = haiboPaintDestinationCards;
+window.haiboBootDestinationGrids = haiboBootDestinationGrids;
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', haiboBootDestinationGrids);
+} else {
+  haiboBootDestinationGrids();
 }

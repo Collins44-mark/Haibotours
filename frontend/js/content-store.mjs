@@ -185,10 +185,17 @@ function startRealtimeListeners() {
   subscribeDoc(db, FIRESTORE_PATHS.settings, 'settings');
 
   subscribeCollection(db, FIRESTORE_PATHS.destinations, (items) => {
-    window.HAIBO_CONTENT.destinations =
-      typeof haiboMergeDestinationsList === 'function'
-        ? haiboMergeDestinationsList(items)
-        : items;
+    try {
+      window.HAIBO_CONTENT.destinations =
+        typeof haiboMergeDestinationsList === 'function'
+          ? haiboMergeDestinationsList(items)
+          : items;
+    } catch (err) {
+      console.warn('HAIBO: destination merge failed, keeping static catalog.', err);
+      window.HAIBO_CONTENT.destinations =
+        window.HAIBO_DESTINATIONS_STATIC?.map((x) => ({ ...x })) ||
+        (typeof DESTINATIONS !== 'undefined' ? DESTINATIONS.map((x) => ({ ...x })) : []);
+    }
   });
 
   subscribeCollection(db, FIRESTORE_PATHS.gallery, (items) => {
