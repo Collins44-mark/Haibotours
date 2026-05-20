@@ -25,7 +25,23 @@ Open [http://localhost:8080](http://localhost:8080)
 
 ## Deploy
 
-Host the **`frontend`** folder (e.g. GitHub Pages — set publish directory to `/frontend`).
+### Vercel (recommended)
+
+Use **one** of these setups (not both):
+
+**Option A — Root Directory (simplest)**  
+In the Vercel project: **Settings → General → Root Directory** → set to `frontend`.  
+Framework Preset: **Other**. Leave **Build Command** and **Output Directory** empty.  
+Do **not** add a second `frontend` path in Output Directory.
+
+**Option B — Repo root**  
+Leave Root Directory as `.` (repository root). The included `vercel.json` rewrites `/` to `frontend/index.html` and static assets to `frontend/`.
+
+After changing settings, click **Redeploy** on the latest deployment.
+
+### GitHub Pages
+
+Set publish directory to **`/frontend`**.
 
 ## Responsive design
 
