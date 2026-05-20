@@ -806,6 +806,17 @@ body.admin-login-ready.admin-login-page #admin-auth-loading {
   }
 }
 
+.admin-import-banner {
+  margin-bottom: 1.25rem;
+  border: 1px solid rgba(217, 139, 43, 0.35);
+  background: linear-gradient(135deg, rgba(217, 139, 43, 0.08), rgba(255, 255, 255, 0.03));
+}
+
+.admin-import-banner h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .admin-panel,
   .admin-sidebar,

@@ -57,13 +57,62 @@ function countPackages(dests) {
   return dests.reduce((n, d) => n + (Array.isArray(d.packages) ? d.packages.length : 0), 0);
 }
 
+/** Built-in catalog from destinations-data.js */
+function getStaticDestinations() {
+  return (
+    window.HAIBO_DESTINATIONS_STATIC ||
+    (typeof DESTINATIONS !== 'undefined' ? DESTINATIONS : [])
+  );
+}
+
+/** Firestore rows merged with static defaults for admin editing */
+function getAdminDestinationsForUi() {
+  const staticList = getStaticDestinations();
+  const fromDb = state.destinations;
+  if (!fromDb.length) {
+    return staticList.map((d, i) => ({ ...d, order: i, _source: 'static' }));
+  }
+  const byId = new Map(fromDb.map((d) => [d.id, { ...d, _source: 'firestore' }]));
+  staticList.forEach((d, i) => {
+    if (!byId.has(d.id)) {
+      byId.set(d.id, { ...d, order: 500 + i, _source: 'static' });
+    }
+  });
+  return [...byId.values()].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+}
+
+function getAdminDestinationById(id) {
+  if (!id) return null;
+  const fromDb = state.destinations.find((x) => x.id === id);
+  if (fromDb) return fromDb;
+  return getStaticDestinations().find((x) => x.id === id) || null;
+}
+
+function showDestinationsImportBanner() {
+  const panel = document.getElementById('panel-destinations');
+  if (!panel) return;
+  let banner = document.getElementById('dest-import-banner');
+  if (state.destinations.length > 0) {
+    banner?.remove();
+    return;
+  }
+  if (banner) return;
+  banner = document.createElement('div');
+  banner.id = 'dest-import-banner';
+  banner.className = 'admin-glass admin-import-banner';
+  banner.innerHTML = `
+    <h2>Website content ready to import</h2>
+    <p class="admin-muted">All ${getStaticDestinations().length} destinations, packages, and gallery data from the live site are listed below. Click <strong>Import website defaults</strong> to copy them into Firestore, or open any destination, edit, and save to publish changes to the website.</p>
+    <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:1rem">
+      <button type="button" class="admin-btn admin-btn--primary admin-btn--sm" id="btn-seed-inline">Import all defaults to Firestore</button>
+    </div>
+  `;
+  panel.insertBefore(banner, panel.firstChild);
+  banner.querySelector('#btn-seed-inline')?.addEventListener('click', () => seedAllDefaults());
+}
+
 async function renderDashboard() {
-  const dests =
-    state.destinations.length > 0
-      ? state.destinations
-      : typeof DESTINATIONS !== 'undefined'
-        ? DESTINATIONS
-        : [];
+  const dests = getAdminDestinationsForUi();
   const hero = state.heroDoc || (await dbGetDoc(FIRESTORE_PATHS.hero));
   const hasHero = Boolean(hero?.backgroundImageUrl);
   const pkgCount = countPackages(dests);
@@ -236,11 +285,12 @@ async function seedAllDefaults() {
   const db = requireDb();
   const batch = getDbBatch();
   DESTINATIONS.forEach((d, i) => {
-    batch.set(
-      doc(db, FIRESTORE_PATHS.destinations, d.id),
-      { ...d, order: i, active: true, updatedAt: Date.now() },
-      { merge: true }
-    );
+    const row = { ...d, order: i, active: true, updatedAt: Date.now() };
+    if (row.galleryImages?.length && !row.gallery?.length) {
+      row.gallery = row.galleryImages;
+    }
+    delete row.galleryImages;
+    batch.set(doc(db, FIRESTORE_PATHS.destinations, d.id), row, { merge: true });
   });
   await batch.commit();
 
@@ -292,6 +342,7 @@ async function seedAllDefaults() {
 
   adminToast('Defaults imported to Firestore', 'success');
   await loadAllAdminData();
+  showDestinationsImportBanner();
   } catch (err) {
     adminToast(err.message || formatAdminError(err, 'Import'), 'error');
   }
@@ -303,6 +354,7 @@ async function loadAllAdminData() {
   state.weatherCards = await dbList(FIRESTORE_PATHS.weatherCards);
   state.heroDoc = await dbGetDoc(FIRESTORE_PATHS.hero);
   renderDestinationsList();
+  showDestinationsImportBanner();
   renderGalleryList();
   renderWeatherList();
   renderSearchDestCheckboxes();
@@ -464,7 +516,7 @@ async function saveSettingsForm(e) {
 function renderDestinationsList() {
   const el = document.getElementById('destinations-list');
   if (!el) return;
-  const sorted = [...state.destinations].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  const sorted = getAdminDestinationsForUi();
   el.innerHTML =
     sorted
       .map(
@@ -473,10 +525,10 @@ function renderDestinationsList() {
       <img src="${d.image || ''}" alt="" class="admin-thumb" />
       <div class="admin-card-item__body">
         <strong>${d.name}</strong>
-        <span class="admin-muted">${d.id} · ${d.region || ''}</span>
+        <span class="admin-muted">${d.id} · ${d.region || ''}${d._source === 'static' ? ' · default (save to publish)' : ''}</span>
       </div>
       <button type="button" class="admin-btn admin-btn--ghost" data-edit-dest="${d.id}">Edit</button>
-      <button type="button" class="admin-btn admin-btn--danger" data-del-dest="${d.id}">Delete</button>
+      ${d._source === 'firestore' ? `<button type="button" class="admin-btn admin-btn--danger" data-del-dest="${d.id}">Delete</button>` : ''}
     </div>`
       )
       .join('') || '<p class="admin-muted">No destinations. Import defaults or add new.</p>';
@@ -490,7 +542,7 @@ function renderDestinationsList() {
 }
 
 function openDestinationEditor(id) {
-  const d = state.destinations.find((x) => x.id === id) || {
+  const d = (id ? getAdminDestinationById(id) : null) || {
     id: '',
     name: '',
     subtitle: '',
@@ -504,7 +556,7 @@ function openDestinationEditor(id) {
     packages: [],
     experience: { label: '', title: '', intro: '', items: [] },
     active: true,
-    order: state.destinations.length,
+    order: state.destinations.length || getStaticDestinations().length,
   };
   const f = document.getElementById('form-destination');
   f.dataset.editId = d.id || '';
@@ -713,8 +765,8 @@ function renderSearchDestCheckboxes() {
   const settings = state.settingsCache || {};
   dbGetDoc(FIRESTORE_PATHS.settings).then((s) => {
     state.settingsCache = s || {};
-    const enabled = new Set(s?.searchEnabledIds || state.destinations.map((d) => d.id));
-    const sorted = [...state.destinations].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    const enabled = new Set(s?.searchEnabledIds || getAdminDestinationsForUi().map((d) => d.id));
+    const sorted = getAdminDestinationsForUi();
     el.innerHTML = sorted
       .map(
         (d) => `
