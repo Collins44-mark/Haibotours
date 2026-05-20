@@ -351,9 +351,61 @@ const DESTINATIONS = [
 ];
 
 function getDestinationById(id) {
-  return DESTINATIONS.find((d) => d.id === id);
+  if (!id) return null;
+  const key = String(id).trim().toLowerCase();
+  return DESTINATIONS.find((d) => d.id === key) || null;
 }
 
+/** Match user input or slug to a destination id */
+function resolveDestinationSlug(input) {
+  if (!input) return null;
+  const raw = String(input).trim().toLowerCase();
+  const slug = raw
+    .replace(/national\s+park/gi, '')
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+
+  const exact = DESTINATIONS.find((d) => d.id === slug || d.id === raw);
+  if (exact) return exact.id;
+
+  const byName = DESTINATIONS.find((d) => {
+    const name = d.name.toLowerCase();
+    const nameSlug = name.replace(/\s+/g, '-');
+    return (
+      name === raw ||
+      nameSlug === slug ||
+      slug.includes(d.id) ||
+      d.id.includes(slug) ||
+      raw.includes(name) ||
+      name.includes(raw.replace(/-/g, ' '))
+    );
+  });
+  return byName ? byName.id : null;
+}
+
+/** Works on static hosts, GitHub Pages, and local dev */
 function destinationDetailUrl(id) {
-  return `destination.html?id=${id}`;
+  return `destination.html?id=${encodeURIComponent(id)}`;
+}
+
+function destinationDetailUrlFallback(id) {
+  return destinationDetailUrl(id);
+}
+
+/** Pretty URL — use on Vercel (rewrite in vercel.json) */
+function destinationPrettyUrl(id) {
+  return `destinations/${encodeURIComponent(id)}`;
+}
+
+function getDestinationIdFromLocation() {
+  const params = new URLSearchParams(window.location.search);
+  const q = params.get('id');
+  if (q) return q.trim().toLowerCase();
+
+  const pathMatch = window.location.pathname.match(/\/destinations\/([^/]+)\/?$/i);
+  if (pathMatch) return decodeURIComponent(pathMatch[1]).toLowerCase();
+
+  return null;
 }

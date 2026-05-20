@@ -1,0 +1,157 @@
+/**
+ * HAIBO — safari search card + toast
+ */
+
+.safari-search {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: clamp(1rem, 4vw, 2rem);
+  border-radius: clamp(1.25rem, 4vw, 2.2rem);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.85rem;
+  align-items: stretch;
+}
+
+@media (min-width: 768px) {
+  .safari-search {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  .safari-search__submit {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 1025px) {
+  .safari-search {
+    grid-template-columns: 1.2fr 1fr 0.85fr auto;
+    align-items: end;
+    gap: 1rem;
+  }
+
+  .safari-search__submit {
+    grid-column: auto;
+  }
+}
+
+.safari-search__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+  width: 100%;
+}
+
+.safari-search__label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #d98b2b;
+  padding-left: 0.15rem;
+}
+
+.safari-search__input,
+.safari-search__select {
+  width: 100%;
+  max-width: 100%;
+  min-height: 3rem;
+  padding: 0.85rem 1.1rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font-size: 1rem;
+  line-height: 1.4;
+  outline: none;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.safari-search__select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23d98b2b' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  padding-right: 2.5rem;
+  cursor: pointer;
+}
+
+.safari-search__input::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.safari-search__input:focus,
+.safari-search__select:focus {
+  border-color: rgba(217, 139, 43, 0.55);
+  box-shadow: 0 0 0 3px rgba(217, 139, 43, 0.15);
+}
+
+.safari-search__input[type='date'] {
+  color-scheme: dark;
+}
+
+.safari-search__submit {
+  width: 100%;
+  min-height: 3.1rem;
+  padding: 0.9rem 1.5rem;
+  border: none;
+  border-radius: 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.safari-search__submit:active {
+  transform: scale(0.98);
+}
+
+.safari-search__submit:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+/* Toast */
+.haibo-toast {
+  position: fixed;
+  left: 50%;
+  bottom: max(5.5rem, calc(1.25rem + env(safe-area-inset-bottom, 0px)));
+  transform: translateX(-50%) translateY(120%);
+  z-index: 200;
+  width: min(calc(100% - 2rem), 22rem);
+  padding: 1rem 1.25rem;
+  border-radius: 1rem;
+  background: rgba(20, 20, 20, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(217, 139, 43, 0.35);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  color: #f3f4f6;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  text-align: center;
+  pointer-events: none;
+  opacity: 0;
+  transition:
+    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.35s ease;
+}
+
+.haibo-toast.is-visible {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+.haibo-toast strong {
+  display: block;
+  color: #d98b2b;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}

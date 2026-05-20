@@ -1,0 +1,175 @@
+/**
+ * HAIBO — global mobile stability (no horizontal scroll)
+ */
+
+html {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
+}
+
+body {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+img,
+video,
+svg,
+canvas,
+iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+.haibo-media {
+  width: 100%;
+  max-width: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Prevent 100vw bleed */
+main,
+section,
+footer,
+header,
+nav,
+form,
+article,
+aside,
+.hero,
+.hero-banner,
+.glass,
+.cta-cinematic,
+.safari-search,
+#safaris,
+#detail-root {
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* Grids never exceed viewport */
+.grid,
+[class*='grid-cols'] {
+  min-width: 0;
+  width: 100%;
+}
+
+.grid > *,
+[class*='grid-cols'] > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Flex children shrink */
+.flex,
+[class*='flex'] {
+  min-width: 0;
+}
+
+.flex > * {
+  min-width: 0;
+}
+
+/* Long words / URLs */
+h1,
+h2,
+h3,
+h4,
+p,
+a,
+span,
+li,
+label {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+
+/* Inputs never overflow */
+input,
+select,
+textarea,
+button {
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* Newsletter bar — mobile safe */
+#newsletter-form {
+  max-width: 100%;
+  width: 100%;
+}
+
+#newsletter-form .cta-cinematic__content {
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+#newsletter-form input[type='email'] {
+  flex: 1 1 12rem;
+  min-width: 0;
+  width: auto;
+}
+
+#newsletter-form button {
+  flex: 0 0 auto;
+}
+
+/* Search bar wrapper — clip negative margin bleed */
+#safaris {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* Hero bg scale contained */
+.hero-banner {
+  overflow: hidden;
+  max-width: 100%;
+}
+
+.hero-banner::before {
+  inset: -1px;
+}
+
+/* WhatsApp — no layout shift */
+.whatsapp-float {
+  position: fixed;
+  contain: layout style;
+}
+
+@media (max-width: 767px) {
+  .whatsapp-float.floating {
+    animation: none;
+  }
+
+  /* Disable sticky / fixed inner elements that shift layout */
+  nav.nav-blur {
+    position: fixed;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .rounded-\[40px\],
+  .rounded-\[35px\] {
+    border-radius: 1.25rem !important;
+  }
+
+  .tracking-\[5px\],
+  .tracking-\[4px\] {
+    letter-spacing: 0.18em !important;
+  }
+}

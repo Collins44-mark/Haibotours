@@ -203,23 +203,95 @@ function initNewsletterForm() {
   });
 }
 
+function showHaiboToast(message, title) {
+  let toast = document.getElementById('haibo-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'haibo-toast';
+    toast.className = 'haibo-toast';
+    toast.setAttribute('role', 'status');
+    toast.setAttribute('aria-live', 'polite');
+    document.body.appendChild(toast);
+  }
+
+  toast.innerHTML = title
+    ? `<strong>${title}</strong>${message}`
+    : message;
+
+  toast.classList.add('is-visible');
+  clearTimeout(showHaiboToast._timer);
+  showHaiboToast._timer = setTimeout(() => {
+    toast.classList.remove('is-visible');
+  }, 3800);
+}
+
+function safariSearchRedirectUrl(slug) {
+  const isLocal =
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1' ||
+    window.location.protocol === 'file:';
+  return isLocal ? destinationDetailUrl(slug) : destinationPrettyUrl(slug);
+}
+
 function initSearchBar() {
   const bar = document.getElementById('safari-search');
-  if (!bar || !HAIBO_CONFIG.apiBaseUrl) return;
+  if (!bar || typeof DESTINATIONS === 'undefined') return;
+
+  const destSelect = bar.querySelector('[name="destination"]');
+  if (destSelect && destSelect.tagName === 'SELECT') {
+    destSelect.innerHTML =
+      '<option value="" disabled selected>Select destination</option>' +
+      DESTINATIONS.map(
+        (d) => `<option value="${d.id}">${d.name} — ${d.subtitle}</option>`
+      ).join('');
+  }
+
+  const dateInput = bar.querySelector('[name="travelDate"]');
+  if (dateInput) {
+    dateInput.min = new Date().toISOString().split('T')[0];
+  }
 
   bar.addEventListener('submit', async (e) => {
     e.preventDefault();
     const data = new FormData(bar);
-    try {
-      await submitSearch({
-        destination: data.get('destination'),
-        travelDate: data.get('travelDate') || null,
-        travelers: data.get('travelers') ? Number(data.get('travelers')) : null,
-      });
-      window.location.href = 'destinations.html';
-    } catch {
-      window.location.href = 'destinations.html';
+    const destinationInput = data.get('destination');
+    const slug = resolveDestinationSlug(destinationInput);
+
+    if (!slug) {
+      showHaiboToast('No safari package found', 'HAIBO Tours');
+      return;
     }
+
+    const payload = {
+      destination: slug,
+      travelDate: data.get('travelDate') || null,
+      travelers: data.get('travelers') ? Number(data.get('travelers')) : null,
+    };
+
+    try {
+      sessionStorage.setItem(
+        'haibo_safari_search',
+        JSON.stringify({ ...payload, searchedAt: Date.now() })
+      );
+    } catch {
+      /* ignore */
+    }
+
+    const btn = bar.querySelector('.safari-search__submit');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Searching…';
+    }
+
+    if (HAIBO_CONFIG.apiBaseUrl) {
+      try {
+        await submitSearch(payload);
+      } catch {
+        /* still redirect when destination is valid */
+      }
+    }
+
+    window.location.href = safariSearchRedirectUrl(slug);
   });
 }
 
@@ -283,7 +355,9 @@ function getQueryParam(name) {
 }
 
 function renderDestinationDetail() {
-  const id = getQueryParam('id');
+  const id = typeof getDestinationIdFromLocation === 'function'
+    ? getDestinationIdFromLocation()
+    : getQueryParam('id');
   const dest = getDestinationById(id);
 
   if (!dest) {

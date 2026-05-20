@@ -9,9 +9,7 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
-body {
-  overflow-x: hidden;
-}
+/* overflow-x on html/body — see mobile-fixes.css */
 
 img,
 video {
@@ -314,20 +312,20 @@ p,
 
   /* ── Search form ── */
   #safaris {
-    margin-top: -2rem !important;
+    margin-top: -1.5rem !important;
+    padding-left: max(0.75rem, env(safe-area-inset-left)) !important;
+    padding-right: max(0.75rem, env(safe-area-inset-right)) !important;
   }
 
-  #safari-search {
-    grid-template-columns: 1fr !important;
-    gap: 0.65rem !important;
-    padding: 1.15rem !important;
-    border-radius: 1.25rem !important;
+  .safari-search {
+    padding: 1rem !important;
+    gap: 0.75rem !important;
   }
 
-  #safari-search input,
-  #safari-search button {
-    width: 100%;
-    min-height: 48px;
+  .safari-search__input,
+  .safari-search__select,
+  .safari-search__submit {
+    min-height: 3rem;
     font-size: 1rem;
   }
 

@@ -45,4 +45,8 @@ Set publish directory to **`/frontend`**.
 
 ## Responsive design
 
-Mobile layouts use `frontend/css/responsive.css` plus multi-column gallery and destination grids on phones.
+Mobile layouts use `frontend/css/responsive.css`, `mobile-fixes.css` (no horizontal scroll), and `safari-search.css` on the home page.
+
+## Safari search
+
+On the home page, users pick destination, date, and travelers. Valid destinations redirect to `destination.html?id=…` (local) or `/destinations/slug` on Vercel. Unknown destinations show a toast: **No safari package found**.

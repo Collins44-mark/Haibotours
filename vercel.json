@@ -1,5 +1,9 @@
 {
   "rewrites": [
+    {
+      "source": "/destinations/:slug",
+      "destination": "/frontend/destination.html?id=:slug"
+    },
     { "source": "/", "destination": "/frontend/index.html" },
     { "source": "/(.*)", "destination": "/frontend/$1" }
   ]
