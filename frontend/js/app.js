@@ -409,7 +409,7 @@ function renderDestinationCard(dest) {
       ? window.haiboOptimizeImage(imageUrl, { width: 900 })
       : imageUrl;
   const img = imageUrl
-    ? `<img src="${escapeAttrUrl(imgSrc)}" alt="${alt.replace(/"/g, '&quot;')}" loading="lazy" decoding="async" class="haibo-media dest-card-img w-full h-[380px] md:h-[420px] object-cover" width="900" height="520">`
+    ? `<img src="${escapeAttrUrl(imgSrc)}" alt="${alt.replace(/"/g, '&quot;')}" loading="lazy" decoding="async" class="haibo-media dest-card-img w-full object-cover" width="900" height="600">`
     : '';
   return `
     <a href="${href}" class="destination-card glass rounded-[30px] overflow-hidden">

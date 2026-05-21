@@ -532,7 +532,7 @@ function haiboPaintDestinationCards(containerId, limit) {
       const imageUrl = haiboResolveCardImage(dest);
       const bg = imageUrl.replace(/'/g, '%27');
       const img = imageUrl
-        ? `<img src="${haiboEscapeHtml(imageUrl)}" alt="${haiboEscapeHtml(`${dest.name} safari — ${dest.subtitle}`)}" loading="lazy" decoding="async" class="haibo-media dest-card-img w-full h-[380px] md:h-[420px] object-cover" width="900" height="520">`
+        ? `<img src="${haiboEscapeHtml(imageUrl)}" alt="${haiboEscapeHtml(`${dest.name} safari — ${dest.subtitle}`)}" loading="lazy" decoding="async" class="haibo-media dest-card-img w-full object-cover" width="900" height="600">`
         : '';
       const price = Array.isArray(dest.packages) && dest.packages[0]?.price
         ? dest.packages[0].price

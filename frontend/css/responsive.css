@@ -329,54 +329,7 @@ p,
     font-size: 1rem;
   }
 
-  /* ── Destination cards (2-col, equal height) ── */
-  #home-destinations,
-  #all-destinations {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 0.85rem !important;
-    align-items: stretch;
-  }
-
-  .destination-card {
-    border-radius: 1.25rem !important;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .destination-card .dest-card-media {
-    position: relative;
-    aspect-ratio: 4 / 5;
-    flex-shrink: 0;
-    overflow: hidden;
-  }
-
-  .destination-card .dest-card-media img {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100% !important;
-    min-height: 0 !important;
-    object-fit: cover;
-    object-position: center;
-  }
-
-  .destination-card h3 {
-    font-size: 0.95rem !important;
-    line-height: 1.25;
-  }
-
-  .destination-card .text-gray-300,
-  .destination-card .text-gray-400 {
-    font-size: 0.7rem;
-    line-height: 1.35;
-  }
-
-  .destination-card .absolute.bottom-6 {
-    bottom: 0.65rem !important;
-    left: 0.65rem !important;
-    right: 0.65rem !important;
-  }
+  /* Destination & package cards — see cards-mobile.css */
 
   /* ── Home gallery preview ── */
   #gallery .gallery.grid {
@@ -723,12 +676,6 @@ p,
   #all-destinations {
     grid-template-columns: repeat(2, 1fr) !important;
     gap: 1.25rem !important;
-  }
-
-  .destination-card .dest-card-media img {
-    height: 280px !important;
-    min-height: 280px !important;
-    object-fit: cover;
   }
 
   #gallery .gallery.grid {

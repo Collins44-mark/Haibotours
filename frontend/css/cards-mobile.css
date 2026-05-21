@@ -1,0 +1,298 @@
+/**
+ * HAIBO — destination & package cards (mobile / tablet proportions)
+ * Load after responsive.css. Desktop (1025px+) unchanged.
+ */
+
+/* ─── Destination cards: mobile-first media ─── */
+@media (max-width: 1024px) {
+  .destination-card .dest-card-media {
+    min-height: 0 !important;
+    max-height: none;
+    aspect-ratio: 4 / 3;
+    width: 100%;
+    background-size: cover;
+    background-position: center;
+  }
+
+  .destination-card .dest-card-media img,
+  .destination-card .dest-card-media .dest-card-img {
+    position: absolute;
+    inset: 0;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    object-fit: cover;
+    object-position: center;
+  }
+}
+
+@media (max-width: 767px) {
+  #home-destinations,
+  #all-destinations {
+    gap: 0.75rem !important;
+    align-items: stretch;
+  }
+
+  .destination-card {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    min-height: 0;
+    border-radius: 1.1rem !important;
+  }
+
+  .destination-card .dest-card-media {
+    aspect-ratio: 3 / 2;
+    flex: 0 0 auto;
+    max-height: 10.5rem;
+  }
+
+  .destination-card .dest-card-media .overlay-dark {
+    background: linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.05) 0%,
+      rgba(0, 0, 0, 0.55) 55%,
+      rgba(0, 0, 0, 0.88) 100%
+    );
+  }
+
+  .destination-card .absolute.bottom-6 {
+    position: absolute !important;
+    bottom: 0.5rem !important;
+    left: 0.5rem !important;
+    right: 0.5rem !important;
+    padding: 0;
+  }
+
+  .destination-card .absolute.bottom-6 p.text-xs {
+    font-size: 0.6rem !important;
+    letter-spacing: 0.12em !important;
+    margin-bottom: 0.15rem !important;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .destination-card h3 {
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+    line-height: 1.2 !important;
+    margin-bottom: 0.1rem !important;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .destination-card .absolute.bottom-6 .text-gray-300 {
+    font-size: 0.68rem !important;
+    line-height: 1.25 !important;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .destination-card .absolute.bottom-6 .text-gray-400,
+  .destination-card .absolute.bottom-6 .text-sm {
+    font-size: 0.62rem !important;
+    margin-top: 0.25rem !important;
+    line-height: 1.2;
+  }
+
+  /* Package cards — compact */
+  .cta-cinematic.package-card {
+    min-height: 0 !important;
+    border-radius: 1.15rem !important;
+  }
+
+  .cta-cinematic.package-card .cta-cinematic__content {
+    padding: 1.15rem 1.1rem !important;
+    min-height: 0 !important;
+    gap: 0.35rem;
+  }
+
+  .cta-cinematic.package-card h3 {
+    font-size: 1.1rem !important;
+    line-height: 1.25 !important;
+    margin-bottom: 0.25rem !important;
+  }
+
+  .cta-cinematic.package-card .text-4xl {
+    font-size: 1.5rem !important;
+    line-height: 1.1 !important;
+    margin-bottom: 0.15rem !important;
+  }
+
+  .cta-cinematic.package-card .text-gray-300 {
+    font-size: 0.8rem !important;
+    margin-bottom: 0.35rem !important;
+  }
+
+  .cta-cinematic.package-card .text-sm.text-gray-400 {
+    font-size: 0.7rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  .cta-cinematic.package-card ul {
+    margin-bottom: 0.75rem !important;
+    font-size: 0.78rem !important;
+  }
+
+  .cta-cinematic.package-card ul li {
+    line-height: 1.35;
+  }
+
+  .cta-cinematic.package-card .btn-main {
+    padding: 0.7rem 1rem !important;
+    font-size: 0.85rem !important;
+    margin-top: auto;
+  }
+
+  .grid.md\:grid-cols-2.lg\:grid-cols-3 {
+    gap: 1rem !important;
+  }
+
+  /* Destination detail — room for WhatsApp */
+  #detail-root section:last-of-type {
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  #detail-root .page-hero .page-heading {
+    font-size: clamp(1.65rem, 7vw, 2.25rem) !important;
+  }
+
+  #detail-root .page-hero .text-xl {
+    font-size: 0.95rem !important;
+  }
+
+  #detail-root .page-hero .leading-8 {
+    font-size: 0.85rem !important;
+    line-height: 1.55 !important;
+  }
+
+  .dest-experience-card {
+    padding: 1rem !important;
+  }
+
+  .dest-experience-card h4 {
+    font-size: 0.95rem !important;
+  }
+}
+
+/* Small phones: single column destinations */
+@media (max-width: 479px) {
+  #home-destinations,
+  #all-destinations {
+    grid-template-columns: 1fr !important;
+    gap: 0.85rem !important;
+  }
+
+  .destination-card .dest-card-media {
+    aspect-ratio: 16 / 10;
+    max-height: 11rem;
+  }
+}
+
+/* Medium phones: balanced 2-column */
+@media (min-width: 480px) and (max-width: 767px) {
+  #home-destinations,
+  #all-destinations {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .destination-card .dest-card-media {
+    aspect-ratio: 4 / 5;
+    max-height: 9.5rem;
+  }
+
+  .destination-card h3 {
+    font-size: 0.82rem !important;
+    -webkit-line-clamp: 2;
+  }
+}
+
+/* Tablet destination height cap */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .destination-card .dest-card-media {
+    aspect-ratio: 4 / 3;
+    min-height: 0 !important;
+    max-height: 16rem;
+  }
+
+  .destination-card .dest-card-media img,
+  .destination-card .dest-card-media .dest-card-img {
+    position: absolute;
+    inset: 0;
+    height: 100% !important;
+    min-height: 0 !important;
+  }
+
+  .cta-cinematic.package-card {
+    min-height: 0 !important;
+  }
+
+  .cta-cinematic.package-card .cta-cinematic__content {
+    padding: 1.35rem !important;
+  }
+}
+
+/* WhatsApp — never cover last CTAs / package buttons */
+@media (max-width: 767px) {
+  body {
+    padding-bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .whatsapp-float {
+    bottom: max(0.85rem, env(safe-area-inset-bottom, 0.85rem)) !important;
+    right: max(0.85rem, env(safe-area-inset-right, 0.85rem)) !important;
+    width: 3rem !important;
+    height: 3rem !important;
+    z-index: 45;
+  }
+
+  main section.py-20:last-child,
+  #detail-root > section:last-child {
+    scroll-margin-bottom: 5rem;
+  }
+
+  /* Gallery page cards */
+  .gallery-grid-photos,
+  .gallery-grid-videos {
+    gap: 0.65rem !important;
+  }
+
+  .gallery-media-card {
+    border-radius: 0.85rem !important;
+    overflow: hidden;
+  }
+
+  .gallery-media-card img,
+  .gallery-media-card video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+  }
+}
+
+/* Admin login on small screens */
+@media (max-width: 767px) {
+  #admin-login-gate .admin-login-card {
+    padding: 1.35rem 1.15rem;
+    max-width: 100%;
+  }
+
+  .admin-card-item {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .admin-thumb {
+    width: 3rem;
+    height: 3rem;
+    object-fit: cover;
+  }
+}

@@ -186,6 +186,12 @@
   min-height: clamp(22rem, 52vh, 28rem);
 }
 
+@media (max-width: 1024px) {
+  .cta-cinematic.package-card {
+    min-height: 0;
+  }
+}
+
 .cta-cinematic.package-card .cta-cinematic__content {
   min-height: 100%;
   display: flex;

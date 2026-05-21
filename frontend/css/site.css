@@ -115,7 +115,6 @@ body {
 .destination-card .dest-card-media {
   position: relative;
   overflow: hidden;
-  min-height: 380px;
   background-color: #141414;
   background-size: cover;
   background-position: center;
@@ -126,13 +125,12 @@ body {
 .destination-card .dest-card-media .dest-card-img {
   display: block;
   width: 100%;
-  min-height: 380px;
-  height: 380px;
   object-fit: cover;
   object-position: center;
 }
 
-@media (min-width: 768px) {
+/* Desktop-only tall cards (mobile uses cards-mobile.css) */
+@media (min-width: 1025px) {
   .destination-card .dest-card-media {
     min-height: 420px;
   }
