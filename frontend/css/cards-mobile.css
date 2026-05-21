@@ -330,12 +330,15 @@
 
 /* WhatsApp + safe area */
 @media (max-width: 767px) {
-  body {
+  body:not(:has(footer.site-footer)) {
     padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  body {
     overflow-x: hidden;
   }
 
-  .whatsapp-float {
+  body:not(:has(footer.site-footer)) .whatsapp-float {
     bottom: max(0.75rem, env(safe-area-inset-bottom, 0.75rem)) !important;
     right: max(0.75rem, env(safe-area-inset-right, 0.75rem)) !important;
     width: 2.85rem !important;

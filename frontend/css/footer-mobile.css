@@ -1,0 +1,255 @@
+/**
+ * HAIBO Tours — footer mobile & tablet polish
+ * Desktop (1025px+): unchanged — Tailwind layout preserved.
+ */
+
+@media (max-width: 1024px) {
+  footer.site-footer {
+    padding-top: 3rem !important;
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)) !important;
+    padding-left: clamp(1.15rem, 4.5vw, 1.75rem) !important;
+    padding-right: clamp(1.15rem, 4.5vw, 1.75rem) !important;
+    overflow-x: hidden;
+  }
+
+  footer.site-footer .site-footer__grid,
+  footer.site-footer .grid.md\:grid-cols-3 {
+    grid-template-columns: 1fr !important;
+    gap: 2rem !important;
+    text-align: left !important;
+    align-items: start;
+    justify-items: start;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* Brand */
+  footer.site-footer .site-footer__brand h2 {
+    font-size: clamp(1.5rem, 5vw, 1.85rem) !important;
+    margin-bottom: 0.6rem !important;
+    letter-spacing: 0.04em;
+  }
+
+  footer.site-footer .site-footer__brand p {
+    font-size: 0.9rem !important;
+    line-height: 1.65 !important;
+    max-width: 22rem;
+    margin: 0;
+  }
+
+  /* Section labels — luxury hierarchy */
+  footer.site-footer .site-footer__heading {
+    font-size: 0.7rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.16em !important;
+    text-transform: uppercase !important;
+    color: #d98b2b !important;
+    margin-bottom: 0.85rem !important;
+    line-height: 1.3;
+  }
+
+  /* Quick links — left-aligned, tight stack */
+  footer.site-footer .site-footer__links-col {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  footer.site-footer .site-footer__links,
+  footer.site-footer [data-haibo-footer-links] {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    gap: 0.45rem !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100%;
+    text-align: left !important;
+  }
+
+  footer.site-footer .site-footer__links p,
+  footer.site-footer [data-haibo-footer-links] p {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: auto !important;
+  }
+
+  footer.site-footer .site-footer__link,
+  footer.site-footer .site-footer__links a,
+  footer.site-footer [data-haibo-footer-links] a {
+    display: block;
+    font-size: 0.92rem !important;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.72) !important;
+    text-decoration: none;
+    padding: 0.15rem 0;
+    transition: color 0.25s ease;
+  }
+
+  footer.site-footer .site-footer__link:hover,
+  footer.site-footer .site-footer__links a:hover {
+    color: #fff !important;
+  }
+
+  /* Newsletter — compact inline bar */
+  footer.site-footer .site-footer__newsletter {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  footer.site-footer #newsletter-form.site-footer__newsletter-form,
+  footer.site-footer #newsletter-form {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 0 !important;
+    border-radius: 0.75rem !important;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 6px 28px rgba(0, 0, 0, 0.35);
+    padding: 0.2rem !important;
+  }
+
+  footer.site-footer #newsletter-form .cta-cinematic__bg,
+  footer.site-footer #newsletter-form .cta-cinematic__glow {
+    opacity: 0.85;
+  }
+
+  footer.site-footer #newsletter-form .cta-cinematic__content {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 0 !important;
+    width: 100%;
+    min-width: 0;
+    padding: 0 !important;
+  }
+
+  footer.site-footer #newsletter-form input[type='email'] {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    width: auto !important;
+    min-height: 0 !important;
+    height: auto !important;
+    padding: 0.6rem 0.85rem !important;
+    font-size: 0.875rem !important;
+    line-height: 1.35 !important;
+    border-radius: 0.5rem 0 0 0.5rem !important;
+    background: rgba(0, 0, 0, 0.25) !important;
+  }
+
+  footer.site-footer #newsletter-form input[type='email']::placeholder {
+    font-size: 0.82rem;
+    color: rgba(156, 163, 175, 0.9);
+  }
+
+  footer.site-footer #newsletter-form button[type='submit'] {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    padding: 0.6rem 1rem !important;
+    font-size: 0.78rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border-radius: 0.5rem !important;
+    white-space: nowrap;
+    line-height: 1.2;
+  }
+
+  footer.site-footer .newsletter-message {
+    margin-top: 0.5rem;
+    text-align: left !important;
+    font-size: 0.75rem;
+  }
+
+  /* Bottom bar */
+  footer.site-footer .site-footer__bottom,
+  footer.site-footer > .flex.justify-between {
+    margin-top: 2rem !important;
+    padding-top: 1.15rem !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    text-align: left !important;
+    gap: 0.45rem !important;
+    width: 100%;
+  }
+
+  footer.site-footer .site-footer__bottom p {
+    margin: 0;
+    font-size: 0.78rem;
+    line-height: 1.5;
+  }
+}
+
+/* Tablet — two columns + full-width newsletter */
+@media (min-width: 768px) and (max-width: 1024px) {
+  footer.site-footer .site-footer__grid,
+  footer.site-footer .grid.md\:grid-cols-3 {
+    grid-template-columns: 1fr 1fr !important;
+    column-gap: 2.5rem !important;
+    row-gap: 2rem !important;
+  }
+
+  footer.site-footer .site-footer__newsletter {
+    grid-column: 1 / -1;
+    max-width: 26rem;
+  }
+
+  footer.site-footer #newsletter-form {
+    max-width: 26rem;
+  }
+}
+
+/* Phone — extra clearance for WhatsApp float */
+@media (max-width: 767px) {
+  body:has(footer.site-footer) {
+    padding-bottom: 0 !important;
+  }
+
+  footer.site-footer {
+    padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  footer.site-footer .site-footer__grid,
+  footer.site-footer .grid.md\:grid-cols-3 {
+    gap: 1.75rem !important;
+  }
+
+  footer.site-footer .site-footer__newsletter {
+    padding-bottom: 0.25rem;
+  }
+
+  footer.site-footer #newsletter-form input[type='email'] {
+    padding: 0.55rem 0.75rem !important;
+    font-size: 0.84rem !important;
+  }
+
+  footer.site-footer #newsletter-form button[type='submit'] {
+    padding: 0.55rem 0.85rem !important;
+  }
+
+  .whatsapp-float {
+    bottom: max(1rem, env(safe-area-inset-bottom, 1rem)) !important;
+    right: max(0.85rem, env(safe-area-inset-right, 0.85rem)) !important;
+    width: 2.9rem !important;
+    height: 2.9rem !important;
+    z-index: 45;
+  }
+
+  .whatsapp-float svg {
+    width: 1.4rem !important;
+    height: 1.4rem !important;
+  }
+}
+
+/* Very small phones */
+@media (max-width: 374px) {
+  footer.site-footer #newsletter-form button[type='submit'] {
+    padding: 0.55rem 0.7rem !important;
+    font-size: 0.72rem !important;
+  }
+}

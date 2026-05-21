@@ -436,9 +436,7 @@ p,
   #contact-form input,
   #contact-form select,
   #contact-form textarea,
-  #contact-form button,
-  #newsletter-form input,
-  #newsletter-form button {
+  #contact-form button {
     width: 100%;
     min-height: 48px;
     font-size: 1rem;
@@ -535,35 +533,9 @@ p,
     width: 100%;
   }
 
-  /* ── Footer ── */
-  footer .grid.md\:grid-cols-3 {
-    grid-template-columns: 1fr !important;
-    gap: 1.75rem !important;
-    text-align: center;
-  }
+  /* ── Footer: see css/footer-mobile.css ── */
 
-  footer .flex.justify-between {
-    flex-direction: column;
-    text-align: center;
-    gap: 0.75rem;
-  }
-
-  #newsletter-form .cta-cinematic__content {
-    flex-direction: column !important;
-    gap: 0.65rem !important;
-  }
-
-  #newsletter-form {
-    border-radius: 1.15rem !important;
-    padding: 0.35rem !important;
-  }
-
-  #newsletter-form input,
-  #newsletter-form button {
-    border-radius: 0.85rem !important;
-  }
-
-  /* ── WhatsApp float ── */
+  /* ── WhatsApp float (base mobile; footer clearance in footer-mobile.css) ── */
   .whatsapp-float {
     bottom: max(1rem, env(safe-area-inset-bottom, 1rem));
     right: max(1rem, env(safe-area-inset-right, 1rem));

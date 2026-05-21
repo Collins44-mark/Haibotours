@@ -172,7 +172,10 @@ function renderFooter() {
     const box = document.querySelector('[data-haibo-footer-links]');
     if (box) {
       box.innerHTML = links
-        .map((l) => `<p><a href="${l.href}" class="hover:text-white transition">${l.label}</a></p>`)
+        .map(
+          (l) =>
+            `<a href="${l.href}" class="site-footer__link hover:text-white transition">${l.label}</a>`
+        )
         .join('');
     }
   }

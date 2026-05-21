@@ -23,6 +23,7 @@
   <link rel="stylesheet" href="css/safari-search.css">
   <link rel="stylesheet" href="css/weather-widget.css">
   <link rel="stylesheet" href="css/cta-cinematic.css">
+  <link rel="stylesheet" href="css/footer-mobile.css">
   <link rel="stylesheet" href="css/seo-perf.css">
 </head>
 
@@ -335,11 +336,11 @@
   </main>
 
   <!-- FOOTER -->
-  <footer class="bg-[#0b0b0b] px-8 md:px-20 py-20">
+  <footer class="site-footer bg-[#0b0b0b] px-8 md:px-20 py-20">
 
-    <div class="grid md:grid-cols-3 gap-12">
+    <div class="site-footer__grid grid md:grid-cols-3 gap-12">
 
-      <div>
+      <div class="site-footer__brand">
 
         <h2 class="text-3xl font-bold mb-4" data-haibo-footer-brand>HAIBO</h2>
 
@@ -349,27 +350,27 @@
 
       </div>
 
-      <div>
+      <div class="site-footer__links-col">
 
-        <h3 class="text-2xl font-semibold mb-5">Quick Links</h3>
+        <h3 class="site-footer__heading text-2xl font-semibold mb-5">Quick Links</h3>
 
-        <div class="space-y-3 text-gray-400" data-haibo-footer-links>
+        <nav class="site-footer__links text-gray-400" data-haibo-footer-links aria-label="Quick links">
 
-          <p><a href="#about" class="hover:text-white transition">About Us</a></p>
-          <p><a href="destinations.html" class="hover:text-white transition">Destinations</a></p>
-          <p><a href="gallery.html" class="hover:text-white transition">Gallery</a></p>
-          <p><a href="#safaris" class="hover:text-white transition">Safaris</a></p>
-          <p><a href="contact.html" class="hover:text-white transition">Contact</a></p>
+          <a href="#about" class="site-footer__link hover:text-white transition">About Us</a>
+          <a href="destinations.html" class="site-footer__link hover:text-white transition">Destinations</a>
+          <a href="gallery.html" class="site-footer__link hover:text-white transition">Gallery</a>
+          <a href="#safaris" class="site-footer__link hover:text-white transition">Safaris</a>
+          <a href="contact.html" class="site-footer__link hover:text-white transition">Contact</a>
 
-        </div>
+        </nav>
 
       </div>
 
-      <div>
+      <div class="site-footer__newsletter">
 
-        <h3 class="text-2xl font-semibold mb-5">Newsletter</h3>
+        <h3 class="site-footer__heading text-2xl font-semibold mb-5">Newsletter</h3>
 
-        <form id="newsletter-form" class="cta-cinematic cta-cinematic--compact rounded-full overflow-hidden">
+        <form id="newsletter-form" class="cta-cinematic cta-cinematic--compact site-footer__newsletter-form rounded-full overflow-hidden">
 
           <div class="cta-cinematic__bg cta-bg-misty" aria-hidden="true"></div>
           <div class="cta-cinematic__overlay" aria-hidden="true"></div>
@@ -394,7 +395,7 @@
 
     </div>
 
-    <div class="border-t border-white/10 mt-16 pt-8 text-gray-500 text-sm flex justify-between flex-wrap gap-5">
+    <div class="site-footer__bottom border-t border-white/10 mt-16 pt-8 text-gray-500 text-sm flex justify-between flex-wrap gap-5">
 
       <p data-haibo-footer-copy>© 2026 HAIBO Tours & Safaris</p>
 
