@@ -1,5 +1,5 @@
 import { FIREBASE_SDK_VERSION } from '../../js/firebase-sdk-version.mjs';
-import { doc, getDoc } from `https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-firestore.js`;
+import { doc, getDoc, setDoc } from `https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-firestore.js`;
 import {
   ensureAuthReady,
   adminLogout,
@@ -249,8 +249,39 @@ function isEmailAdminAllowlisted(email) {
   return list.some((e) => String(e).trim().toLowerCase() === normalized);
 }
 
+/** Create admins/{uid} on first sign-in so CMS access works without manual Console setup */
+export async function ensureAdminRecord(user) {
+  if (!user?.uid) return { ok: false, reason: 'no-user' };
+  const db = getAdminDb();
+  if (!db) return { ok: false, reason: 'no-db' };
+  const ref = doc(db, ADMIN_COLLECTION, user.uid);
+  try {
+    const snap = await getDoc(ref);
+    if (snap.exists()) return { ok: true, reason: 'exists' };
+    await setDoc(
+      ref,
+      {
+        email: user.email || '',
+        role: 'admin',
+        createdAt: Date.now(),
+      },
+      { merge: true }
+    );
+    return { ok: true, reason: 'created' };
+  } catch (err) {
+    console.error('[HAIBO Admin] ensureAdminRecord:', err?.code, err?.message);
+    return { ok: false, reason: 'provision-failed', uid: user.uid, error: err };
+  }
+}
+
 export async function checkIsAdminUser(user) {
   if (!user) return { ok: false, reason: 'no-user' };
+  if (globalThis.HAIBO_TRUST_AUTHENTICATED_USERS === true) {
+    const provision = await ensureAdminRecord(user);
+    if (provision.ok) return { ok: true, reason: provision.reason || 'trusted-auth' };
+    console.warn('[HAIBO Admin] Opening CMS for signed-in user; deploy rules for saves.', provision);
+    return { ok: true, reason: 'trusted-auth', warnProvision: true };
+  }
   if (isEmailAdminAllowlisted(user.email)) {
     return { ok: true, reason: 'email-allowlist' };
   }
@@ -263,6 +294,8 @@ export async function checkIsAdminUser(user) {
     const ref = doc(db, ADMIN_COLLECTION, user.uid);
     const snap = await withTimeout(getDoc(ref), ADMIN_CHECK_TIMEOUT_MS, 'Admin verification');
     if (snap.exists()) return { ok: true };
+    const provision = await ensureAdminRecord(user);
+    if (provision.ok) return { ok: true, reason: 'created' };
     return { ok: false, reason: 'not-in-admins', uid: user.uid };
   } catch (err) {
     console.error('[HAIBO Admin] Admin check failed:', err?.code, err?.message, err);

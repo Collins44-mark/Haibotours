@@ -36,6 +36,9 @@ const FIRESTORE_ADMIN_COLLECTION = 'admins';
  */
 const HAIBO_ADMIN_EMAIL_ALLOWLIST = [];
 
+/** If true, any signed-in Firebase user opens the CMS (still needs admins/{uid} for saves unless auto-provisioned). */
+const HAIBO_TRUST_AUTHENTICATED_USERS = true;
+
 const FIREBASE_SDK_VERSION = '10.14.1';
 
 function isFirebaseConfigured() {
@@ -48,6 +51,7 @@ globalThis.CLOUDINARY_CONFIG = CLOUDINARY_CONFIG;
 globalThis.FIRESTORE_PATHS = FIRESTORE_PATHS;
 globalThis.FIRESTORE_ADMIN_COLLECTION = FIRESTORE_ADMIN_COLLECTION;
 globalThis.HAIBO_ADMIN_EMAIL_ALLOWLIST = HAIBO_ADMIN_EMAIL_ALLOWLIST;
+globalThis.HAIBO_TRUST_AUTHENTICATED_USERS = HAIBO_TRUST_AUTHENTICATED_USERS;
 globalThis.FIREBASE_SDK_VERSION = FIREBASE_SDK_VERSION;
 globalThis.isFirebaseConfigured = isFirebaseConfigured;
 

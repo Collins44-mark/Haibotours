@@ -25,10 +25,13 @@ service cloud.firestore {
       ];
     }
 
-    // Admin allowlist — readable only by the signed-in user for their own doc
+    // Admin allowlist — each signed-in user may create/read their own admins/{uid} doc
     match /admins/{userId} {
       allow get: if isSignedIn() && request.auth.uid == userId;
-      allow list, create, update, delete: if false;
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isSignedIn() && request.auth.uid == userId;
+      allow delete: if false;
+      allow list: if false;
     }
 
     // Public website: anyone can read; only admins can write

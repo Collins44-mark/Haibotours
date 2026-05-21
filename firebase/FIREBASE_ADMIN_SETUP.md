@@ -7,19 +7,13 @@
 3. Enable **Firestore** (production mode).
 4. Project settings → Your apps → Web app → copy config into `frontend/js/firebase-config.js`.
 
-5. **Authorize your admin user** (required for writes):
+5. **Admin access** (automatic after rules deploy):
 
-   - Sign in once at `/admin/login.html` (or create the user in Authentication).
-   - Firebase Console → Authentication → copy the user **UID**.
-   - Firestore → **Start collection** → Collection ID: `admins` → Document ID: **paste UID** → fields (example):
+   - Create the user under **Authentication** → Email/Password.
+   - Deploy `firebase/firestore.rules` (allows each user to create `admins/{their-uid}` on first sign-in).
+   - Sign in at `/admin` — the app creates `admins/{uid}` automatically.
 
-   | Field | Type | Example |
-   |-------|------|---------|
-   | `email` | string | `you@example.com` |
-   | `role` | string | `admin` |
-   | `createdAt` | number | `1715000000000` |
-
-   Only UIDs with a document in `admins/{uid}` can write CMS data. The dashboard checks this before allowing access.
+   Manual option: Firestore → collection `admins` → document ID = Auth **UID** (empty doc is OK).
 
 6. Deploy security rules (from repo root):
 
