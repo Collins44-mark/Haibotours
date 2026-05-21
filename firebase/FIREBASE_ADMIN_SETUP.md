@@ -30,8 +30,10 @@ firebase deploy --only firestore:rules
 Rules summary (`firebase/firestore.rules`):
 
 - **Read:** all CMS collections are public (website visitors).
-- **Write:** only authenticated users with `admins/{uid}` document.
-- **`admins` collection:** no client writes; manage via Firebase Console only.
+- **Write:** only authenticated users with `admins/{uid}` document (`admin: "admin"` or `role: "admin"`).
+- **`admins` collection:** each signed-in user may read/create/update **only** their own `admins/{uid}` doc.
+
+**If you see “Firestore blocked reading admins/…”** → rules are not published yet. See [PUBLISH_RULES.md](./PUBLISH_RULES.md).
 
 ## 2. Cloudinary
 

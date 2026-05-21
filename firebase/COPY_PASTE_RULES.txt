@@ -1,3 +1,5 @@
+COPY EVERYTHING BELOW into Firebase Console → Firestore → Rules → Publish
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -6,7 +8,6 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    /** CMS write access — requires admins/{uid} with admin privilege */
     function isAdmin() {
       return isSignedIn()
         && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
@@ -30,7 +31,6 @@ service cloud.firestore {
       ];
     }
 
-    // Admin allowlist — signed-in user may read/write ONLY their own admins/{uid} doc
     match /admins/{userId} {
       allow read: if isSignedIn() && request.auth.uid == userId;
       allow create: if isSignedIn() && request.auth.uid == userId;
@@ -39,7 +39,6 @@ service cloud.firestore {
       allow list: if false;
     }
 
-    // Public CMS read + backup: own admins/{uid} readable when signed in
     match /{collection}/{document} {
       allow read: if isContentCollection(collection)
         || (isSignedIn() && collection == 'admins' && request.auth.uid == document);
@@ -51,3 +50,8 @@ service cloud.firestore {
     }
   }
 }
+
+YOUR ADMIN DOCUMENT (after publishing rules):
+  Collection: admins
+  Document ID: 2Fon2CNGTfSHF84miZ4GsKGSc6w1
+  Fields: admin = "admin"  (string), role = "admin"  (string)

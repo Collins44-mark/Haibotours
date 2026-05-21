@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex, nofollow" />
   <title>HAIBO Admin Dashboard</title>
+  <link rel="icon" href="/assets/logo/logo.png" type="image/png" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -358,9 +359,12 @@
       var gate = document.getElementById('admin-login-gate');
       var loading = document.getElementById('admin-auth-loading');
       if (gate) gate.hidden = false;
-      if (loading) loading.hidden = true;
+      if (loading) {
+        loading.hidden = true;
+        loading.setAttribute('aria-busy', 'false');
+      }
       document.body.classList.add('admin-login-page', 'admin-login-ready');
-      document.body.classList.remove('admin-auth-pending');
+      document.body.classList.remove('admin-authenticated', 'admin-auth-pending', 'admin-signing-in');
 
       /* Never expose credentials in URL (blocks native GET submit before modules load) */
       var qs = new URLSearchParams(window.location.search);
@@ -368,13 +372,15 @@
         window.history.replaceState(null, '', window.location.pathname + window.location.hash);
       }
 
+      /* Block native GET submit only — do not stopPropagation (breaks module login handler) */
       var form = document.getElementById('login-form');
       if (form) {
+        form.setAttribute('method', 'post');
+        form.setAttribute('action', '#');
         form.addEventListener(
           'submit',
           function (e) {
             e.preventDefault();
-            e.stopPropagation();
           },
           true
         );

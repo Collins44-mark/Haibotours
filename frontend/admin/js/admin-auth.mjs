@@ -1,8 +1,7 @@
 /**
  * HAIBO Admin — auth session, Firestore admin verify, redirects (with debug logs).
  */
-import { FIREBASE_SDK_VERSION } from '../../js/firebase-sdk-version.mjs';
-import { doc, getDoc } from `https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-firestore.js`;
+import { doc, getDoc, setDoc } from '../../js/firebase-cdn.mjs';
 import {
   ensureAuthReady,
   adminLogin,
@@ -68,7 +67,35 @@ export async function verifyAdminAccess(user) {
   logAuth('Firestore admin check started', path);
 
   try {
+    /* Ensure Auth token is attached to Firestore requests */
+    try {
+      await user.getIdToken(true);
+    } catch (tokenErr) {
+      logAuth('auth token refresh warning', tokenErr?.message);
+    }
+
     const ref = doc(db, ADMIN_COLLECTION, user.uid);
+
+    /* Create admins/{uid} on first sign-in (requires published firestore.rules) */
+    try {
+      const existing = await withTimeout(getDoc(ref), ADMIN_VERIFY_TIMEOUT_MS, 'Admin doc lookup');
+      if (!existing.exists()) {
+        await setDoc(
+          ref,
+          {
+            email: user.email || '',
+            admin: 'admin',
+            role: 'admin',
+            createdAt: Date.now(),
+          },
+          { merge: true }
+        );
+        logAuth('admin doc auto-created', user.uid);
+      }
+    } catch (provisionErr) {
+      logAuth('admin doc provision skipped', provisionErr?.code, provisionErr?.message);
+    }
+
     const snap = await withTimeout(getDoc(ref), ADMIN_VERIFY_TIMEOUT_MS, 'Firestore admin check');
 
     const exists = snap.exists();
@@ -206,9 +233,9 @@ export function redirectIfNeeded(wantDashboard) {
   }
 
   if (isUnifiedAdminSpa() && wantDashboard) {
-    window.location.assign(target);
-    logAuth('redirect status', 'assign dashboard', target);
-    return true;
+    window.history.replaceState(null, '', target);
+    logAuth('redirect status', 'SPA dashboard URL', target);
+    return false;
   }
 
   if (isUnifiedAdminSpa() && !wantDashboard) {
@@ -222,7 +249,9 @@ export function redirectIfNeeded(wantDashboard) {
   return true;
 }
 
-/** After login: go to dashboard URL (full navigation in prod avoids SPA stuck state). */
+/**
+ * Update URL to dashboard without reloading (keeps dashboard visible after login).
+ */
 export function completeLoginRedirect() {
   const dashPath = resolveDashboardPath();
   const current = window.location.pathname.replace(/\/$/, '') || '/';
@@ -235,14 +264,14 @@ export function completeLoginRedirect() {
     return;
   }
 
-  if (isUnifiedAdminSpa() && (isLoginPage() || current.includes('admin-login'))) {
-    window.location.assign(dashPath);
-    logAuth('redirect status', 'assign', dashPath);
+  if (isUnifiedAdminSpa()) {
+    window.history.replaceState(null, '', dashPath);
+    logAuth('redirect completed (SPA replaceState)', dashPath);
     return;
   }
 
   window.location.href = dashPath;
-  logAuth('redirect completed', dashPath);
+  logAuth('redirect completed (navigation)', dashPath);
 }
 
 export function attachAuthListener({ onSignedIn, onSignedOut }) {

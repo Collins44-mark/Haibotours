@@ -74,17 +74,25 @@ body.admin-login-page .admin-login-wrap {
   pointer-events: auto;
 }
 
-body.admin-login-page #admin-auth-loading {
+body.admin-login-page #admin-auth-loading[hidden] {
   display: none;
 }
 
-body.admin-auth-pending.admin-login-page .admin-login-wrap {
-  visibility: visible;
-  pointer-events: auto;
+body.admin-login-page #admin-auth-loading:not([hidden]) {
+  display: flex;
+  z-index: 10002;
 }
 
-body.admin-auth-pending.admin-login-page #admin-auth-loading {
-  display: none;
+/* Sign-in only: overlay spinner (login form stays visible on initial page load) */
+body.admin-signing-in.admin-login-page:not(.admin-authenticated) .admin-login-wrap {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+body.admin-signing-in #admin-auth-loading:not([hidden]) {
+  display: flex;
+  z-index: 10002;
 }
 
 body.admin-login-ready.admin-login-page .admin-login-wrap {

@@ -1,15 +1,7 @@
 /**
  * Firebase modular SDK — single app instance for site + admin
  */
-import { FIREBASE_SDK_VERSION } from './firebase-sdk-version.mjs';
-import { initializeApp, getApps, getApp } from `https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-app.js`;
-import { getFirestore } from `https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-firestore.js`;
-import {
-  getAuth,
-  initializeAuth,
-  setPersistence,
-  browserLocalPersistence,
-} from `https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-auth.js`;
+import { initializeApp, getApps, getApp, getFirestore, getAuth, initializeAuth, setPersistence, browserLocalPersistence } from './firebase-cdn.mjs';
 
 const FIREBASE_CONFIG = globalThis.FIREBASE_CONFIG;
 function isFirebaseConfigured() {
@@ -74,9 +66,18 @@ export function getHaiboAuth() {
   return auth;
 }
 
-export function waitForAuthPersistence() {
+export function waitForAuthPersistence(timeoutMs = 5000) {
   getHaiboAuth();
-  return persistenceReady ?? Promise.resolve();
+  const p = persistenceReady ?? Promise.resolve();
+  return Promise.race([
+    p,
+    new Promise((resolve) => {
+      setTimeout(() => {
+        console.warn('[HAIBO] Auth persistence wait timed out — continuing');
+        resolve();
+      }, timeoutMs);
+    }),
+  ]);
 }
 
 function waitAuthStateReady(authInstance, timeoutMs) {

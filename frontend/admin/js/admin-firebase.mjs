@@ -7,12 +7,7 @@ import {
   getHaiboAuth,
   ensureHaiboAuthReady,
 } from '../../js/firebase-app.mjs';
-import { FIREBASE_SDK_VERSION } from '../../js/firebase-sdk-version.mjs';
-import {
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged,
-} from `https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-auth.js`;
+import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from '../../js/firebase-cdn.mjs';
 import {
   withTimeout,
   LOGIN_REQUEST_TIMEOUT_MS,

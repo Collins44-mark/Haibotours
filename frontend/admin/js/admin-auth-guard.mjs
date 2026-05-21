@@ -1,5 +1,4 @@
-import { FIREBASE_SDK_VERSION } from '../../js/firebase-sdk-version.mjs';
-import { doc, getDoc, setDoc } from `https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-firestore.js`;
+import { doc, getDoc, setDoc } from '../../js/firebase-cdn.mjs';
 import {
   ensureAuthReady,
   adminLogout,
@@ -32,13 +31,19 @@ function isLocalDev() {
 }
 
 export function resolveLoginPath() {
-  return isLocalDev() ? '/admin/login.html' : ADMIN_LOGIN_PATH;
+  if (isLocalDev()) return '/admin/index.html';
+  return ADMIN_LOGIN_PATH;
 }
 
 export function resolveDashboardPath() {
   if (isLocalDev()) return '/admin/index.html';
-  /* Production canonical dashboard URL (Vercel rewrite → admin/index.html) */
+  /* Vercel rewrite → admin/index.html */
   return ADMIN_DASHBOARD_ALIAS_PATH;
+}
+
+/** One URL that works on Python http.server and Vercel */
+export function resolveAdminSpaPath() {
+  return isLocalDev() ? '/admin/index.html' : '/admin';
 }
 
 export function isLoginPage() {

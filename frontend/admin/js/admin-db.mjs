@@ -1,14 +1,5 @@
-import { FIREBASE_SDK_VERSION } from '../../js/firebase-sdk-version.mjs';
 import { getAdminDb } from './admin-firebase.mjs';
-import {
-  doc,
-  setDoc,
-  getDoc,
-  getDocs,
-  deleteDoc,
-  collection,
-  writeBatch,
-} from `https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-firestore.js`;
+import { doc, setDoc, getDoc, getDocs, deleteDoc, collection, writeBatch } from '../../js/firebase-cdn.mjs';
 import { formatFirestoreError } from './admin-errors.mjs';
 
 export const ADMIN_DOC = 'main';

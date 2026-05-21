@@ -36,8 +36,10 @@ Routing is defined in **`frontend/vercel.json`** (not the repo-root file).
 
 | URL | Page |
 |-----|------|
-| `/admin-login` | Admin sign-in |
-| `/admin` | CMS dashboard (auth required) |
+| `/admin-login` | Admin sign-in (same app as dashboard) |
+| `/admin` or `/admin-dashboard` | CMS dashboard after sign-in |
+
+**Local dev** (`python3 -m http.server` in `frontend/`): open **http://localhost:8080/admin/index.html** (or `/admin/`). `/admin-login` redirects there automatically.
 
 **Option B — Repo root**  
 Leave Root Directory as `.` (repository root). Use the repo-root **`vercel.json`** (paths include `/frontend/`).
@@ -70,7 +72,7 @@ On the home page, users pick destination, date, and travelers. Valid destination
 
 ## Admin CMS (Firebase + Cloudinary)
 
-- **Admin:** `frontend/admin/login.html`
+- **Admin:** `frontend/admin/index.html` (local: http://localhost:8080/admin/index.html)
 - **Setup guide:** [firebase/FIREBASE_ADMIN_SETUP.md](firebase/FIREBASE_ADMIN_SETUP.md)
 - Configure `frontend/js/firebase-config.js`, add your Auth UID to Firestore `admins/{uid}`, deploy rules, then sign in.
 - **Security:** public Firestore read; writes only for users in `admins`; dashboard redirects unauthenticated visitors.

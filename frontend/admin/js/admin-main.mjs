@@ -14,7 +14,9 @@ if (globalThis.isFirebaseConfigured?.()) {
 /* Attach before async boot so submit never uses native GET navigation */
 bindLoginForm();
 
-bootUnifiedAdmin().catch((err) => {
+try {
+  bootUnifiedAdmin();
+} catch (err) {
   console.error('[HAIBO Admin] Bootstrap failed:', err);
   const loading = document.getElementById('admin-auth-loading');
   if (loading) loading.hidden = true;
@@ -28,4 +30,4 @@ bootUnifiedAdmin().catch((err) => {
       'Admin failed to start. Hard refresh (Cmd+Shift+R). If it persists, check the browser console.';
     errEl.style.color = '#f87171';
   }
-});
+}

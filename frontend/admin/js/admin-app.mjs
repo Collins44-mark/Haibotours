@@ -1,5 +1,4 @@
-import { FIREBASE_SDK_VERSION } from '../../js/firebase-sdk-version.mjs';
-import { doc } from `https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-firestore.js`;
+import { doc } from '../../js/firebase-cdn.mjs';
 
 const FIRESTORE_PATHS = globalThis.FIRESTORE_PATHS;
 import {
