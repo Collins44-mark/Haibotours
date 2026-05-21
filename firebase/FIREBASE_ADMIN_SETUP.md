@@ -73,7 +73,8 @@ Images upload to `haibo/hero`, `haibo/destinations`, etc. Only **URLs** are stor
 | Page | Path |
 |------|------|
 | Login | `/admin/login.html` |
-| Dashboard | `/admin/index.html` |
+| Login | `/admin/login.html` |
+| Dashboard | `/admin/dashboard.html` |
 
 On Vercel with repo root deploy, paths are under `/frontend/admin/…` unless Root Directory is set to `frontend`.
 

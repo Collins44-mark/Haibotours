@@ -12,7 +12,7 @@ import {
   slugify,
   ADMIN_DOC,
 } from './admin-db.mjs';
-import { handleAdminLogout } from './admin-auth-guard.mjs';
+import { signOutAdmin, LOGIN_URL } from './firebase.js';
 import { formatAdminError } from './admin-errors.mjs';
 import { createUploadZone, getRecentUploads } from './admin-cloudinary.mjs';
 
@@ -806,7 +806,8 @@ function initAdminAppHandlers() {
 
   document.getElementById('btn-logout')?.addEventListener('click', async () => {
     try {
-      await handleAdminLogout();
+      await signOutAdmin();
+      window.location.replace(LOGIN_URL);
     } catch (err) {
       adminToast(formatAdminError(err, 'Logout'), 'error');
     }

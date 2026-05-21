@@ -3,15 +3,49 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>HAIBO Admin — Redirecting</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <title>HAIBO Admin — Sign in</title>
   <link rel="icon" href="/assets/logo/logo.png" type="image/png" />
-  <script>
-    location.replace('/admin/index.html');
-  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/css/admin.css">
 </head>
-<body>
-  <p style="font-family:Poppins,sans-serif;padding:2rem;text-align:center">
-    <a href="/admin/index.html">Open HAIBO Admin</a>
-  </p>
+<body class="admin-login-page admin-login-ready">
+  <div class="admin-login-wrap">
+    <div class="admin-login-bg" aria-hidden="true"></div>
+    <form id="login-form" class="admin-login-card" method="post" action="#" autocomplete="on" novalidate>
+      <div class="admin-login-brand">
+        <span class="admin-login-brand__mark">H</span>
+        <div>
+          <strong>HAIBO CMS</strong>
+          <span>Tours & Safaris</span>
+        </div>
+      </div>
+      <p class="admin-muted admin-login-tagline">Sign in to manage your website content</p>
+      <div class="admin-field">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required autocomplete="email" />
+      </div>
+      <div class="admin-field">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required autocomplete="current-password" />
+      </div>
+      <button type="submit" class="admin-btn admin-btn--primary admin-btn--block">
+        <span>Sign in to dashboard</span>
+      </button>
+      <p id="login-error" class="admin-login-error" role="alert"></p>
+      <details class="admin-login-help admin-muted">
+        <summary>Admin access not working?</summary>
+        <p style="margin:0.75rem 0 0;font-size:0.8rem;line-height:1.5">
+          Create <strong>Firestore</strong> document <code>admins/YOUR_UID</code> (UID from Authentication → Users).
+        </p>
+      </details>
+      <p class="admin-muted admin-login-foot"><a href="/">← Back to website</a></p>
+    </form>
+  </div>
+
+  <script src="/js/firebase-config.js"></script>
+  <script type="module" src="/admin/js/admin-login.js"></script>
 </body>
 </html>

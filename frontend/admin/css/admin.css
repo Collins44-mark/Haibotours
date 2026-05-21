@@ -64,6 +64,14 @@ body.admin-authenticated #admin-app-root {
   transition: opacity 0.35s ease;
 }
 
+body.admin-dashboard-page .admin-auth-loading {
+  display: flex;
+}
+
+body.admin-dashboard-page.admin-ready .admin-auth-loading {
+  display: none;
+}
+
 body.admin-authenticated #admin-login-gate {
   display: none !important;
 }

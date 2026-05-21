@@ -1,4 +1,4 @@
-import { getAdminDb } from './admin-firebase.mjs';
+import { getDb as getAdminDb } from './firebase.js';
 import { doc, setDoc, getDoc, getDocs, deleteDoc, collection, writeBatch } from '../../js/firebase-cdn.mjs';
 import { formatFirestoreError } from './admin-errors.mjs';
 

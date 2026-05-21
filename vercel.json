@@ -8,27 +8,43 @@
     },
     {
       "source": "/admin-login/",
-      "destination": "/frontend/admin/index.html"
+      "destination": "/frontend/admin/login.html"
     },
     {
       "source": "/admin-login",
-      "destination": "/frontend/admin/index.html"
+      "destination": "/frontend/admin/login.html"
     },
     {
       "source": "/admin/login/",
-      "destination": "/frontend/admin/index.html"
+      "destination": "/frontend/admin/login.html"
     },
     {
       "source": "/admin/login",
-      "destination": "/frontend/admin/index.html"
+      "destination": "/frontend/admin/login.html"
+    },
+    {
+      "source": "/admin/dashboard/",
+      "destination": "/frontend/admin/dashboard.html"
+    },
+    {
+      "source": "/admin/dashboard",
+      "destination": "/frontend/admin/dashboard.html"
+    },
+    {
+      "source": "/admin-dashboard/",
+      "destination": "/frontend/admin/dashboard.html"
+    },
+    {
+      "source": "/admin-dashboard",
+      "destination": "/frontend/admin/dashboard.html"
     },
     {
       "source": "/admin/",
-      "destination": "/frontend/admin/index.html"
+      "destination": "/frontend/admin/dashboard.html"
     },
     {
       "source": "/admin",
-      "destination": "/frontend/admin/index.html"
+      "destination": "/frontend/admin/dashboard.html"
     },
     { "source": "/", "destination": "/frontend/index.html" },
     { "source": "/(.*)", "destination": "/frontend/$1" }

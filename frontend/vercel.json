@@ -5,36 +5,44 @@
       "destination": "/destination.html?id=:slug"
     },
     {
-      "source": "/admin-login/",
-      "destination": "/admin/index.html"
-    },
-    {
       "source": "/admin-login",
-      "destination": "/admin/index.html"
+      "destination": "/admin/login.html"
     },
     {
-      "source": "/admin/login/",
-      "destination": "/admin/index.html"
+      "source": "/admin-login/",
+      "destination": "/admin/login.html"
     },
     {
       "source": "/admin/login",
-      "destination": "/admin/index.html"
+      "destination": "/admin/login.html"
     },
     {
-      "source": "/admin/",
-      "destination": "/admin/index.html"
+      "source": "/admin/login/",
+      "destination": "/admin/login.html"
+    },
+    {
+      "source": "/admin/dashboard",
+      "destination": "/admin/dashboard.html"
+    },
+    {
+      "source": "/admin/dashboard/",
+      "destination": "/admin/dashboard.html"
     },
     {
       "source": "/admin",
-      "destination": "/admin/index.html"
+      "destination": "/admin/dashboard.html"
     },
     {
-      "source": "/admin-dashboard/",
-      "destination": "/admin/index.html"
+      "source": "/admin/",
+      "destination": "/admin/dashboard.html"
     },
     {
       "source": "/admin-dashboard",
-      "destination": "/admin/index.html"
+      "destination": "/admin/dashboard.html"
+    },
+    {
+      "source": "/admin-dashboard/",
+      "destination": "/admin/dashboard.html"
     }
   ],
   "headers": [
