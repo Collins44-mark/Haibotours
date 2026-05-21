@@ -27,6 +27,14 @@
     {
       "source": "/admin",
       "destination": "/admin/index.html"
+    },
+    {
+      "source": "/admin-dashboard/",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/admin-dashboard",
+      "destination": "/admin/index.html"
     }
   ],
   "headers": [

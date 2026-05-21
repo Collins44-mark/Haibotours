@@ -13,6 +13,13 @@ import {
   signOut,
   onAuthStateChanged,
 } from `https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-auth.js`;
+import {
+  withTimeout,
+  LOGIN_REQUEST_TIMEOUT_MS,
+  AUTH_BOOT_TIMEOUT_MS,
+} from './admin-auth-timeouts.mjs';
+
+const LOG = '[HAIBO Admin Auth]';
 
 export { onAuthStateChanged };
 
@@ -33,13 +40,25 @@ export async function ensureAuthReady(timeoutMs = 15000) {
 }
 
 export async function adminLogin(email, password) {
-  await ensureAuthReady();
+  console.log(LOG, 'Firebase auth request started');
+  await withTimeout(
+    ensureAuthReady(AUTH_BOOT_TIMEOUT_MS),
+    AUTH_BOOT_TIMEOUT_MS,
+    'Auth initialization'
+  );
   const auth = getAdminAuth();
   if (!auth) throw new Error('Firebase Auth is not available');
-  const cred = await signInWithEmailAndPassword(auth, email, password);
-  await ensureAuthReady();
+
+  const cred = await withTimeout(
+    signInWithEmailAndPassword(auth, email, password),
+    LOGIN_REQUEST_TIMEOUT_MS,
+    'Sign in'
+  );
+
+  console.log(LOG, 'Firebase signInWithEmailAndPassword resolved', cred?.user?.uid);
+
   if (!auth.currentUser) {
-    await waitForSignedInUser(auth, 5000);
+    await withTimeout(waitForSignedInUser(auth, 4000), 4000, 'Auth user sync');
   }
   return cred;
 }

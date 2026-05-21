@@ -13,6 +13,8 @@ import { formatAuthError } from './admin-errors.mjs';
 /** Canonical routes (Vercel rewrites) */
 export const ADMIN_LOGIN_PATH = '/admin-login';
 export const ADMIN_DASHBOARD_PATH = '/admin';
+/** Alias — same SPA as /admin (Vercel rewrite) */
+export const ADMIN_DASHBOARD_ALIAS_PATH = '/admin-dashboard';
 
 const AUTH_READY_TIMEOUT_MS = 15000;
 const ADMIN_CHECK_TIMEOUT_MS = 10000;
@@ -49,7 +51,11 @@ export function isLoginPage() {
 
 export function isDashboardPage() {
   const p = window.location.pathname.replace(/\/$/, '') || '/';
-  return p === '/admin' || /\/admin\/index\.html$/i.test(p);
+  return (
+    p === '/admin' ||
+    p === '/admin-dashboard' ||
+    /\/admin\/index\.html$/i.test(p)
+  );
 }
 
 export function showAuthLoading(message) {

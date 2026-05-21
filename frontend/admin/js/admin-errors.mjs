@@ -28,7 +28,14 @@ const FIRESTORE_MESSAGES = {
 export function formatAuthError(error) {
   if (!error) return 'Something went wrong. Please try again.';
   if (error?.friendlyMessage) return error.friendlyMessage;
-  if (String(error?.message || '').includes('timed out')) {
+  const msg = String(error?.message || '');
+  if (msg.includes('timed out') || msg.includes('timed out after')) {
+    if (msg.includes('Sign in')) {
+      return 'Sign-in timed out. Check your network and try again.';
+    }
+    if (msg.includes('Firestore') || msg.includes('admin')) {
+      return 'Admin verification timed out. Check Firestore rules and network.';
+    }
     return 'Connection timed out. Check your network and try again.';
   }
   const code = error?.code || '';

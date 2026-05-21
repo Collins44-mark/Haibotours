@@ -21,9 +21,15 @@ import {
   safeRedirect,
 } from './admin-auth-guard.mjs';
 
+import {
+  withTimeout,
+  LOGIN_REQUEST_TIMEOUT_MS,
+  ADMIN_VERIFY_TIMEOUT_MS,
+  AUTH_BOOT_TIMEOUT_MS,
+} from './admin-auth-timeouts.mjs';
+
 const ADMIN_COLLECTION = globalThis.FIRESTORE_ADMIN_COLLECTION || 'admins';
-const AUTH_WAIT_MS = 15000;
-const ADMIN_DOC_TIMEOUT_MS = 12000;
+const AUTH_WAIT_MS = AUTH_BOOT_TIMEOUT_MS;
 
 const LOG = '[HAIBO Admin Auth]';
 
@@ -59,16 +65,11 @@ export async function verifyAdminAccess(user) {
   }
 
   const path = `${ADMIN_COLLECTION}/${user.uid}`;
-  logAuth('admin check: reading', path);
+  logAuth('Firestore admin check started', path);
 
   try {
     const ref = doc(db, ADMIN_COLLECTION, user.uid);
-    const snap = await Promise.race([
-      getDoc(ref),
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Admin document read timed out')), ADMIN_DOC_TIMEOUT_MS)
-      ),
-    ]);
+    const snap = await withTimeout(getDoc(ref), ADMIN_VERIFY_TIMEOUT_MS, 'Firestore admin check');
 
     const exists = snap.exists();
     const data = exists ? snap.data() : null;
@@ -87,12 +88,20 @@ export async function verifyAdminAccess(user) {
       };
     }
 
+    logAuth('admin verified', user.uid);
     return { ok: true, uid: user.uid, data };
   } catch (err) {
-    console.error(LOG, 'admin check error', err?.code, err?.message);
+    console.error(LOG, 'Firestore admin check error', err?.code, err?.message, err);
     const code = err?.code || '';
-    if (code === 'permission-denied' || String(err?.message || '').includes('permission')) {
+    const msg = String(err?.message || '');
+    if (msg.includes('timed out')) {
+      return { ok: false, reason: 'check-timeout', uid: user.uid, error: err };
+    }
+    if (code === 'permission-denied' || msg.includes('permission')) {
       return { ok: false, reason: 'permission-denied', uid: user.uid };
+    }
+    if (code === 'unavailable' || msg.includes('network')) {
+      return { ok: false, reason: 'network-error', uid: user.uid, error: err };
     }
     return { ok: false, reason: 'check-failed', uid: user.uid, error: err };
   }
@@ -101,7 +110,12 @@ export async function verifyAdminAccess(user) {
 /** Wait for Firebase Auth persistence (authStateReady + signed-in user if any). */
 export async function waitForInitialAuthState() {
   logAuth('waiting for auth state…');
-  await ensureAuthReady(AUTH_WAIT_MS);
+  try {
+    await withTimeout(ensureAuthReady(AUTH_WAIT_MS), AUTH_WAIT_MS, 'Auth ready');
+  } catch (e) {
+    logAuth('auth ready timeout/fallback', e?.message || e);
+  }
+
   const auth = getAdminAuth();
   if (!auth) {
     logAuth('auth instance missing');
@@ -110,10 +124,7 @@ export async function waitForInitialAuthState() {
 
   if (typeof auth.authStateReady === 'function') {
     try {
-      await Promise.race([
-        auth.authStateReady(),
-        new Promise((_, rej) => setTimeout(() => rej(new Error('authStateReady timeout')), AUTH_WAIT_MS)),
-      ]);
+      await withTimeout(auth.authStateReady(), AUTH_WAIT_MS, 'authStateReady');
     } catch (e) {
       logAuth('authStateReady fallback', e?.message || e);
     }
@@ -121,7 +132,11 @@ export async function waitForInitialAuthState() {
 
   let user = auth.currentUser;
   if (!user) {
-    user = await waitForSignedInUser(auth, AUTH_WAIT_MS);
+    try {
+      user = await withTimeout(waitForSignedInUser(auth, AUTH_WAIT_MS), AUTH_WAIT_MS, 'Wait for user');
+    } catch {
+      user = auth.currentUser ?? null;
+    }
   }
 
   logAuth('auth state detected', user ? { uid: user.uid, email: user.email } : 'signed-out');
@@ -137,6 +152,10 @@ export function messageForAdminFailure(result) {
       return `Not an admin: admins/${uid} must include field admin: "admin". ${result.detail || ''}`;
     case 'not-in-admins':
       return `Not an admin: no admins/${uid} document. Create it in Firestore (UID from Authentication).`;
+    case 'check-timeout':
+      return 'Network timeout verifying admin access. Check connection and try again.';
+    case 'network-error':
+      return 'Network error while verifying admin access. Try again.';
     case 'no-db':
       return 'Firestore is not available. Check firebase-config.js and network.';
     default:
@@ -146,9 +165,15 @@ export function messageForAdminFailure(result) {
 
 export async function signInAdmin(email, password) {
   logAuth('sign-in attempt', email);
-  const cred = await adminLogin(email, password);
-  logAuth('login success', cred?.user?.uid, cred?.user?.email);
-  return cred;
+  try {
+    const cred = await adminLogin(email, password);
+    logAuth('login success', cred?.user?.uid, cred?.user?.email);
+    logAuth('current user UID', cred?.user?.uid);
+    return cred;
+  } catch (err) {
+    console.error(LOG, 'login error', err?.code, err?.message, err);
+    throw err;
+  }
 }
 
 export async function signOutAdminUser() {
@@ -164,6 +189,9 @@ function isUnifiedAdminSpa() {
  * Canonical URL: signed-in admins on /admin, signed-out on /admin-login (prod).
  * Same index.html on Vercel — use replaceState to avoid reload loops.
  */
+/** Production dashboard paths (Vercel rewrites → admin/index.html) */
+export const ADMIN_DASHBOARD_URL = '/admin';
+
 export function redirectIfNeeded(wantDashboard) {
   const loginPath = resolveLoginPath();
   const dashPath = resolveDashboardPath();
@@ -176,15 +204,29 @@ export function redirectIfNeeded(wantDashboard) {
     return false;
   }
 
+  logAuth('redirect started →', target);
+
   if (isUnifiedAdminSpa()) {
-    logAuth('SPA URL normalize →', target);
     window.history.replaceState(null, '', target);
+    logAuth('redirect completed (SPA)', target);
     return false;
   }
 
-  logAuth('redirect →', target);
   safeRedirect(target);
+  logAuth('redirect completed', target);
   return true;
+}
+
+/** After login: normalize URL to /admin (or local index) without blocking UI */
+export function completeLoginRedirect() {
+  const dashPath = resolveDashboardPath();
+  logAuth('redirect started', dashPath);
+  const current = window.location.pathname.replace(/\/$/, '') || '/';
+  const normalized = dashPath.replace(/\/$/, '') || '/';
+  if (current !== normalized) {
+    window.history.replaceState(null, '', dashPath);
+  }
+  logAuth('redirect completed', window.location.pathname);
 }
 
 export function attachAuthListener({ onSignedIn, onSignedOut }) {
