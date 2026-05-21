@@ -28,7 +28,7 @@ export function getAdminAuth() {
   return getHaiboAuth();
 }
 
-export async function ensureAuthReady(timeoutMs = 8000) {
+export async function ensureAuthReady(timeoutMs = 15000) {
   return ensureHaiboAuthReady(timeoutMs);
 }
 

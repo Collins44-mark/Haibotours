@@ -262,6 +262,7 @@ export async function ensureAdminRecord(user) {
       ref,
       {
         email: user.email || '',
+        admin: 'admin',
         role: 'admin',
         createdAt: Date.now(),
       },
@@ -274,13 +275,15 @@ export async function ensureAdminRecord(user) {
   }
 }
 
+function adminDocHasPrivilege(data) {
+  if (!data || typeof data !== 'object') return false;
+  return data.admin === 'admin' || data.admin === true || data.role === 'admin';
+}
+
 export async function checkIsAdminUser(user) {
   if (!user) return { ok: false, reason: 'no-user' };
   if (globalThis.HAIBO_TRUST_AUTHENTICATED_USERS === true) {
-    const provision = await ensureAdminRecord(user);
-    if (provision.ok) return { ok: true, reason: provision.reason || 'trusted-auth' };
-    console.warn('[HAIBO Admin] Opening CMS for signed-in user; deploy rules for saves.', provision);
-    return { ok: true, reason: 'trusted-auth', warnProvision: true };
+    return { ok: true, reason: 'trusted-auth' };
   }
   if (isEmailAdminAllowlisted(user.email)) {
     return { ok: true, reason: 'email-allowlist' };
@@ -293,10 +296,14 @@ export async function checkIsAdminUser(user) {
   try {
     const ref = doc(db, ADMIN_COLLECTION, user.uid);
     const snap = await withTimeout(getDoc(ref), ADMIN_CHECK_TIMEOUT_MS, 'Admin verification');
-    if (snap.exists()) return { ok: true };
-    const provision = await ensureAdminRecord(user);
-    if (provision.ok) return { ok: true, reason: 'created' };
-    return { ok: false, reason: 'not-in-admins', uid: user.uid };
+    if (!snap.exists()) {
+      return { ok: false, reason: 'not-in-admins', uid: user.uid };
+    }
+    const data = snap.data();
+    if (!adminDocHasPrivilege(data)) {
+      return { ok: false, reason: 'missing-admin-field', uid: user.uid };
+    }
+    return { ok: true };
   } catch (err) {
     console.error('[HAIBO Admin] Admin check failed:', err?.code, err?.message, err);
     const code = err?.code || '';

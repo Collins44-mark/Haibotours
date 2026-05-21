@@ -7,6 +7,7 @@ import { getFirestore } from `https://www.gstatic.com/firebasejs/${FIREBASE_SDK_
 import {
   getAuth,
   initializeAuth,
+  setPersistence,
   browserLocalPersistence,
 } from `https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-auth.js`;
 
@@ -63,6 +64,10 @@ export function getHaiboAuth() {
     }
   }
 
+  setPersistence(auth, browserLocalPersistence).catch((err) => {
+    console.warn('[HAIBO] setPersistence:', err?.code, err?.message);
+  });
+
   return auth;
 }
 
@@ -103,7 +108,7 @@ function waitAuthStateReady(authInstance, timeoutMs) {
 /**
  * Each call is independent (no cached promise) so login never blocks forever.
  */
-export async function ensureHaiboAuthReady(timeoutMs = 3000) {
+export async function ensureHaiboAuthReady(timeoutMs = 15000) {
   if (!isFirebaseConfigured()) return null;
   try {
     const instance = getHaiboAuth();

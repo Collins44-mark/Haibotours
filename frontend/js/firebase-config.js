@@ -36,8 +36,8 @@ const FIRESTORE_ADMIN_COLLECTION = 'admins';
  */
 const HAIBO_ADMIN_EMAIL_ALLOWLIST = [];
 
-/** If true, any signed-in Firebase user opens the CMS (still needs admins/{uid} for saves unless auto-provisioned). */
-const HAIBO_TRUST_AUTHENTICATED_USERS = true;
+/** If true, skip Firestore admins/{uid} check (not recommended for production). */
+const HAIBO_TRUST_AUTHENTICATED_USERS = false;
 
 const FIREBASE_SDK_VERSION = '10.14.1';
 
