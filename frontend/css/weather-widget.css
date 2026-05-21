@@ -39,6 +39,11 @@
   .weather-widget-card,
   .weather-widget-viewport {
     min-height: 132px;
+    height: 132px;
+  }
+
+  .weather-slide {
+    min-height: 132px;
   }
 
   .weather-slide {
@@ -118,58 +123,48 @@
 .weather-widget-viewport {
   position: relative;
   min-height: 148px;
+  height: 148px;
+  overflow: hidden;
+  isolation: isolate;
 }
 
+/* Exactly one slide in viewport */
 .weather-slide {
-  position: absolute;
-  inset: 0;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 148px;
   padding: 1.15rem 1.35rem 1rem;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  opacity: 0;
-  transform: translateX(28px);
-  pointer-events: none;
-  transition: none;
+  box-sizing: border-box;
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 0.55s ease, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .weather-slide.is-active {
-  position: relative;
   opacity: 1;
   transform: translateX(0);
   pointer-events: auto;
 }
 
-.weather-slide.is-entering {
-  animation: weatherSlideIn 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+.weather-slide.is-fade-out {
+  opacity: 0;
+  transform: translateX(-12px);
+  pointer-events: none;
 }
 
-.weather-slide.is-exiting {
-  animation: weatherSlideOut 0.55s cubic-bezier(0.55, 0, 0.45, 1) forwards;
-  position: absolute;
-  z-index: 1;
+.weather-slide.is-fade-in {
+  opacity: 0;
+  transform: translateX(14px);
 }
 
-@keyframes weatherSlideIn {
-  from {
-    opacity: 0;
-    transform: translateX(32px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes weatherSlideOut {
-  from {
-    opacity: 1;
-    transform: translateX(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateX(-28px);
-  }
+.weather-slide.is-fade-in.is-active,
+.weather-slide.is-active:not(.is-fade-out) {
+  opacity: 1;
+  transform: translateX(0);
 }
 
 .weather-slide-header {
@@ -339,7 +334,7 @@
 }
 
 .weather-transition-overlay.is-sweeping {
-  animation: weatherSweep 0.5s ease-out forwards;
+  animation: weatherSweep 0.55s ease-out forwards;
 }
 
 @keyframes weatherSweep {

@@ -1,6 +1,5 @@
 /**
- * HAIBO Weather Mini-Slider
- * Live data via Open-Meteo (free, no API key)
+ * HAIBO Weather Mini-Slider — single slide instance, no duplicate DOM
  */
 const WEATHER_PARKS_STATIC = [
   {
@@ -70,6 +69,10 @@ const WEATHER_PARKS_STATIC = [
 ];
 
 window.WEATHER_PARKS_STATIC = WEATHER_PARKS_STATIC;
+
+const TRANSITION_MS = 550;
+const AUTOPLAY_MS = 5000;
+const REFRESH_MS = 30 * 60 * 1000;
 
 function getWeatherParks() {
   if (typeof haiboMergeWeatherCardsList === 'function') {
@@ -142,38 +145,59 @@ function fallbackWeather(park, index) {
   };
 }
 
+/** Module-level singleton — prevents duplicate widgets / intervals */
+let weatherWidgetInstance = null;
+let weatherRefreshIntervalId = null;
+
 class HaiboWeatherWidget {
   constructor(root) {
     this.root = root;
-    this.index = 0;
+    this.activeIndex = 0;
     this.weatherData = [];
-    this.timer = null;
-    this.isAnimating = false;
-    this.slideDuration = 5000;
+    this.autoplayTimer = null;
+    this.isTransitioning = false;
+    this.slideDuration = AUTOPLAY_MS;
     this.viewport = root.querySelector('.weather-widget-viewport');
     this.dotsContainer = root.querySelector('.weather-dots');
     this.overlay = root.querySelector('.weather-transition-overlay');
+    this._onVisibility = () => {
+      if (document.hidden) this.stopAutoplay();
+      else this.startAutoplay();
+    };
+  }
+
+  destroy() {
+    this.stopAutoplay();
+    document.removeEventListener('visibilitychange', this._onVisibility);
+    if (this.viewport) this.viewport.innerHTML = '';
+    if (this.dotsContainer) this.dotsContainer.innerHTML = '';
+    this.isTransitioning = false;
+  }
+
+  get parks() {
+    return getWeatherParks();
   }
 
   async init() {
+    this.stopAutoplay();
+    this.clearSlides();
+    document.removeEventListener('visibilitychange', this._onVisibility);
+    document.addEventListener('visibilitychange', this._onVisibility);
+
     this.root.classList.add('is-loading');
+    this.activeIndex = 0;
     this.renderDots();
-    this.renderSlide(0, true);
+    this.mountSlide(0, false);
 
     await this.loadAllWeather();
     this.root.classList.remove('is-loading');
-    this.renderSlide(0, true);
+    this.mountSlide(this.activeIndex, false);
     this.startAutoplay();
-
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden) this.stopAutoplay();
-      else this.startAutoplay();
-    });
   }
 
   async loadAllWeather() {
-    const parks = getWeatherParks();
-    const results = await Promise.all(
+    const parks = this.parks;
+    this.weatherData = await Promise.all(
       parks.map(async (park, i) => {
         try {
           const w = await fetchParkWeather(park);
@@ -183,36 +207,23 @@ class HaiboWeatherWidget {
         }
       })
     );
-    this.weatherData = results;
   }
 
-  renderDots() {
-    const parks = getWeatherParks();
-    this.dotsContainer.innerHTML = parks.map(
-      (_, i) =>
-        `<button type="button" class="weather-dot${i === 0 ? ' is-active' : ''}" data-index="${i}" aria-label="Show park ${i + 1}"></button>`
-    ).join('');
-
-    this.dotsContainer.querySelectorAll('.weather-dot').forEach((dot) => {
-      dot.addEventListener('click', () => {
-        const idx = parseInt(dot.dataset.index, 10);
-        if (idx !== this.index && !this.isAnimating) {
-          this.goTo(idx);
-        }
-      });
-    });
+  /** Remove every slide node — guarantees no stacking */
+  clearSlides() {
+    if (!this.viewport) return;
+    this.viewport.querySelectorAll('.weather-slide').forEach((el) => el.remove());
   }
 
-  updateDots() {
-    this.dotsContainer.querySelectorAll('.weather-dot').forEach((dot, i) => {
-      dot.classList.toggle('is-active', i === this.index);
-    });
-  }
-
-  getSlideHtml(park, weather, isLoading) {
+  getSlideHtml(index) {
+    const parks = this.parks;
+    const park = parks[index];
+    if (!park) return '';
     const labelPark = (park.shortName || park.name).toUpperCase();
+    const loading = this.root.classList.contains('is-loading');
+    const weather = this.weatherData[index]?.weather;
 
-    if (isLoading || !weather) {
+    if (loading || !weather) {
       return `
         <div class="weather-slide-header">
           <div>
@@ -225,9 +236,8 @@ class HaiboWeatherWidget {
           </div>
         </div>
         <div class="weather-facts">
-          ${park.facts.map((f) => `<span class="weather-fact">${f}</span>`).join('')}
-        </div>
-      `;
+          ${(park.facts || []).map((f) => `<span class="weather-fact">${f}</span>`).join('')}
+        </div>`;
     }
 
     const tempDisplay = park.displayTemp || `${weather.temp}°C`;
@@ -245,117 +255,187 @@ class HaiboWeatherWidget {
         </div>
       </div>
       <div class="weather-facts">
-        ${park.facts.map((f) => `<span class="weather-fact">${f}</span>`).join('')}
-      </div>
-    `;
+        ${(park.facts || []).map((f) => `<span class="weather-fact">${f}</span>`).join('')}
+      </div>`;
   }
 
-  renderSlide(index, instant = false) {
-    const parks = getWeatherParks();
-    const park = parks[index];
-    const cached = this.weatherData[index];
-    const weather = cached?.weather;
-    const loading = this.root.classList.contains('is-loading');
-    const html = this.getSlideHtml(park, weather, loading);
+  /** Single slide in viewport — instant replace */
+  mountSlide(index, animate) {
+    const parks = this.parks;
+    if (!parks.length) return;
 
-    const existing = this.viewport.querySelector('.weather-slide.is-active');
-    if (instant || !existing) {
-      this.viewport.innerHTML = `<div class="weather-slide is-active">${html}</div>`;
-      return;
-    }
-  }
+    const safeIndex = ((index % parks.length) + parks.length) % parks.length;
+    this.activeIndex = safeIndex;
 
-  async transitionTo(nextIndex) {
-    if (this.isAnimating) return;
-    this.isAnimating = true;
+    this.clearSlides();
 
-    const currentEl = this.viewport.querySelector('.weather-slide.is-active');
-    const parks = getWeatherParks();
-    const park = parks[nextIndex];
-    const cached = this.weatherData[nextIndex];
-    const weather = cached?.weather;
-    const html = this.getSlideHtml(park, weather, false);
+    const slide = document.createElement('div');
+    slide.className = 'weather-slide is-active';
+    slide.setAttribute('role', 'tabpanel');
+    slide.setAttribute('aria-hidden', 'false');
+    slide.innerHTML = this.getSlideHtml(safeIndex);
 
-    if (this.overlay) {
-      this.overlay.classList.remove('is-sweeping');
-      void this.overlay.offsetWidth;
-      this.overlay.classList.add('is-sweeping');
+    if (animate) {
+      slide.classList.add('is-fade-in');
+      requestAnimationFrame(() => {
+        slide.classList.remove('is-fade-in');
+      });
     }
 
-    if (currentEl) {
-      currentEl.classList.remove('is-active');
-      currentEl.classList.add('is-exiting');
-    }
-
-    const nextEl = document.createElement('div');
-    nextEl.className = 'weather-slide is-entering';
-    nextEl.innerHTML = html;
-    this.viewport.appendChild(nextEl);
-
-    await this.wait(580);
-
-    if (currentEl) currentEl.remove();
-    nextEl.classList.remove('is-entering');
-    nextEl.classList.add('is-active');
-
-    this.index = nextIndex;
+    this.viewport.appendChild(slide);
     this.updateDots();
-    this.isAnimating = false;
+  }
+
+  sweepOverlay() {
+    if (!this.overlay) return;
+    this.overlay.classList.remove('is-sweeping');
+    void this.overlay.offsetWidth;
+    this.overlay.classList.add('is-sweeping');
   }
 
   wait(ms) {
-    return new Promise((r) => setTimeout(r, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  async goTo(nextIndex) {
+    const parks = this.parks;
+    if (!parks.length || this.isTransitioning) return;
+
+    const safeIndex = ((nextIndex % parks.length) + parks.length) % parks.length;
+    if (safeIndex === this.activeIndex) return;
+
+    this.isTransitioning = true;
+    this.sweepOverlay();
+
+    const current = this.viewport.querySelector('.weather-slide.is-active');
+    if (current) {
+      current.classList.add('is-fade-out');
+      await this.wait(TRANSITION_MS);
+    }
+
+    this.mountSlide(safeIndex, true);
+    this.isTransitioning = false;
   }
 
   next() {
-    const parks = getWeatherParks();
-    const nextIndex = (this.index + 1) % parks.length;
-    return this.transitionTo(nextIndex);
+    const parks = this.parks;
+    if (!parks.length) return Promise.resolve();
+    return this.goTo(this.activeIndex + 1);
   }
 
-  goTo(index) {
-    this.stopAutoplay();
-    return this.transitionTo(index).then(() => this.startAutoplay());
+  renderDots() {
+    const parks = this.parks;
+    if (!this.dotsContainer) return;
+
+    this.dotsContainer.innerHTML = parks
+      .map(
+        (_, i) =>
+          `<button type="button" class="weather-dot${i === this.activeIndex ? ' is-active' : ''}" data-index="${i}" aria-label="${parks[i].shortName || parks[i].name}" aria-selected="${i === this.activeIndex}"></button>`
+      )
+      .join('');
+
+    this.dotsContainer.querySelectorAll('.weather-dot').forEach((dot) => {
+      dot.addEventListener('click', () => {
+        const idx = parseInt(dot.dataset.index, 10);
+        if (Number.isNaN(idx) || idx === this.activeIndex || this.isTransitioning) return;
+        this.stopAutoplay();
+        this.goTo(idx).then(() => this.startAutoplay());
+      });
+    });
+  }
+
+  updateDots() {
+    if (!this.dotsContainer) return;
+    this.dotsContainer.querySelectorAll('.weather-dot').forEach((dot, i) => {
+      const active = i === this.activeIndex;
+      dot.classList.toggle('is-active', active);
+      dot.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
   }
 
   startAutoplay() {
     this.stopAutoplay();
-    this.timer = setInterval(() => {
-      if (!this.isAnimating) this.next();
+    const parks = this.parks;
+    if (parks.length < 2) return;
+
+    this.autoplayTimer = setInterval(() => {
+      if (!this.isTransitioning) this.next();
     }, this.slideDuration);
   }
 
   stopAutoplay() {
-    if (this.timer) clearInterval(this.timer);
-    this.timer = null;
+    if (this.autoplayTimer) {
+      clearInterval(this.autoplayTimer);
+      this.autoplayTimer = null;
+    }
   }
 
   async refreshWeather() {
+    if (this.isTransitioning) return;
     await this.loadAllWeather();
-    const active = this.viewport.querySelector('.weather-slide.is-active');
-    if (active && !this.isAnimating) {
-      const parks = getWeatherParks();
-      const park = parks[this.index];
-      const weather = this.weatherData[this.index]?.weather;
-      active.innerHTML = this.getSlideHtml(park, weather, false);
-    }
+    this.mountSlide(this.activeIndex, false);
   }
+
+  /** Rebuild dots/data when CMS content changes — do not create a second widget */
+  async updateFromContent() {
+    const parks = this.parks;
+    if (!parks.length) return;
+
+    this.stopAutoplay();
+    if (this.activeIndex >= parks.length) this.activeIndex = 0;
+
+    await this.loadAllWeather();
+    this.renderDots();
+    this.mountSlide(this.activeIndex, false);
+    this.startAutoplay();
+  }
+}
+
+function stopWeatherRefreshInterval() {
+  if (weatherRefreshIntervalId) {
+    clearInterval(weatherRefreshIntervalId);
+    weatherRefreshIntervalId = null;
+  }
+}
+
+function startWeatherRefreshInterval() {
+  stopWeatherRefreshInterval();
+  weatherRefreshIntervalId = setInterval(() => {
+    weatherWidgetInstance?.refreshWeather();
+  }, REFRESH_MS);
 }
 
 function initWeatherWidget() {
   const root = document.getElementById('weather-widget');
   if (!root) return;
-  if (root._haiboWidget) {
-    root._haiboWidget.stopAutoplay();
-    root._haiboWidget = null;
+
+  if (weatherWidgetInstance) {
+    weatherWidgetInstance.updateFromContent();
+    return;
   }
-  const widget = new HaiboWeatherWidget(root);
-  widget.init();
-  root._haiboWidget = widget;
-  setInterval(() => widget.refreshWeather(), 30 * 60 * 1000);
+
+  weatherWidgetInstance = new HaiboWeatherWidget(root);
+  root._haiboWidget = weatherWidgetInstance;
+  weatherWidgetInstance.init();
+  startWeatherRefreshInterval();
+}
+
+function destroyWeatherWidget() {
+  stopWeatherRefreshInterval();
+  if (weatherWidgetInstance) {
+    weatherWidgetInstance.destroy();
+    weatherWidgetInstance = null;
+  }
+  const root = document.getElementById('weather-widget');
+  if (root) {
+    root._haiboWidget = null;
+    const vp = root.querySelector('.weather-widget-viewport');
+    if (vp) vp.innerHTML = '';
+  }
 }
 
 window.refreshHaiboWeatherWidget = initWeatherWidget;
+window.destroyHaiboWeatherWidget = destroyWeatherWidget;
 
 function bootWeatherWidget() {
   if (!document.getElementById('weather-widget')) return;
@@ -377,11 +457,17 @@ function bootWeatherWidget() {
   if (typeof mergeHaiboContentWithDefaults === 'function') {
     mergeHaiboContentWithDefaults();
   }
+
   initWeatherWidget();
-  if (!window.HAIBO_CONTENT_LOADED) {
-    window.addEventListener('haiboContentReady', initWeatherWidget, { once: true });
-  }
-  window.addEventListener('haiboContentUpdated', initWeatherWidget);
+
+  window.addEventListener('haiboContentReady', () => initWeatherWidget(), { once: true });
+  window.addEventListener('haiboContentUpdated', () => {
+    if (weatherWidgetInstance) {
+      weatherWidgetInstance.updateFromContent();
+    } else {
+      initWeatherWidget();
+    }
+  });
 }
 
 document.addEventListener('DOMContentLoaded', bootWeatherWidget);
