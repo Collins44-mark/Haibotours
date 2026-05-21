@@ -30,6 +30,12 @@ const FIRESTORE_PATHS = {
 /** Firestore allowlist: document ID = Firebase Auth UID */
 const FIRESTORE_ADMIN_COLLECTION = 'admins';
 
+/**
+ * Optional emergency admin emails (lowercase not required).
+ * Prefer Firestore admins/{uid}. Example: ['you@example.com']
+ */
+const HAIBO_ADMIN_EMAIL_ALLOWLIST = [];
+
 const FIREBASE_SDK_VERSION = '10.14.1';
 
 function isFirebaseConfigured() {

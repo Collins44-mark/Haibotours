@@ -242,8 +242,19 @@ export function redirectToDashboard() {
   if (!isDashboardPage()) safeRedirect(resolveDashboardPath());
 }
 
+function isEmailAdminAllowlisted(email) {
+  const list =
+    typeof HAIBO_ADMIN_EMAIL_ALLOWLIST !== 'undefined' ? HAIBO_ADMIN_EMAIL_ALLOWLIST : [];
+  if (!Array.isArray(list) || !email) return false;
+  const normalized = String(email).trim().toLowerCase();
+  return list.some((e) => String(e).trim().toLowerCase() === normalized);
+}
+
 export async function checkIsAdminUser(user) {
   if (!user) return { ok: false, reason: 'no-user' };
+  if (isEmailAdminAllowlisted(user.email)) {
+    return { ok: true, reason: 'email-allowlist' };
+  }
   const db = getAdminDb();
   if (!db) {
     console.warn('[HAIBO Admin] Firestore unavailable for admin check');
@@ -559,12 +570,15 @@ export async function handleAdminLogin(email, password) {
 }
 
 export async function handleAdminLogout() {
-  showAuthLoading('Signing out…');
   try {
+    const { signOutAdmin } = await import('./admin-shell.mjs');
+    await signOutAdmin();
+  } catch {
     await adminLogout();
-  } finally {
-    hideAuthLoading();
-    redirectToLogin();
+    if (isLoginPage()) return;
+    const dest = resolveLoginPath();
+    if (!isDashboardPage()) safeRedirect(dest);
+    else window.location.replace(dest);
   }
 }
 

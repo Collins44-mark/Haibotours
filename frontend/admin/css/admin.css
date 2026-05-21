@@ -35,17 +35,37 @@ body {
   box-sizing: border-box;
 }
 
-/* —— Auth gate: hide CMS until verified —— */
-body.admin-auth-pending .admin-shell {
+/* —— Unified admin: login overlay + dashboard on /admin —— */
+#admin-login-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 10001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+#admin-login-gate[hidden] {
+  display: none !important;
+}
+
+body.admin-auth-pending .admin-shell,
+body.admin-auth-pending #admin-app-root {
   visibility: hidden;
   pointer-events: none;
   opacity: 0;
 }
 
-body.admin-authenticated .admin-shell {
+body.admin-authenticated .admin-shell,
+body.admin-authenticated #admin-app-root {
   visibility: visible;
   opacity: 1;
   transition: opacity 0.35s ease;
+}
+
+body.admin-authenticated #admin-login-gate {
+  display: none !important;
 }
 
 /* Login page: form visible by default (spinner only on dashboard) */

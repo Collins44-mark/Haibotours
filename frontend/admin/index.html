@@ -14,11 +14,44 @@
   <div id="admin-auth-loading" class="admin-auth-loading" aria-live="polite" aria-busy="true">
     <div class="admin-auth-loading__inner">
       <div class="admin-auth-loading__spinner" aria-hidden="true"></div>
-      <p data-auth-loading-msg>Verifying admin session…</p>
+      <p data-auth-loading-msg>Loading admin…</p>
     </div>
   </div>
 
-  <div class="admin-shell">
+  <div id="admin-login-gate" class="admin-login-wrap" hidden>
+    <div class="admin-login-bg" aria-hidden="true"></div>
+    <form id="login-form" class="admin-login-card">
+      <div class="admin-login-brand">
+        <span class="admin-login-brand__mark">H</span>
+        <div>
+          <strong>HAIBO CMS</strong>
+          <span>Tours & Safaris</span>
+        </div>
+      </div>
+      <p class="admin-muted admin-login-tagline">Sign in to manage your website content</p>
+      <div class="admin-field">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required autocomplete="email" />
+      </div>
+      <div class="admin-field">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required autocomplete="current-password" />
+      </div>
+      <button type="submit" class="admin-btn admin-btn--primary admin-btn--block">
+        <span>Sign in to dashboard</span>
+      </button>
+      <p id="login-error" class="admin-login-error" role="alert"></p>
+      <details class="admin-login-help admin-muted">
+        <summary>Admin access not working?</summary>
+        <p style="margin:0.75rem 0 0;font-size:0.8rem;line-height:1.5">
+          Create <strong>Firestore</strong> document <code>admins/YOUR_UID</code> (UID from Authentication → Users).
+        </p>
+      </details>
+      <p class="admin-muted admin-login-foot"><a href="/">← Back to website</a></p>
+    </form>
+  </div>
+
+  <div id="admin-app-root" class="admin-shell" aria-hidden="true">
     <div id="sidebar-backdrop" class="admin-sidebar-backdrop" aria-hidden="true"></div>
 
     <aside id="admin-sidebar" class="admin-sidebar">

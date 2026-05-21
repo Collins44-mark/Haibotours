@@ -8,19 +8,19 @@
     },
     {
       "source": "/admin-login/",
-      "destination": "/frontend/admin-login.html"
+      "destination": "/frontend/admin/index.html"
     },
     {
       "source": "/admin-login",
-      "destination": "/frontend/admin-login.html"
+      "destination": "/frontend/admin/index.html"
     },
     {
       "source": "/admin/login/",
-      "destination": "/frontend/admin/login.html"
+      "destination": "/frontend/admin/index.html"
     },
     {
       "source": "/admin/login",
-      "destination": "/frontend/admin/login.html"
+      "destination": "/frontend/admin/index.html"
     },
     {
       "source": "/admin/",

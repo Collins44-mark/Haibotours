@@ -3,89 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="robots" content="noindex, nofollow" />
-  <title>Admin Login — HAIBO Tours</title>
-  <link rel="canonical" href="/admin-login" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/admin/css/admin.css">
-  <style>
-    /* Login form visible immediately — do not wait for ES modules */
-    body.admin-login-page .admin-login-wrap {
-      visibility: visible !important;
-      pointer-events: auto !important;
-    }
-    body.admin-login-page #admin-auth-loading {
-      display: none !important;
-    }
-    body.admin-login-page.admin-auth-pending .admin-login-wrap {
-      visibility: visible !important;
-      pointer-events: auto !important;
-    }
-    body.admin-login-page.admin-auth-pending #admin-auth-loading {
-      display: none !important;
-    }
-  </style>
-</head>
-<body class="admin-login-ready admin-login-page">
-  <div id="admin-auth-loading" class="admin-auth-loading" hidden aria-live="polite" aria-busy="false">
-    <div class="admin-auth-loading__inner">
-      <div class="admin-auth-loading__spinner" aria-hidden="true"></div>
-      <p data-auth-loading-msg>Checking session…</p>
-    </div>
-  </div>
-
-  <div class="admin-login-wrap">
-    <div class="admin-login-bg" aria-hidden="true"></div>
-    <form id="login-form" class="admin-login-card">
-      <div class="admin-login-brand">
-        <span class="admin-login-brand__mark">H</span>
-        <div>
-          <strong>HAIBO CMS</strong>
-          <span>Tours & Safaris</span>
-        </div>
-      </div>
-      <p class="admin-muted admin-login-tagline">Secure content management for your luxury tourism website</p>
-      <div class="admin-field">
-        <label for="email">Email</label>
-        <input type="email" id="email" name="email" required autocomplete="email" placeholder="admin@haibotours.com" />
-      </div>
-      <div class="admin-field">
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" required autocomplete="current-password" placeholder="••••••••" />
-      </div>
-      <button type="submit" class="admin-btn admin-btn--primary admin-btn--block">
-        <span>Sign in to dashboard</span>
-      </button>
-      <p id="login-error" class="admin-login-error" role="alert"></p>
-      <details class="admin-login-help admin-muted">
-        <summary>Admin access not working?</summary>
-        <p style="margin:0.75rem 0 0;font-size:0.8rem;line-height:1.5">
-          Firebase <strong>Authentication</strong> (email/password) is only step 1.
-          You also need a Firestore document: collection <code>admins</code>, document ID = your
-          <strong>User UID</strong> from Authentication → Users (not your email).
-        </p>
-      </details>
-      <p class="admin-muted admin-login-foot"><a href="/">← Back to website</a></p>
-    </form>
-  </div>
-
-  <script src="/js/firebase-config.js"></script>
+  <meta http-equiv="refresh" content="0;url=/admin" />
+  <title>Redirect — HAIBO Admin</title>
   <script>
     (function () {
-      function showLoginNow() {
-        document.body.classList.remove('admin-auth-pending');
-        document.body.classList.add('admin-login-ready');
-        var el = document.getElementById('admin-auth-loading');
-        if (el) {
-          el.hidden = true;
-          el.setAttribute('aria-busy', 'false');
-        }
-      }
-      showLoginNow();
+      var local =
+        location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+      location.replace(local ? '/admin/index.html' : '/admin');
     })();
   </script>
-  <script type="module" src="/admin/js/admin-login.mjs"></script>
+</head>
+<body>
+  <p style="font-family:sans-serif;padding:2rem">
+    <a href="/admin">Continue to HAIBO Admin</a>
+  </p>
 </body>
 </html>
