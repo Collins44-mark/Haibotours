@@ -624,16 +624,9 @@ export async function handleAdminLogin(email, password) {
 }
 
 export async function handleAdminLogout() {
-  try {
-    const { signOutAdmin } = await import('./admin-shell.mjs');
-    await signOutAdmin();
-  } catch {
-    await adminLogout();
-    if (isLoginPage()) return;
-    const dest = resolveLoginPath();
-    if (!isDashboardPage()) safeRedirect(dest);
-    else window.location.replace(dest);
-  }
+  const { signOutAdmin, LOGIN_URL } = await import('./firebase.js');
+  await signOutAdmin();
+  window.location.replace(LOGIN_URL);
 }
 
 export { formatAuthError };

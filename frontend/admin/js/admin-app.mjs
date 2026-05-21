@@ -1,6 +1,5 @@
 import { doc } from '../../js/firebase-cdn.mjs';
 
-const FIRESTORE_PATHS = globalThis.FIRESTORE_PATHS;
 import {
   dbSetDoc,
   dbGetDoc,
@@ -12,9 +11,17 @@ import {
   slugify,
   ADMIN_DOC,
 } from './admin-db.mjs';
-import { signOutAdmin, LOGIN_URL } from './firebase.js';
+
+import { handleAdminLogout } from './admin-auth-guard.mjs';
+
 import { formatAdminError } from './admin-errors.mjs';
-import { createUploadZone, getRecentUploads } from './admin-cloudinary.mjs';
+
+import {
+  createUploadZone,
+  getRecentUploads,
+} from './admin-cloudinary.mjs';
+
+const FIRESTORE_PATHS = globalThis.FIRESTORE_PATHS;
 
 /** HAIBO Admin — section managers */
 let state = {
@@ -806,8 +813,7 @@ function initAdminAppHandlers() {
 
   document.getElementById('btn-logout')?.addEventListener('click', async () => {
     try {
-      await signOutAdmin();
-      window.location.replace(LOGIN_URL);
+      await handleAdminLogout();
     } catch (err) {
       adminToast(formatAdminError(err, 'Logout'), 'error');
     }
