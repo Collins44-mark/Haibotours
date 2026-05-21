@@ -19,6 +19,7 @@ function isFirebaseConfigured() {
 let app = null;
 let db = null;
 let auth = null;
+let persistenceReady = null;
 
 export function getHaiboApp() {
   if (!isFirebaseConfigured()) return null;
@@ -64,11 +65,18 @@ export function getHaiboAuth() {
     }
   }
 
-  setPersistence(auth, browserLocalPersistence).catch((err) => {
-    console.warn('[HAIBO] setPersistence:', err?.code, err?.message);
-  });
+  if (!persistenceReady) {
+    persistenceReady = setPersistence(auth, browserLocalPersistence).catch((err) => {
+      console.warn('[HAIBO] setPersistence:', err?.code, err?.message);
+    });
+  }
 
   return auth;
+}
+
+export function waitForAuthPersistence() {
+  getHaiboAuth();
+  return persistenceReady ?? Promise.resolve();
 }
 
 function waitAuthStateReady(authInstance, timeoutMs) {
@@ -111,6 +119,7 @@ function waitAuthStateReady(authInstance, timeoutMs) {
 export async function ensureHaiboAuthReady(timeoutMs = 15000) {
   if (!isFirebaseConfigured()) return null;
   try {
+    await waitForAuthPersistence();
     const instance = getHaiboAuth();
     if (!instance) return null;
     await waitAuthStateReady(instance, timeoutMs);

@@ -36,7 +36,9 @@ export function resolveLoginPath() {
 }
 
 export function resolveDashboardPath() {
-  return isLocalDev() ? '/admin/index.html' : ADMIN_DASHBOARD_PATH;
+  if (isLocalDev()) return '/admin/index.html';
+  /* Production canonical dashboard URL (Vercel rewrite → admin/index.html) */
+  return ADMIN_DASHBOARD_ALIAS_PATH;
 }
 
 export function isLoginPage() {

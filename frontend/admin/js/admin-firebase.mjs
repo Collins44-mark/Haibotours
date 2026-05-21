@@ -41,26 +41,28 @@ export async function ensureAuthReady(timeoutMs = 15000) {
 
 export async function adminLogin(email, password) {
   console.log(LOG, 'Firebase auth request started');
-  await withTimeout(
-    ensureAuthReady(AUTH_BOOT_TIMEOUT_MS),
-    AUTH_BOOT_TIMEOUT_MS,
-    'Auth initialization'
-  );
   const auth = getAdminAuth();
-  if (!auth) throw new Error('Firebase Auth is not available');
-
-  const cred = await withTimeout(
-    signInWithEmailAndPassword(auth, email, password),
-    LOGIN_REQUEST_TIMEOUT_MS,
-    'Sign in'
-  );
-
-  console.log(LOG, 'Firebase signInWithEmailAndPassword resolved', cred?.user?.uid);
-
-  if (!auth.currentUser) {
-    await withTimeout(waitForSignedInUser(auth, 4000), 4000, 'Auth user sync');
+  if (!auth) {
+    throw new Error('Firebase Auth is not available. Check frontend/js/firebase-config.js');
   }
-  return cred;
+
+  try {
+    const cred = await withTimeout(
+      signInWithEmailAndPassword(auth, email, password),
+      LOGIN_REQUEST_TIMEOUT_MS,
+      'Sign in'
+    );
+    console.log(LOG, 'auth success', cred?.user?.uid, cred?.user?.email);
+
+    const user = cred?.user ?? auth.currentUser;
+    if (!user) {
+      await withTimeout(waitForSignedInUser(auth, 4000), 4000, 'Auth user sync');
+    }
+    return cred;
+  } catch (err) {
+    console.error(LOG, 'auth failure', err?.code, err?.message);
+    throw err;
+  }
 }
 
 export async function adminLogout() {

@@ -39,8 +39,8 @@ export function logAuth(...args) {
 
 function isAdminDocumentValid(data) {
   if (!data || typeof data !== 'object') return false;
-  if (data.admin === 'admin' || data.admin === true) return true;
   if (data.role === 'admin') return true;
+  if (data.admin === 'admin' || data.admin === true) return true;
   return false;
 }
 
@@ -107,40 +107,29 @@ export async function verifyAdminAccess(user) {
   }
 }
 
-/** Wait for Firebase Auth persistence (authStateReady + signed-in user if any). */
-export async function waitForInitialAuthState() {
-  logAuth('waiting for auth state…');
-  try {
-    await withTimeout(ensureAuthReady(AUTH_WAIT_MS), AUTH_WAIT_MS, 'Auth ready');
-  } catch (e) {
-    logAuth('auth ready timeout/fallback', e?.message || e);
-  }
-
+/** Fast session restore for boot (does not block login form). */
+export async function getRestoredSessionUser() {
+  logAuth('session restore started');
   const auth = getAdminAuth();
   if (!auth) {
-    logAuth('auth instance missing');
+    logAuth('auth failure', 'no auth instance');
     return null;
   }
 
-  if (typeof auth.authStateReady === 'function') {
-    try {
-      await withTimeout(auth.authStateReady(), AUTH_WAIT_MS, 'authStateReady');
-    } catch (e) {
-      logAuth('authStateReady fallback', e?.message || e);
-    }
+  try {
+    await withTimeout(ensureAuthReady(AUTH_WAIT_MS), AUTH_WAIT_MS, 'Auth ready');
+  } catch (e) {
+    logAuth('auth ready fallback', e?.message || e);
   }
 
-  let user = auth.currentUser;
-  if (!user) {
-    try {
-      user = await withTimeout(waitForSignedInUser(auth, AUTH_WAIT_MS), AUTH_WAIT_MS, 'Wait for user');
-    } catch {
-      user = auth.currentUser ?? null;
-    }
-  }
+  const user = auth.currentUser ?? null;
+  logAuth('session restore', user ? { uid: user.uid } : 'signed-out');
+  return user;
+}
 
-  logAuth('auth state detected', user ? { uid: user.uid, email: user.email } : 'signed-out');
-  return user ?? null;
+/** @deprecated Use getRestoredSessionUser — kept for imports */
+export async function waitForInitialAuthState() {
+  return getRestoredSessionUser();
 }
 
 export function messageForAdminFailure(result) {
@@ -206,10 +195,26 @@ export function redirectIfNeeded(wantDashboard) {
 
   logAuth('redirect started →', target);
 
-  if (isUnifiedAdminSpa()) {
-    window.history.replaceState(null, '', target);
-    logAuth('redirect completed (SPA)', target);
+  if (!wantDashboard && isLoginPage()) {
+    logAuth('redirect skipped (already on login)');
     return false;
+  }
+
+  if (wantDashboard && isDashboardPage()) {
+    logAuth('redirect skipped (already on dashboard)');
+    return false;
+  }
+
+  if (isUnifiedAdminSpa() && wantDashboard) {
+    window.location.assign(target);
+    logAuth('redirect status', 'assign dashboard', target);
+    return true;
+  }
+
+  if (isUnifiedAdminSpa() && !wantDashboard) {
+    window.location.assign(target);
+    logAuth('redirect status', 'assign login', target);
+    return true;
   }
 
   safeRedirect(target);
@@ -217,16 +222,27 @@ export function redirectIfNeeded(wantDashboard) {
   return true;
 }
 
-/** After login: normalize URL to /admin (or local index) without blocking UI */
+/** After login: go to dashboard URL (full navigation in prod avoids SPA stuck state). */
 export function completeLoginRedirect() {
   const dashPath = resolveDashboardPath();
-  logAuth('redirect started', dashPath);
   const current = window.location.pathname.replace(/\/$/, '') || '/';
   const normalized = dashPath.replace(/\/$/, '') || '/';
-  if (current !== normalized) {
-    window.history.replaceState(null, '', dashPath);
+
+  logAuth('redirect started', dashPath);
+
+  if (current === normalized) {
+    logAuth('redirect completed (already on dashboard)', current);
+    return;
   }
-  logAuth('redirect completed', window.location.pathname);
+
+  if (isUnifiedAdminSpa() && (isLoginPage() || current.includes('admin-login'))) {
+    window.location.assign(dashPath);
+    logAuth('redirect status', 'assign', dashPath);
+    return;
+  }
+
+  window.location.href = dashPath;
+  logAuth('redirect completed', dashPath);
 }
 
 export function attachAuthListener({ onSignedIn, onSignedOut }) {

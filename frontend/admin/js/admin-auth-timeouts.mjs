@@ -4,7 +4,7 @@
 
 export const LOGIN_REQUEST_TIMEOUT_MS = 10000;
 export const ADMIN_VERIFY_TIMEOUT_MS = 10000;
-export const AUTH_BOOT_TIMEOUT_MS = 8000;
+export const AUTH_BOOT_TIMEOUT_MS = 6000;
 
 export function withTimeout(promise, ms, label) {
   let timer;
