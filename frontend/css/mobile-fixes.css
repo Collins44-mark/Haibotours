@@ -43,9 +43,12 @@ iframe {
   height: auto;
 }
 
-.haibo-media {
+.haibo-media:not(.dest-card-img) {
   width: 100%;
   max-width: 100%;
+}
+
+.haibo-media {
   object-fit: cover;
   object-position: center;
 }
