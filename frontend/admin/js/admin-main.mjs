@@ -1,4 +1,4 @@
-import { bindLoginForm, bootUnifiedAdmin } from './admin-shell.mjs';
+import { bootUnifiedAdmin } from './admin-shell.mjs';
 import { getAdminAuth, getAdminDb } from './admin-firebase.mjs';
 
 /* Warm up Firebase before first sign-in click */
@@ -10,9 +10,6 @@ if (globalThis.isFirebaseConfigured?.()) {
     console.warn('[HAIBO Admin] Firebase warmup:', err);
   }
 }
-
-/* Attach before async boot so submit never uses native GET navigation */
-bindLoginForm();
 
 try {
   bootUnifiedAdmin();

@@ -208,7 +208,13 @@ function isUnifiedAdminSpa() {
 /** Production dashboard paths (Vercel rewrites → admin/index.html) */
 export const ADMIN_DASHBOARD_URL = '/admin';
 
+/** Unified SPA: never navigate between login/dashboard URLs (prevents reload loops). */
 export function redirectIfNeeded(wantDashboard) {
+  if (isUnifiedAdminSpa()) {
+    logAuth('redirect event', 'skipped (unified SPA — UI only)', { wantDashboard });
+    return false;
+  }
+
   const loginPath = resolveLoginPath();
   const dashPath = resolveDashboardPath();
   const target = wantDashboard ? dashPath : loginPath;
@@ -220,77 +226,32 @@ export function redirectIfNeeded(wantDashboard) {
     return false;
   }
 
-  logAuth('redirect started →', target);
-
-  if (!wantDashboard && isLoginPage()) {
-    logAuth('redirect skipped (already on login)');
-    return false;
-  }
-
-  if (wantDashboard && isDashboardPage()) {
-    logAuth('redirect skipped (already on dashboard)');
-    return false;
-  }
-
-  if (isUnifiedAdminSpa() && wantDashboard) {
-    window.history.replaceState(null, '', target);
-    logAuth('redirect status', 'SPA dashboard URL', target);
-    return false;
-  }
-
-  if (isUnifiedAdminSpa() && !wantDashboard) {
-    window.location.assign(target);
-    logAuth('redirect status', 'assign login', target);
-    return true;
-  }
-
-  safeRedirect(target);
-  logAuth('redirect completed', target);
-  return true;
+  logAuth('redirect event', 'safeRedirect →', target);
+  return safeRedirect(target);
 }
 
-/**
- * Update URL to dashboard without reloading (keeps dashboard visible after login).
- */
+/** @deprecated Shell handles URL sync; no full navigation in unified SPA. */
 export function completeLoginRedirect() {
-  const dashPath = resolveDashboardPath();
-  const current = window.location.pathname.replace(/\/$/, '') || '/';
-  const normalized = dashPath.replace(/\/$/, '') || '/';
-
-  logAuth('redirect started', dashPath);
-
-  if (current === normalized) {
-    logAuth('redirect completed (already on dashboard)', current);
-    return;
-  }
-
   if (isUnifiedAdminSpa()) {
-    window.history.replaceState(null, '', dashPath);
-    logAuth('redirect completed (SPA replaceState)', dashPath);
+    logAuth('redirect event', 'skipped (unified SPA)');
     return;
   }
-
-  window.location.href = dashPath;
-  logAuth('redirect completed (navigation)', dashPath);
+  const dashPath = resolveDashboardPath();
+  if (!isDashboardPage()) {
+    logAuth('redirect event', 'navigation →', dashPath);
+    window.location.href = dashPath;
+  }
 }
 
+/** @deprecated Use admin-shell single listener. Kept for legacy imports. */
 export function attachAuthListener({ onSignedIn, onSignedOut }) {
   const auth = getAdminAuth();
   if (!auth) return () => {};
-
-  let first = true;
+  logAuth('attachAuthListener (legacy) — prefer admin-shell');
   return onAuthStateChanged(auth, (user) => {
-    if (first) {
-      first = false;
-      logAuth('auth listener (initial, ignored)', user?.uid || 'null');
-      return;
-    }
-    logAuth('auth listener', user?.uid || 'signed-out');
-    if (user) {
-      onSignedIn?.(user);
-    } else {
-      onSignedOut?.();
-    }
+    logAuth('auth state change (legacy listener)', user?.uid || 'signed-out');
+    if (user) onSignedIn?.(user);
+    else onSignedOut?.();
   });
 }
 

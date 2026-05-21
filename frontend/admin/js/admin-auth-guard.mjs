@@ -37,8 +37,8 @@ export function resolveLoginPath() {
 
 export function resolveDashboardPath() {
   if (isLocalDev()) return '/admin/index.html';
-  /* Vercel rewrite → admin/index.html */
-  return ADMIN_DASHBOARD_ALIAS_PATH;
+  /* Same SPA as /admin-login — avoid /admin ↔ /admin-dashboard reload loops */
+  return ADMIN_DASHBOARD_PATH;
 }
 
 /** One URL that works on Python http.server and Vercel */
@@ -438,7 +438,8 @@ export async function guardAdminDashboard(onReady) {
     return;
   }
 
-  if (isLoginPage()) {
+  /* Unified SPA: never auto-redirect login URL → dashboard (shell toggles UI only) */
+  if (isLoginPage() && !document.getElementById('admin-login-gate')) {
     redirectToDashboard();
     return;
   }
@@ -577,7 +578,8 @@ export async function guardAdminLogin(onFormReady) {
   try {
     const session = await resolveAdminSession();
 
-    if (session.user && session.isAdmin && !skipAutoRedirect) {
+    const unifiedSpa = Boolean(document.getElementById('admin-login-gate'));
+    if (session.user && session.isAdmin && !skipAutoRedirect && !unifiedSpa) {
       clearAuthFailure();
       window.location.replace(resolveDashboardPath());
       return;

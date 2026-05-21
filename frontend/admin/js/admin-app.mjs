@@ -860,6 +860,13 @@ function initAdminAppHandlers() {
   loadAllAdminData();
 }
 
+let adminAppInitialized = false;
+
 export function initAdminApp() {
+  if (adminAppInitialized) {
+    console.log('[HAIBO Admin] initAdminApp skipped (already initialized)');
+    return;
+  }
+  adminAppInitialized = true;
   initAdminAppHandlers();
 }
