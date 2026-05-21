@@ -379,6 +379,9 @@ function initWhatsAppFloat(customMessage) {
 }
 
 function resolveDestinationImage(dest) {
+  if (typeof haiboResolveCardImage === 'function') {
+    return haiboResolveCardImage(dest);
+  }
   const pick =
     typeof haiboPickDestinationImage === 'function'
       ? haiboPickDestinationImage(dest)
@@ -400,6 +403,9 @@ function escapeAttrUrl(url) {
 }
 
 function renderDestinationCard(dest) {
+  if (typeof window.haiboBuildDestinationCard === 'function') {
+    return window.haiboBuildDestinationCard(dest);
+  }
   const href = destinationDetailUrl(dest.id);
   const imageUrl = resolveDestinationImage(dest);
   const alt = `${dest.name} safari — ${dest.subtitle}`;
@@ -412,15 +418,16 @@ function renderDestinationCard(dest) {
     ? `<img src="${escapeAttrUrl(imgSrc)}" alt="${alt.replace(/"/g, '&quot;')}" loading="lazy" decoding="async" class="haibo-media dest-card-img w-full object-cover" width="900" height="600">`
     : '';
   return `
-    <a href="${href}" class="destination-card glass rounded-[30px] overflow-hidden">
+    <a href="${href}" class="destination-card dest-card-premium glass rounded-[30px] overflow-hidden">
       <div class="relative dest-card-media"${bg ? ` style="background-image:url('${bg}')"` : ''}>
         ${img}
-        <div class="absolute inset-0 overlay-dark"></div>
-        <div class="absolute bottom-6 left-6 right-6">
-          <p class="text-xs orange uppercase tracking-[3px] mb-1">${dest.region}</p>
-          <h3 class="text-2xl font-semibold mb-1">${dest.name}</h3>
-          <p class="text-gray-300">${dest.subtitle}</p>
-          <p class="text-sm text-gray-400 mt-3">From ${dest.packages?.[0]?.price || 'Contact us'}</p>
+        <div class="dest-card-overlay overlay-dark" aria-hidden="true"></div>
+        <div class="dest-card-shine" aria-hidden="true"></div>
+        <div class="dest-card-body absolute bottom-6 left-6 right-6">
+          <p class="dest-card-region text-xs orange uppercase tracking-[3px] mb-1">${dest.region}</p>
+          <h3 class="dest-card-title text-2xl font-semibold mb-1">${dest.name}</h3>
+          <p class="dest-card-subtitle text-gray-300">${dest.subtitle}</p>
+          <p class="dest-card-price text-sm mt-3">From <span>${dest.packages?.[0]?.price || 'Contact us'}</span></p>
         </div>
       </div>
     </a>

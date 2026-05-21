@@ -482,7 +482,53 @@ function haiboResolveCardImage(dest) {
   if (typeof haiboIsAdminUploadedUrl === 'function' && haiboIsAdminUploadedUrl(img)) {
     return img;
   }
-  return staticD?.image || img || '';
+  if (typeof haiboValidMediaUrl === 'function' && haiboValidMediaUrl(img)) {
+    return img;
+  }
+  return staticD?.image || '';
+}
+
+/** Safari card HTML — shared by app.js and paint routine */
+function haiboBuildDestinationCard(dest) {
+  const href = destinationDetailUrl(dest.id);
+  const imageUrl = haiboResolveCardImage(dest);
+  const staticD =
+    typeof haiboStaticDestination === 'function'
+      ? haiboStaticDestination(dest.id)
+      : (window.HAIBO_DESTINATIONS_STATIC || DESTINATIONS).find((d) => d.id === dest.id);
+  const fallbackUrl = staticD?.image || '';
+  const safeUrl = imageUrl || fallbackUrl;
+  const bg = safeUrl.replace(/'/g, '%27').replace(/"/g, '%22');
+  const imgSrc =
+    typeof window.haiboOptimizeImage === 'function'
+      ? window.haiboOptimizeImage(safeUrl, { width: 800 })
+      : safeUrl;
+  const alt = `${dest.name} safari — ${dest.subtitle}`;
+  const fbAttr = fallbackUrl
+    ? ` data-fallback="${haiboEscapeHtml(fallbackUrl)}" onerror="if(this.dataset.fallback){this.src=this.dataset.fallback;this.onerror=null;}"`
+    : '';
+  const img = safeUrl
+    ? `<img src="${haiboEscapeHtml(imgSrc)}" alt="${haiboEscapeHtml(alt)}" loading="lazy" decoding="async" class="haibo-media dest-card-img w-full object-cover" width="800" height="533"${fbAttr}>`
+    : '';
+  const price =
+    Array.isArray(dest.packages) && dest.packages[0]?.price
+      ? dest.packages[0].price
+      : 'Contact us';
+
+  return `
+    <a href="${haiboEscapeHtml(href)}" class="destination-card dest-card-premium glass rounded-[30px] overflow-hidden">
+      <div class="relative dest-card-media"${bg ? ` style="background-image:url('${bg}')"` : ''}>
+        ${img}
+        <div class="dest-card-overlay overlay-dark" aria-hidden="true"></div>
+        <div class="dest-card-shine" aria-hidden="true"></div>
+        <div class="dest-card-body absolute bottom-6 left-6 right-6">
+          <p class="dest-card-region text-xs orange uppercase tracking-[3px] mb-1">${haiboEscapeHtml(dest.region)}</p>
+          <h3 class="dest-card-title text-2xl font-semibold mb-1">${haiboEscapeHtml(dest.name)}</h3>
+          <p class="dest-card-subtitle text-gray-300">${haiboEscapeHtml(dest.subtitle)}</p>
+          <p class="dest-card-price text-sm mt-3">From <span>${haiboEscapeHtml(price)}</span></p>
+        </div>
+      </div>
+    </a>`;
 }
 
 /** Paint destination cards from local data — runs even if Firebase/CMS fails */
@@ -526,32 +572,7 @@ function haiboPaintDestinationCards(containerId, limit) {
   if (!list.length) return false;
   if (limit) list = list.slice(0, limit);
 
-  container.innerHTML = list
-    .map((dest) => {
-      const href = destinationDetailUrl(dest.id);
-      const imageUrl = haiboResolveCardImage(dest);
-      const bg = imageUrl.replace(/'/g, '%27');
-      const img = imageUrl
-        ? `<img src="${haiboEscapeHtml(imageUrl)}" alt="${haiboEscapeHtml(`${dest.name} safari — ${dest.subtitle}`)}" loading="lazy" decoding="async" class="haibo-media dest-card-img w-full object-cover" width="900" height="600">`
-        : '';
-      const price = Array.isArray(dest.packages) && dest.packages[0]?.price
-        ? dest.packages[0].price
-        : 'Contact us';
-      return `
-    <a href="${haiboEscapeHtml(href)}" class="destination-card glass rounded-[30px] overflow-hidden">
-      <div class="relative dest-card-media"${bg ? ` style="background-image:url('${bg}')"` : ''}>
-        ${img}
-        <div class="absolute inset-0 overlay-dark"></div>
-        <div class="absolute bottom-6 left-6 right-6">
-          <p class="text-xs orange uppercase tracking-[3px] mb-1">${haiboEscapeHtml(dest.region)}</p>
-          <h3 class="text-2xl font-semibold mb-1">${haiboEscapeHtml(dest.name)}</h3>
-          <p class="text-gray-300">${haiboEscapeHtml(dest.subtitle)}</p>
-          <p class="text-sm text-gray-400 mt-3">From ${haiboEscapeHtml(price)}</p>
-        </div>
-      </div>
-    </a>`;
-    })
-    .join('');
+  container.innerHTML = list.map((dest) => haiboBuildDestinationCard(dest)).join('');
 
   container.dataset.haiboRendered = '1';
   return true;
@@ -563,6 +584,7 @@ function haiboBootDestinationGrids() {
 }
 
 window.haiboPaintDestinationCards = haiboPaintDestinationCards;
+window.haiboBuildDestinationCard = haiboBuildDestinationCard;
 window.haiboBootDestinationGrids = haiboBootDestinationGrids;
 
 if (document.readyState === 'loading') {
