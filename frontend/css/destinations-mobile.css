@@ -140,13 +140,12 @@
     }
   }
 
-  /* Compact consistent ratio — no tall stretch */
+  /* Card media — height capped on phone via @media (max-width: 767px) below */
   .destination-card .dest-card-media {
     position: relative;
     width: 100%;
-    aspect-ratio: 3 / 4;
+    aspect-ratio: 4 / 5;
     min-height: 0 !important;
-    max-height: none !important;
     overflow: hidden;
     background-color: #0a0a0a;
     background-size: cover;
@@ -277,36 +276,99 @@
   }
 }
 
-/* Medium phones: 2-column compact squares */
-@media (min-width: 480px) and (max-width: 767px) {
+/* ═══════════════════════════════════════
+   MOBILE — 2-column luxury grid (< 768px)
+   ═══════════════════════════════════════ */
+@media (max-width: 767px) {
+  .destinations-section {
+    padding-left: max(0.85rem, env(safe-area-inset-left)) !important;
+    padding-right: max(0.85rem, env(safe-area-inset-right)) !important;
+    padding-bottom: calc(4.25rem + env(safe-area-inset-bottom, 0px)) !important;
+    overflow-x: hidden;
+  }
+
   #home-destinations,
   #all-destinations {
-    gap: 0.8rem !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: clamp(0.5rem, 2.2vw, 0.75rem) !important;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    align-items: stretch;
+    grid-auto-rows: 1fr;
+    margin-bottom: 0.35rem;
   }
 
+  .destination-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+  }
+
+  /* Fixed professional height — no tall single-column stretch */
   .destination-card .dest-card-media {
-    aspect-ratio: 4 / 5;
-  }
-}
-
-/* Very small: single column, cinematic wide tile */
-@media (max-width: 479px) {
-  #home-destinations,
-  #all-destinations {
-    grid-template-columns: 1fr !important;
-    gap: 0.85rem !important;
-  }
-
-  .destination-card .dest-card-media {
-    aspect-ratio: 16 / 11;
-  }
-
-  .destination-card .dest-card-title {
-    font-size: 1.02rem !important;
+    flex: 0 0 auto;
+    width: 100%;
+    aspect-ratio: unset !important;
+    height: clamp(11rem, 38vw, 17.5rem);
+    max-height: 280px;
+    min-height: 220px;
   }
 
   .destination-card .dest-card-body {
-    padding: 0.85rem 0.9rem 0.9rem !important;
+    padding: 0.55rem 0.6rem 0.62rem !important;
+  }
+
+  .destination-card .dest-card-region {
+    font-size: clamp(0.48rem, 2.4vw, 0.56rem) !important;
+    letter-spacing: 0.12em !important;
+    margin-bottom: 0.15rem !important;
+  }
+
+  .destination-card .dest-card-title,
+  .destination-card h3.dest-card-title {
+    font-size: clamp(0.72rem, 3.4vw, 0.88rem) !important;
+    line-height: 1.2 !important;
+    -webkit-line-clamp: 2;
+  }
+
+  .destination-card .dest-card-subtitle {
+    font-size: clamp(0.58rem, 2.6vw, 0.66rem) !important;
+    line-height: 1.25 !important;
+    -webkit-line-clamp: 2;
+  }
+
+  .destination-card .dest-card-price {
+    font-size: clamp(0.52rem, 2.3vw, 0.6rem) !important;
+    margin-top: 0.28rem !important;
+  }
+
+  .destination-card .dest-card-price span {
+    font-size: clamp(0.62rem, 2.8vw, 0.72rem) !important;
+  }
+
+  .destination-card:active {
+    transform: scale(0.97);
+  }
+}
+
+/* Narrow phones — tighter gap, still 2 columns */
+@media (max-width: 374px) {
+  #home-destinations,
+  #all-destinations {
+    gap: 0.45rem !important;
+  }
+
+  .destination-card .dest-card-media {
+    height: clamp(10.75rem, 36vw, 15.5rem);
+    min-height: 210px;
+    max-height: 248px;
+  }
+
+  .destination-card .dest-card-body {
+    padding: 0.5rem 0.52rem 0.55rem !important;
   }
 }
 
@@ -326,22 +388,10 @@
   }
 }
 
-/* WhatsApp + safe area — no overlap with last row */
-@media (max-width: 767px) {
-  .destinations-section {
-    padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px)) !important;
-  }
-
-  #home-destinations,
-  #all-destinations {
-    margin-bottom: 0.25rem;
-  }
-}
-
 @media (max-width: 1024px) {
   .destination-card .dest-card-img {
     content-visibility: auto;
-    contain-intrinsic-size: 200px 260px;
+    contain-intrinsic-size: 160px 240px;
   }
 }
 
