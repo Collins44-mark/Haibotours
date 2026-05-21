@@ -1,21 +1,14 @@
 /**
- * Unified admin — login + dashboard on ONE page (no redirect after sign-in).
+ * Admin login + dashboard on one page.
+ * Session lock: after sign-in, ignore Firebase null ticks until Logout.
  */
-import {
-  ensureAuthReady,
-  adminLogin,
-  adminLogout,
-  getAdminAuth,
-  onAuthStateChanged,
-} from './admin-firebase.mjs';
-import { checkIsAdminUser, formatAuthError } from './admin-auth-guard.mjs';
+import { ensureAuthReady, adminLogin, adminLogout, getAdminAuth } from './admin-firebase.mjs';
+import { ensureAdminRecord, formatAuthError } from './admin-auth-guard.mjs';
 import { initAdminApp } from './admin-app.mjs';
 
 let cmsStarted = false;
-let authHooked = false;
-let activeUid = null;
-/** Ignore brief null auth ticks right after sign-in */
-let ignoreSignedOutUntil = 0;
+/** When true, never show login overlay (until explicit logout) */
+let sessionLocked = false;
 
 function el(id) {
   return document.getElementById(id);
@@ -29,7 +22,14 @@ function hideLoading() {
   }
 }
 
+function setStatus(text) {
+  const s = el('admin-status');
+  if (s) s.textContent = text || '';
+}
+
 function showLoginGate(message, type = 'error') {
+  if (sessionLocked) return;
+
   hideLoading();
   document.body.classList.add('admin-login-page', 'admin-login-ready');
   document.body.classList.remove('admin-authenticated');
@@ -41,15 +41,15 @@ function showLoginGate(message, type = 'error') {
 
   const err = el('login-error');
   if (err) {
-    err.textContent = message || '';
-    err.style.color = type === 'warn' ? '#fbbf24' : message ? '#f87171' : '';
+    err.textContent = message || 'Please sign in with your Firebase admin email and password.';
+    err.style.color = type === 'warn' ? '#fbbf24' : '#f87171';
   }
+  setStatus('');
 }
 
 function showCms(user) {
+  sessionLocked = true;
   hideLoading();
-  activeUid = user?.uid || null;
-  ignoreSignedOutUntil = Date.now() + 8000;
 
   document.body.classList.remove('admin-login-page', 'admin-login-ready', 'admin-auth-pending');
   document.body.classList.add('admin-authenticated');
@@ -65,55 +65,20 @@ function showCms(user) {
   const err = el('login-error');
   if (err) err.textContent = '';
 
-  if (!cmsStarted) {
-    cmsStarted = true;
-    initAdminApp();
-  }
-}
-
-async function processUser(user) {
-  if (!user) {
-    if (Date.now() < ignoreSignedOutUntil) {
-      return;
-    }
-    activeUid = null;
-    showLoginGate();
-    return;
-  }
-
-  if (activeUid === user.uid && document.body.classList.contains('admin-authenticated')) {
-    return;
-  }
-
-  const adminResult = await checkIsAdminUser(user);
-  if (!adminResult.ok) {
-    const uid = user.uid || '';
-    let msg =
-      adminResult.reason === 'permission-denied'
-        ? 'Firestore rules blocked admin setup. Deploy firebase/firestore.rules (admins create rule).'
-        : `Could not verify admin access for UID: ${uid}. In Firestore create admins/${uid} or deploy updated rules.`;
-    if (adminResult.reason === 'provision-failed') {
-      msg = `Could not create admins/${uid}. Deploy firestore.rules then sign in again. (${adminResult.error?.code || 'error'})`;
-    }
-    const hint = el('login-uid-hint');
-    if (hint) hint.textContent = uid ? `Your Firebase UID: ${uid}` : '';
-    showLoginGate(msg);
-    return;
-  }
-
   const hint = el('login-uid-hint');
   if (hint) hint.textContent = '';
-  showCms(user);
-}
 
-function hookAuthListener() {
-  if (authHooked) return;
-  authHooked = true;
-  const auth = getAdminAuth();
-  if (!auth) return;
-  onAuthStateChanged(auth, (user) => {
-    processUser(user);
-  });
+  if (!cmsStarted) {
+    cmsStarted = true;
+    try {
+      initAdminApp();
+    } catch (e) {
+      console.error('[HAIBO Admin] initAdminApp:', e);
+      setStatus('Dashboard loaded with errors — check console (F12).');
+    }
+  }
+
+  setStatus('');
 }
 
 function bindLoginForm() {
@@ -130,18 +95,36 @@ function bindLoginForm() {
     if (errEl) errEl.textContent = '';
     if (submitBtn) submitBtn.disabled = true;
     if (btnLabel) btnLabel.textContent = 'Signing in…';
+    setStatus('Connecting to Firebase…');
 
     try {
       const cred = await adminLogin(form.email.value, form.password.value);
-      ignoreSignedOutUntil = Date.now() + 10000;
+      if (!cred?.user) {
+        throw new Error('Sign-in succeeded but no user was returned.');
+      }
+
       if (btnLabel) btnLabel.textContent = 'Opening dashboard…';
-      await processUser(cred.user);
+      showCms(cred.user);
+
+      ensureAdminRecord(cred.user).then((r) => {
+        if (!r.ok) {
+          setStatus(
+            'Signed in. Publish Firestore rules in Firebase Console to enable saving (see firebase/firestore.rules).'
+          );
+        }
+      });
     } catch (ex) {
-      console.error('[HAIBO Admin] Sign-in failed:', ex?.code, ex?.message);
+      console.error('[HAIBO Admin] Sign-in failed:', ex?.code, ex?.message, ex);
+      sessionLocked = false;
+      const msg =
+        formatAuthError(ex) ||
+        ex?.message ||
+        'Sign-in failed. Check email/password and Firebase Authentication.';
       if (errEl) {
-        errEl.textContent = formatAuthError(ex);
+        errEl.textContent = msg;
         errEl.style.color = '#f87171';
       }
+      showLoginGate(msg);
     } finally {
       if (submitBtn) submitBtn.disabled = false;
       if (btnLabel && !document.body.classList.contains('admin-authenticated')) {
@@ -149,6 +132,16 @@ function bindLoginForm() {
       }
     }
   });
+}
+
+async function restoreSessionIfAny() {
+  const auth = getAdminAuth();
+  const user = auth?.currentUser;
+  if (!user) return false;
+
+  showCms(user);
+  ensureAdminRecord(user).catch(() => {});
+  return true;
 }
 
 export async function bootUnifiedAdmin() {
@@ -160,27 +153,28 @@ export async function bootUnifiedAdmin() {
 
   bindLoginForm();
   showLoginGate();
-  hookAuthListener();
 
   try {
     await Promise.race([
-      ensureAuthReady(8000),
-      new Promise((resolve) => setTimeout(resolve, 8000)),
+      ensureAuthReady(10000),
+      new Promise((r) => setTimeout(r, 10000)),
     ]);
-    const auth = getAdminAuth();
-    if (auth?.currentUser) {
-      await processUser(auth.currentUser);
+    const restored = await restoreSessionIfAny();
+    if (!restored) {
+      showLoginGate();
     }
   } catch (err) {
     console.error('[HAIBO Admin] Boot error:', err);
-    showLoginGate('Could not connect to Firebase. Check network and refresh.', 'warn');
+    showLoginGate('Could not connect to Firebase. Check internet and refresh.', 'warn');
   }
 }
 
-/** Sign out without leaving /admin */
 export async function signOutAdmin() {
+  sessionLocked = false;
   cmsStarted = false;
-  activeUid = null;
-  ignoreSignedOutUntil = 0;
-  await adminLogout();
+  try {
+    await adminLogout();
+  } finally {
+    showLoginGate('You have been signed out.');
+  }
 }
