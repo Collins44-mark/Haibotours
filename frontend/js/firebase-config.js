@@ -42,6 +42,15 @@ function isFirebaseConfigured() {
   return Boolean(FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.projectId);
 }
 
+/** Expose for ES modules (modules cannot read const from this script file). */
+globalThis.FIREBASE_CONFIG = FIREBASE_CONFIG;
+globalThis.CLOUDINARY_CONFIG = CLOUDINARY_CONFIG;
+globalThis.FIRESTORE_PATHS = FIRESTORE_PATHS;
+globalThis.FIRESTORE_ADMIN_COLLECTION = FIRESTORE_ADMIN_COLLECTION;
+globalThis.HAIBO_ADMIN_EMAIL_ALLOWLIST = HAIBO_ADMIN_EMAIL_ALLOWLIST;
+globalThis.FIREBASE_SDK_VERSION = FIREBASE_SDK_VERSION;
+globalThis.isFirebaseConfigured = isFirebaseConfigured;
+
 /**
  * Production: add your Vercel/custom domain in Firebase Console →
  * Authentication → Settings → Authorized domains

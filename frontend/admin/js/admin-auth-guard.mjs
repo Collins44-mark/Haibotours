@@ -1,3 +1,4 @@
+import { FIREBASE_SDK_VERSION } from '../../js/firebase-sdk-version.mjs';
 import { doc, getDoc } from `https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-firestore.js`;
 import {
   ensureAuthReady,
@@ -21,8 +22,7 @@ const JUST_LOGGED_IN_KEY = 'haibo_admin_just_logged_in';
 const AUTH_FAIL_KEY = 'haibo_admin_last_fail';
 
 /** Firestore allowlist collection (from firebase-config.js or fallback) */
-const ADMIN_COLLECTION =
-  typeof FIRESTORE_ADMIN_COLLECTION !== 'undefined' ? FIRESTORE_ADMIN_COLLECTION : 'admins';
+const ADMIN_COLLECTION = globalThis.FIRESTORE_ADMIN_COLLECTION || 'admins';
 
 function isLocalDev() {
   const h = window.location.hostname;
@@ -243,8 +243,7 @@ export function redirectToDashboard() {
 }
 
 function isEmailAdminAllowlisted(email) {
-  const list =
-    typeof HAIBO_ADMIN_EMAIL_ALLOWLIST !== 'undefined' ? HAIBO_ADMIN_EMAIL_ALLOWLIST : [];
+  const list = globalThis.HAIBO_ADMIN_EMAIL_ALLOWLIST || [];
   if (!Array.isArray(list) || !email) return false;
   const normalized = String(email).trim().toLowerCase();
   return list.some((e) => String(e).trim().toLowerCase() === normalized);
@@ -380,7 +379,7 @@ export function showUnauthorizedMessage(uid, reason) {
 }
 
 export async function guardAdminDashboard(onReady) {
-  if (!isFirebaseConfigured()) {
+  if (!globalThis.isFirebaseConfigured?.()) {
     document.body.innerHTML =
       '<div style="padding:3rem;color:#fff;font-family:Poppins,sans-serif;text-align:center"><h1 style="color:#d98b2b">Firebase not configured</h1><p>Edit frontend/js/firebase-config.js</p></div>';
     return;
@@ -484,7 +483,7 @@ export async function guardAdminDashboard(onReady) {
 }
 
 export async function guardAdminLogin(onFormReady) {
-  if (!isFirebaseConfigured()) {
+  if (!globalThis.isFirebaseConfigured?.()) {
     document.body.innerHTML =
       '<div style="padding:3rem;color:#fff;font-family:Poppins,sans-serif;text-align:center"><h1 style="color:#d98b2b">Firebase not configured</h1><p>Add keys in frontend/js/firebase-config.js</p></div>';
     return;

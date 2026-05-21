@@ -1,3 +1,4 @@
+import { FIREBASE_SDK_VERSION } from '../../js/firebase-sdk-version.mjs';
 import { getAdminDb } from './admin-firebase.mjs';
 import {
   doc,

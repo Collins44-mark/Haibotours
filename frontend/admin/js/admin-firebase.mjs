@@ -7,6 +7,7 @@ import {
   getHaiboAuth,
   ensureHaiboAuthReady,
 } from '../../js/firebase-app.mjs';
+import { FIREBASE_SDK_VERSION } from '../../js/firebase-sdk-version.mjs';
 import {
   signInWithEmailAndPassword,
   signOut,

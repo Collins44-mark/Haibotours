@@ -1,6 +1,7 @@
 /**
  * Firestore realtime listeners — live website updates + always-on local fallbacks
  */
+import { FIREBASE_SDK_VERSION } from './firebase-sdk-version.mjs';
 import { doc, onSnapshot, collection } from `https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-firestore.js`;
 import { getHaiboDb } from './firebase-app.mjs';
 

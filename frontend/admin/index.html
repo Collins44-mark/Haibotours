@@ -10,15 +10,15 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/admin/css/admin.css">
 </head>
-<body class="admin-auth-pending">
-  <div id="admin-auth-loading" class="admin-auth-loading" aria-live="polite" aria-busy="true">
+<body class="admin-login-page admin-login-ready">
+  <div id="admin-auth-loading" class="admin-auth-loading" hidden aria-live="polite" aria-busy="false">
     <div class="admin-auth-loading__inner">
       <div class="admin-auth-loading__spinner" aria-hidden="true"></div>
       <p data-auth-loading-msg>Loading admin…</p>
     </div>
   </div>
 
-  <div id="admin-login-gate" class="admin-login-wrap" hidden>
+  <div id="admin-login-gate" class="admin-login-wrap">
     <div class="admin-login-bg" aria-hidden="true"></div>
     <form id="login-form" class="admin-login-card">
       <div class="admin-login-brand">
@@ -349,8 +349,18 @@
     </div>
   </div>
 
-  <script src="/js/config.js"></script>
   <script src="/js/firebase-config.js"></script>
+  <script>
+    (function () {
+      var gate = document.getElementById('admin-login-gate');
+      var loading = document.getElementById('admin-auth-loading');
+      if (gate) gate.hidden = false;
+      if (loading) loading.hidden = true;
+      document.body.classList.add('admin-login-page', 'admin-login-ready');
+      document.body.classList.remove('admin-auth-pending');
+    })();
+  </script>
+  <script src="/js/config.js"></script>
   <script src="/js/haibo-defaults.js"></script>
   <script src="/js/destinations-data.js"></script>
   <script src="/js/gallery-data.js"></script>

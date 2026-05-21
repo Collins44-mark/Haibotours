@@ -13,6 +13,7 @@ import { initAdminApp } from './admin-app.mjs';
 
 let cmsStarted = false;
 let authHooked = false;
+let processingAuth = false;
 
 function el(id) {
   return document.getElementById(id);
@@ -24,20 +25,17 @@ function hideLoading() {
     loading.hidden = true;
     loading.setAttribute('aria-busy', 'false');
   }
-  document.body.classList.remove('admin-auth-pending');
 }
 
 function showLoginGate(message, type = 'error') {
   hideLoading();
-  document.body.classList.add('admin-auth-pending', 'admin-login-page', 'admin-login-ready');
+  document.body.classList.add('admin-login-page', 'admin-login-ready');
   document.body.classList.remove('admin-authenticated');
 
   const gate = el('admin-login-gate');
   const shell = el('admin-app-root');
   if (gate) gate.hidden = false;
-  if (shell) {
-    shell.setAttribute('aria-hidden', 'true');
-  }
+  if (shell) shell.setAttribute('aria-hidden', 'true');
 
   const err = el('login-error');
   if (err) {
@@ -69,27 +67,33 @@ function showCms(user) {
 }
 
 async function processUser(user) {
-  if (!user) {
-    showLoginGate();
-    return;
-  }
-
-  const adminResult = await checkIsAdminUser(user);
-  if (!adminResult.ok) {
-    const msg =
-      adminResult.reason === 'permission-denied'
-        ? 'Firestore rules blocked admin check. Deploy firebase/firestore.rules to project haibo-tours.'
-        : `Not authorized. In Firestore Database create: admins/${user.uid} (document ID = your Authentication UID, not email).`;
-    try {
-      await adminLogout();
-    } catch {
-      /* ignore */
+  if (processingAuth) return;
+  processingAuth = true;
+  try {
+    if (!user) {
+      showLoginGate();
+      return;
     }
-    showLoginGate(msg);
-    return;
-  }
 
-  showCms(user);
+    const adminResult = await checkIsAdminUser(user);
+    if (!adminResult.ok) {
+      const msg =
+        adminResult.reason === 'permission-denied'
+          ? 'Firestore rules blocked admin check. Deploy firebase/firestore.rules to project haibo-tours.'
+          : `Not authorized. In Firestore Database create: admins/${user.uid} (document ID = your Authentication UID, not email).`;
+      try {
+        await adminLogout();
+      } catch {
+        /* ignore */
+      }
+      showLoginGate(msg);
+      return;
+    }
+
+    showCms(user);
+  } finally {
+    processingAuth = false;
+  }
 }
 
 function bindLoginForm() {
@@ -117,6 +121,7 @@ function bindLoginForm() {
         errEl.textContent = formatAuthError(ex);
         errEl.style.color = '#f87171';
       }
+      showLoginGate();
     } finally {
       if (submitBtn) submitBtn.disabled = false;
       if (btnLabel && !document.body.classList.contains('admin-authenticated')) {
@@ -127,32 +132,49 @@ function bindLoginForm() {
 }
 
 export async function bootUnifiedAdmin() {
-  if (!isFirebaseConfigured()) {
+  if (!globalThis.isFirebaseConfigured?.()) {
     document.body.innerHTML =
       '<div style="padding:3rem;color:#fff;font-family:Poppins,sans-serif;text-align:center"><h1 style="color:#d98b2b">Firebase not configured</h1><p>Edit frontend/js/firebase-config.js</p></div>';
     return;
   }
 
   bindLoginForm();
+  showLoginGate();
+
+  const safety = setTimeout(() => {
+    if (!document.body.classList.contains('admin-authenticated')) {
+      showLoginGate();
+    }
+  }, 2000);
 
   try {
-    await ensureAuthReady(15000);
+    await Promise.race([
+      ensureAuthReady(5000),
+      new Promise((resolve) => setTimeout(resolve, 5000)),
+    ]);
+
+    if (!authHooked) {
+      authHooked = true;
+      watchAdminAuth((user) => {
+        processUser(user);
+      });
+    }
+
+    const auth = getAdminAuth();
+    if (auth?.currentUser) {
+      await processUser(auth.currentUser);
+    }
   } catch (err) {
-    console.warn('[HAIBO Admin] Auth ready:', err);
-  }
-
-  if (!authHooked) {
-    authHooked = true;
-    watchAdminAuth((user) => {
-      processUser(user);
-    });
-  }
-
-  const auth = getAdminAuth();
-  if (auth?.currentUser) {
-    await processUser(auth.currentUser);
-  } else {
-    showLoginGate();
+    console.error('[HAIBO Admin] Boot error:', err);
+    showLoginGate(
+      'Could not connect to Firebase. Check your network and refresh the page.',
+      'warn'
+    );
+  } finally {
+    clearTimeout(safety);
+    if (!document.body.classList.contains('admin-authenticated')) {
+      showLoginGate();
+    }
   }
 }
 

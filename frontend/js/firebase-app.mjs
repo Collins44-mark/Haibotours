@@ -1,6 +1,7 @@
 /**
  * Firebase modular SDK — single app instance for site + admin
  */
+import { FIREBASE_SDK_VERSION } from './firebase-sdk-version.mjs';
 import { initializeApp, getApps, getApp } from `https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-app.js`;
 import { getFirestore } from `https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-firestore.js`;
 import {
@@ -8,6 +9,11 @@ import {
   initializeAuth,
   browserLocalPersistence,
 } from `https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-auth.js`;
+
+const FIREBASE_CONFIG = globalThis.FIREBASE_CONFIG;
+function isFirebaseConfigured() {
+  return globalThis.isFirebaseConfigured?.() ?? false;
+}
 
 let app = null;
 let db = null;
