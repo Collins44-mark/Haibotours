@@ -14,8 +14,6 @@ import {
   isLoginPage,
   isDashboardPage,
 } from './admin-auth.mjs';
-import { initAdminApp } from './admin-app.mjs';
-
 const AUTH_BOOT_TIMEOUT_MS = 17000;
 
 let cmsStarted = false;
@@ -65,7 +63,7 @@ function showLoginGate(message, type = 'error') {
   el('admin-status') && (el('admin-status').textContent = '');
 }
 
-function showCms(user) {
+async function showCms(user) {
   sessionLocked = true;
   hideLoading();
 
@@ -91,6 +89,7 @@ function showCms(user) {
     cmsStarted = true;
     logAuth('opening dashboard CMS');
     try {
+      const { initAdminApp } = await import('./admin-app.mjs');
       initAdminApp();
     } catch (e) {
       console.error('[HAIBO Admin] initAdminApp:', e);
@@ -106,12 +105,16 @@ async function handleAuthenticatedUser(user, { fromLogin } = {}) {
   logAuth('handleAuthenticatedUser', { fromLogin, check: check.ok, reason: check.reason });
 
   if (!check.ok) {
+    logAuth('firestore admin check failed', check.reason, check.uid);
     sessionLocked = false;
     await signOutAdminUser();
-    showLoginGate(messageForAdminFailure(check));
+    const notAdminMsg = messageForAdminFailure(check);
+    showLoginGate(notAdminMsg);
     if (!fromLogin) redirectIfNeeded(false);
     return false;
   }
+
+  logAuth('firestore admin check passed', check.uid);
 
   sessionLocked = true;
 
@@ -119,34 +122,59 @@ async function handleAuthenticatedUser(user, { fromLogin } = {}) {
     redirectIfNeeded(true);
   }
 
-  showCms(user);
+  await showCms(user);
   return true;
 }
 
-function bindLoginForm() {
+/** Bind Firebase login handler (call as early as possible). */
+export function bindLoginForm() {
   const form = el('login-form');
   if (!form || form.dataset.haiboBound === '1') return;
   form.dataset.haiboBound = '1';
 
+  form.setAttribute('method', 'post');
+  form.setAttribute('action', '#');
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    e.stopPropagation();
+
+    logAuth('submit triggered');
+
     const errEl = el('login-error');
     const submitBtn = form.querySelector('button[type="submit"]');
     const btnLabel = submitBtn?.querySelector('span');
     const status = el('admin-status');
+    const emailInput = form.querySelector('#email') || form.elements.namedItem('email');
+    const passwordInput = form.querySelector('#password') || form.elements.namedItem('password');
+    const email = String(emailInput?.value || '').trim();
+    const password = String(passwordInput?.value || '');
 
     if (errEl) errEl.textContent = '';
     if (status) status.textContent = 'Signing in…';
     if (submitBtn) submitBtn.disabled = true;
     if (btnLabel) btnLabel.textContent = 'Signing in…';
 
+    if (!email || !password) {
+      const msg = 'Enter your email and password.';
+      if (errEl) {
+        errEl.textContent = msg;
+        errEl.style.color = '#f87171';
+      }
+      if (submitBtn) submitBtn.disabled = false;
+      if (btnLabel) btnLabel.textContent = 'Sign in to dashboard';
+      if (status) status.textContent = '';
+      return;
+    }
+
     try {
-      const cred = await signInAdmin(form.email.value, form.password.value);
+      const cred = await signInAdmin(email, password);
       if (status) status.textContent = 'Verifying admin access…';
 
       const ok = await handleAuthenticatedUser(cred.user, { fromLogin: true });
       if (!ok) return;
 
+      logAuth('redirect success', window.location.pathname);
       if (btnLabel) btnLabel.textContent = 'Signed in';
     } catch (ex) {
       console.error('[HAIBO Admin] Sign-in failed:', ex?.code, ex?.message);
@@ -167,6 +195,8 @@ function bindLoginForm() {
       }
     }
   });
+
+  logAuth('login form listener attached');
 }
 
 export async function bootUnifiedAdmin() {

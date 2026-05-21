@@ -21,7 +21,7 @@
 
   <div id="admin-login-gate" class="admin-login-wrap">
     <div class="admin-login-bg" aria-hidden="true"></div>
-    <form id="login-form" class="admin-login-card">
+    <form id="login-form" class="admin-login-card" method="post" action="#" autocomplete="on" novalidate>
       <div class="admin-login-brand">
         <span class="admin-login-brand__mark">H</span>
         <div>
@@ -361,6 +361,24 @@
       if (loading) loading.hidden = true;
       document.body.classList.add('admin-login-page', 'admin-login-ready');
       document.body.classList.remove('admin-auth-pending');
+
+      /* Never expose credentials in URL (blocks native GET submit before modules load) */
+      var qs = new URLSearchParams(window.location.search);
+      if (qs.has('email') || qs.has('password')) {
+        window.history.replaceState(null, '', window.location.pathname + window.location.hash);
+      }
+
+      var form = document.getElementById('login-form');
+      if (form) {
+        form.addEventListener(
+          'submit',
+          function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+          },
+          true
+        );
+      }
     })();
   </script>
   <script src="/js/config.js"></script>

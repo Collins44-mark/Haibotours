@@ -5,8 +5,8 @@
 const AUTH_MESSAGES = {
   'auth/invalid-email': 'Please enter a valid email address.',
   'auth/user-disabled': 'This account has been disabled. Contact support.',
-  'auth/user-not-found': 'Incorrect email or password.',
-  'auth/wrong-password': 'Incorrect email or password.',
+  'auth/user-not-found': 'No account found with this email.',
+  'auth/wrong-password': 'Incorrect password.',
   'auth/invalid-credential': 'Incorrect email or password.',
   'auth/too-many-requests': 'Too many attempts. Wait a few minutes and try again.',
   'auth/network-request-failed': 'Network error. Check your connection and try again.',
@@ -34,6 +34,9 @@ export function formatAuthError(error) {
   const code = error?.code || '';
   if (code === 'auth/not-authorized') {
     return 'This account is not authorized for admin access.';
+  }
+  if (code === 'auth/not-admin' || String(error?.message || '').includes('NOT_ADMIN')) {
+    return 'This account is not an admin. Create admins/YOUR_UID in Firestore.';
   }
   if (AUTH_MESSAGES[code]) return AUTH_MESSAGES[code];
   if (typeof console !== 'undefined') {

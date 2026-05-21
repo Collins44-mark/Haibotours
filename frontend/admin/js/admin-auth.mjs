@@ -134,9 +134,9 @@ export function messageForAdminFailure(result) {
     case 'permission-denied':
       return `Firestore blocked reading admins/${uid}. Publish firebase/firestore.rules in Console.`;
     case 'missing-admin-field':
-      return `admins/${uid} exists but needs field admin: "admin". ${result.detail || ''}`;
+      return `Not an admin: admins/${uid} must include field admin: "admin". ${result.detail || ''}`;
     case 'not-in-admins':
-      return `No admins/${uid} document. Create it in Firestore (UID from Authentication).`;
+      return `Not an admin: no admins/${uid} document. Create it in Firestore (UID from Authentication).`;
     case 'no-db':
       return 'Firestore is not available. Check firebase-config.js and network.';
     default:

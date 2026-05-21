@@ -1,4 +1,7 @@
-import { bootUnifiedAdmin } from './admin-shell.mjs';
+import { bindLoginForm, bootUnifiedAdmin } from './admin-shell.mjs';
+
+/* Attach before async boot so submit never uses native GET navigation */
+bindLoginForm();
 
 bootUnifiedAdmin().catch((err) => {
   console.error('[HAIBO Admin] Bootstrap failed:', err);
