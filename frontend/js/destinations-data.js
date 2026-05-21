@@ -505,7 +505,7 @@ function haiboBuildDestinationCard(dest) {
       : safeUrl;
   const alt = `${dest.name} safari — ${dest.subtitle}`;
   const fbAttr = fallbackUrl
-    ? ` data-fallback="${haiboEscapeHtml(fallbackUrl)}" onerror="if(this.dataset.fallback){this.src=this.dataset.fallback;this.onerror=null;}"`
+    ? ` data-fallback="${haiboEscapeHtml(fallbackUrl)}" onerror="(function(img){var u=img.dataset.fallback;if(!u)return;img.classList.add('haibo-img-broken');var m=img.closest('.dest-card-media');if(m)m.style.backgroundImage='url('+u+')';img.onerror=null;})(this)"`
     : '';
   const img = safeUrl
     ? `<img src="${haiboEscapeHtml(imgSrc)}" alt="${haiboEscapeHtml(alt)}" loading="lazy" decoding="async" class="haibo-media dest-card-img w-full object-cover" width="800" height="533"${fbAttr}>`

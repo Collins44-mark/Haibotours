@@ -97,9 +97,7 @@ p,
     transform: scale(1.03);
   }
 
-  /* Reduce hover / float animations (less jank) */
-  .destination-card:hover,
-  .destination-card:hover img,
+  /* Reduce hover / float animations (less jank); destination cards styled in destinations-mobile.css */
   .stats-card:hover,
   .contact-card:hover,
   .package-card:hover,
