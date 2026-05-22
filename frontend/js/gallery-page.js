@@ -26,6 +26,9 @@ function renderGalleryPage() {
   const videosEl = document.getElementById('gallery-videos');
   if (!photosEl || !videosEl) return;
 
+  photosEl.innerHTML = '';
+  videosEl.innerHTML = '';
+
   const { images, videos } = getGalleryData();
   window.__HAIBO_GALLERY_IMAGES = images;
   window.__HAIBO_GALLERY_VIDEOS = videos;

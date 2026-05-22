@@ -326,3 +326,13 @@ nav a:hover {
 .breadcrumb a:hover {
   color: #d98b2b;
 }
+
+/* Firestore realtime — subtle loading (no layout change) */
+body.haibo-content-loading main {
+  opacity: 0.97;
+  transition: opacity 0.2s ease;
+}
+
+body.haibo-content-ready main {
+  opacity: 1;
+}

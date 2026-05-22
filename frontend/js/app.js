@@ -449,6 +449,8 @@ function renderDestinationCards(containerId, limit) {
   const container = document.getElementById(containerId);
   if (!container) return;
 
+  container.innerHTML = '';
+
   let all = [];
   try {
     all = getDestinationsForUi();
