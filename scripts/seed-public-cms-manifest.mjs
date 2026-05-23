@@ -49,4 +49,9 @@ globalThis.CLOUDINARY_CONFIG = {
 };
 
 const saved = await uploadSiteCms(manifest);
-console.log('OK: Published', saved.destinations.length, 'destinations (updatedAt', saved.updatedAt, ')');
+console.log(
+  'OK: Published',
+  saved.destinations?.length ?? 0,
+  'destinations to site-live (+ backup). updatedAt:',
+  saved.updatedAt
+);

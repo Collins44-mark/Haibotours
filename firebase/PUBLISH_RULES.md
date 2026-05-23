@@ -1,26 +1,38 @@
 # HAIBO CMS — how content works
 
-The **live website** reads all text, destinations, and image URLs from a JSON file on **Cloudinary**.
+The **live website** loads content from Cloudinary (JSON + image URLs).
 
-The **admin panel** uses **Firebase Authentication only** (email + password). When you save anything in admin, the site JSON is updated on Cloudinary and the public site picks it up within about 25 seconds (or on refresh).
-
-You do **not** need Firestore rules, “Publish to website”, or database setup for content.
+The **admin panel** uses **Firebase Authentication only** (email + password). When you save, content is pushed to Cloudinary and the public site refreshes automatically.
 
 ## Admin access
 
 1. Add your email to `HAIBO_ADMIN_EMAIL_ALLOWLIST` in `frontend/js/firebase-config.js`.
-2. Create the user in Firebase Console → Authentication → Users.
-3. Sign in at `/admin/login.html`.
+2. Create that user in Firebase Console → Authentication.
+3. Sign in at `/admin/login`.
 
-## Images
+## Cloudinary upload preset (important)
 
-Upload images in admin (Hero, About, Destinations, etc.). They go to Cloudinary; the URL is saved in the site JSON automatically.
+In [Cloudinary Console](https://console.cloudinary.com) → Settings → Upload → your preset `ml_default`:
+
+- Turn **Overwrite** ON (so `haibo/cms/site-live` updates on each save).
+
+Without overwrite, only the first save per file sticks; the site may show old data.
+
+## Best live updates (optional, Vercel)
+
+Add environment variables on Vercel for project **haibo-tours** site:
+
+| Variable | Purpose |
+|----------|---------|
+| `CLOUDINARY_API_KEY` | From Cloudinary dashboard |
+| `CLOUDINARY_API_SECRET` | From Cloudinary dashboard |
+| `CLOUDINARY_CLOUD_NAME` | `dae3rpnmg` (optional, default in code) |
+
+Then `/api/site-cms` can overwrite `site-live` on every save and find the newest upload for visitors.
 
 ## First-time content
 
-In admin → **Import website defaults** loads the starter destinations and sections onto the live site.
-
-Optional bootstrap from terminal:
+Admin → **Import website defaults**, or run:
 
 ```bash
 node scripts/seed-public-cms-manifest.mjs
