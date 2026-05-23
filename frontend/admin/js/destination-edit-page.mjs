@@ -3,7 +3,7 @@
  */
 import { doc, onSnapshot } from '../../js/firebase-cdn.mjs';
 import { getDb, getAuth, signOutAdmin, LOGIN_URL } from './firebase.js';
-import { runAdminAuthGate } from './admin-auth-boot.mjs';
+import { protectAdminPage } from './admin-gate.mjs';
 import { renderSidebar, initSidebar, userDisplayFromAuth } from './admin-layout.mjs';
 import {
   initHighlightsChips,
@@ -466,6 +466,6 @@ async function bootPage(user) {
 
 bindSaveControls();
 
-runAdminAuthGate(async (user) => {
+protectAdminPage(async (user) => {
   await bootPage(user);
 });

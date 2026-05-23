@@ -3,7 +3,7 @@
  */
 import { collection, onSnapshot } from '../../js/firebase-cdn.mjs';
 import { getDb } from './firebase.js';
-import { runAdminAuthGate } from './admin-auth-boot.mjs';
+import { protectAdminPage } from './admin-gate.mjs';
 import { renderSidebar, initSidebar, userDisplayFromAuth, closeAllMenus } from './admin-layout.mjs';
 import { mergeDestinationsForAdmin, destinationEditUrl } from './admin-destinations.mjs';
 import { confirmDialog, formatRelativeTime } from './admin-ui.mjs';
@@ -234,4 +234,4 @@ async function boot(user) {
   subscribeDestinations();
 }
 
-runAdminAuthGate((user) => boot(user));
+protectAdminPage((user) => boot(user));

@@ -863,12 +863,18 @@ html, body {
 }
 
 /* CMS sub-pages (destinations list / edit) */
-body.admin-cms-page.admin-ready #app {
+body.admin-cms-page.admin-ready #app,
+body.admin-cms-page.admin-ready .haibo-admin {
   visibility: visible;
 }
 
+body.admin-cms-page.auth-loading #app,
 body.admin-cms-page:not(.admin-ready) #app {
   visibility: hidden;
+}
+
+body.auth-loading #admin-auth-loading {
+  display: flex !important;
 }
 
 /* Auth loader (destinations + edit pages) */

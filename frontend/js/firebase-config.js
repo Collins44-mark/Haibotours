@@ -34,6 +34,7 @@ const FIRESTORE_ADMIN_COLLECTION = 'admins';
  * Optional emergency admin emails (lowercase not required).
  * Prefer Firestore admins/{uid}. Example: ['you@example.com']
  */
+/** Admin login emails (lowercase). Example: ['you@haibotours.com'] */
 const HAIBO_ADMIN_EMAIL_ALLOWLIST = [];
 
 /** If true, skip Firestore admins/{uid} check (not recommended for production). */

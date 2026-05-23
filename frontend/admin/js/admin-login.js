@@ -1,16 +1,19 @@
 /**
- * HAIBO Admin login page — sign in, verify admins/{uid}, go to dashboard.
+ * HAIBO Admin login — sign in, verify admin, go to dashboard.
  */
 import {
   getAuth,
   signInAdmin,
   signOutAdmin,
-  checkUserIsAdmin,
+  isAdminUser,
+  isAdminEmail,
+  onAuthStateChanged,
   DASHBOARD_URL,
   log,
 } from './firebase.js';
 
-const UNAUTHORIZED_MSG = 'Unauthorized admin access';
+const UNAUTHORIZED_MSG =
+  'Unauthorized. Add your email to HAIBO_ADMIN_EMAIL_ALLOWLIST in firebase-config.js, or create admins/YOUR_UID in Firestore.';
 
 const form = document.getElementById('login-form');
 const errEl = document.getElementById('login-error');
@@ -30,28 +33,6 @@ function setBusy(busy) {
     submitBtn.setAttribute('aria-busy', busy ? 'true' : 'false');
   }
   if (btnLabel) btnLabel.textContent = busy ? 'Signing in…' : 'Sign in to dashboard';
-}
-
-/** Already signed in as admin → dashboard (one check, no listener). */
-async function redirectIfAlreadyAdmin() {
-  const auth = getAuth();
-  if (!auth) return;
-  try {
-    if (typeof auth.authStateReady === 'function') {
-      await Promise.race([
-        auth.authStateReady(),
-        new Promise((resolve) => setTimeout(resolve, 5000)),
-      ]);
-    }
-    const user = auth.currentUser;
-    if (!user) return;
-    if (await checkUserIsAdmin(user, 5000)) {
-      log('redirect event → dashboard (existing session)');
-      window.location.replace(DASHBOARD_URL);
-    }
-  } catch (err) {
-    console.warn('[HAIBO Admin] session check skipped', err?.message);
-  }
 }
 
 form?.addEventListener('submit', async (e) => {
@@ -76,17 +57,15 @@ form?.addEventListener('submit', async (e) => {
   try {
     const cred = await signInAdmin(email, password);
     const user = cred.user;
-    log('login success', user.uid);
 
-    const isAdmin = await checkUserIsAdmin(user);
-    if (!isAdmin) {
+    if (!(await isAdminUser(user))) {
       await signOutAdmin();
       showError(UNAUTHORIZED_MSG);
-      log('auth failure — not in admins collection');
+      log('denied — not admin', user.uid);
       return;
     }
 
-    log('redirect event → dashboard');
+    log('redirect → dashboard');
     window.location.replace(DASHBOARD_URL);
   } catch (err) {
     console.error('[HAIBO Admin] login error', err?.code, err?.message);
@@ -96,10 +75,16 @@ form?.addEventListener('submit', async (e) => {
   }
 });
 
-if (globalThis.isFirebaseConfigured?.()) {
-  void redirectIfAlreadyAdmin();
-} else {
+const auth = getAuth();
+if (!globalThis.isFirebaseConfigured?.()) {
   showError('Firebase is not configured.');
+} else if (auth) {
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) return;
+    if (await isAdminUser(user)) {
+      window.location.replace(DASHBOARD_URL);
+    }
+  });
 }
 
 log('login page ready');

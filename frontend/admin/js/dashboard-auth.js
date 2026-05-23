@@ -1,8 +1,8 @@
 /**
- * HAIBO Admin dashboard — auth gate then mount CMS once.
+ * HAIBO Admin dashboard — simple auth then mount CMS.
  */
 import { log } from './firebase.js';
-import { runAdminAuthGate } from './admin-auth-boot.mjs';
+import { protectAdminPage } from './admin-gate.mjs';
 import { initAdminApp } from './admin-app.mjs';
 
 const shell = document.getElementById('admin-app-root');
@@ -18,9 +18,8 @@ function showDashboard(user) {
   cmsStarted = true;
   log('dashboard mount', user.uid);
   initAdminApp();
-  log('dashboard CMS initialized');
 }
 
-runAdminAuthGate((user) => {
+protectAdminPage((user) => {
   showDashboard(user);
 });
