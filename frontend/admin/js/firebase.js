@@ -42,6 +42,9 @@ export async function isAdminUser(user) {
   return isAdminEmail(user.email);
 }
 
+/** @deprecated Use isAdminUser — kept for older cached admin-login.js */
+export const checkUserIsAdmin = isAdminUser;
+
 export async function signInAdmin(email, password) {
   const auth = getAuth();
   if (!auth) throw new Error('Firebase Auth is not configured.');
