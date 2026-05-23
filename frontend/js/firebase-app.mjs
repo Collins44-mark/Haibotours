@@ -10,7 +10,6 @@ import {
   initializeAuth,
   setPersistence,
   browserLocalPersistence,
-  signInAnonymously,
 } from './firebase-cdn.mjs';
 
 const FIREBASE_CONFIG = globalThis.FIREBASE_CONFIG;
@@ -40,25 +39,6 @@ export function getHaiboDb() {
     db = getFirestore(haiboApp);
   }
   return db;
-}
-
-/**
- * Public site must read Firestore without admin login.
- * Tries anonymous auth when rules require request.auth (deploy firebase/firestore.rules for open reads).
- */
-export async function ensurePublicSiteFirestoreRead() {
-  if (!isFirebaseConfigured()) return false;
-  const auth = getHaiboAuth();
-  if (!auth) return false;
-  if (auth.currentUser) return true;
-  try {
-    await signInAnonymously(auth);
-    console.log('[HAIBO] Public Firestore read — anonymous session ready');
-    return true;
-  } catch (err) {
-    console.warn('[HAIBO] Anonymous sign-in skipped or failed:', err?.code, err?.message);
-    return false;
-  }
 }
 
 /** Auth with local persistence — one instance per app */
@@ -167,4 +147,3 @@ export async function ensureHaiboAuthReady(timeoutMs = 15000) {
 window.getHaiboDb = getHaiboDb;
 window.getHaiboAuth = getHaiboAuth;
 window.ensureHaiboAuthReady = ensureHaiboAuthReady;
-window.ensurePublicSiteFirestoreRead = ensurePublicSiteFirestoreRead;
