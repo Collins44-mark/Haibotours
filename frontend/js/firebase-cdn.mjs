@@ -23,6 +23,7 @@ export {
 export {
   getAuth,
   signInWithEmailAndPassword,
+  signInAnonymously,
   signOut,
   onAuthStateChanged,
   initializeAuth,

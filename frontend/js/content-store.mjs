@@ -1,7 +1,7 @@
 /**
  * Firestore realtime listeners — live public site (no refresh needed).
  */
-import { getHaiboDb } from './firebase-app.mjs';
+import { getHaiboDb, ensurePublicSiteFirestoreRead } from './firebase-app.mjs';
 import { subscribeDocument, subscribeCollection, unsubscribeAllRealtime } from './firestore-realtime.mjs';
 import { haiboDestinationsFromFirestoreDocs } from './haibo-live-content.mjs';
 
@@ -37,6 +37,18 @@ function firestorePaths() {
 
 function firebaseConfigured() {
   return globalThis.isFirebaseConfigured?.() ?? false;
+}
+
+function showFirestorePermissionBanner() {
+  if (document.getElementById('haibo-firestore-perm-banner')) return;
+  const el = document.createElement('div');
+  el.id = 'haibo-firestore-perm-banner';
+  el.setAttribute('role', 'alert');
+  el.style.cssText =
+    'position:fixed;bottom:0;left:0;right:0;z-index:99999;background:#7f1d1d;color:#fff;padding:14px 16px;font-size:0.9rem;text-align:center;line-height:1.5';
+  el.innerHTML =
+    'Live CMS data is blocked by Firestore security rules. Publish <strong>firebase/firestore.rules</strong> in Firebase Console → Firestore → Rules (see <code>firebase/PUBLISH_RULES.md</code>).';
+  document.body.appendChild(el);
 }
 
 const DOC_MAIN = 'main';
@@ -282,6 +294,10 @@ function bindCollectionListener(db, coll, applyItems, collectionOptions = {}) {
             message: err?.message,
           });
           // #endregion
+          if (err?.code === 'permission-denied') {
+            setFirestoreStatus({ loading: false, error: 'permission-denied' });
+            showFirestorePermissionBanner();
+          }
           if (!initialComplete) tickInitial();
         },
       },
@@ -435,7 +451,7 @@ export function teardownHaiboContentRealtime() {
   unsubscribeAllRealtime();
 }
 
-export function initHaiboContentRealtime() {
+export async function initHaiboContentRealtime() {
   window.HAIBO_CONTENT.destinations = [];
   window.DESTINATIONS = [];
 
@@ -446,6 +462,10 @@ export function initHaiboContentRealtime() {
   }
 
   try {
+    const authOk = await ensurePublicSiteFirestoreRead();
+    // #region agent log
+    dbgLog('A', 'content-store.mjs:init', 'public firestore auth', { authOk });
+    // #endregion
     startRealtimeListeners();
   } catch (err) {
     console.error('[HAIBO] Firebase realtime failed', err);
@@ -465,7 +485,7 @@ window.addEventListener('pagehide', (e) => {
 export { subscribeDocument, subscribeCollection } from './firestore-realtime.mjs';
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initHaiboContentRealtime);
+  document.addEventListener('DOMContentLoaded', () => void initHaiboContentRealtime());
 } else {
-  initHaiboContentRealtime();
+  void initHaiboContentRealtime();
 }

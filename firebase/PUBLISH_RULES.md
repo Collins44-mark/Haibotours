@@ -1,6 +1,17 @@
-# Publish Firestore rules (fix “Firestore blocked reading admins/…”)
+# Publish Firestore rules (required for live website + admin)
+
+**If the public website shows empty destinations or never updates:** Firestore is returning `permission-denied` to visitors. The rules in this repo allow **public read** on `destinations`, `hero`, `gallery`, etc. They must be **published** in Firebase Console.
 
 Your UID: **`2Fon2CNGTfSHF84miZ4GsKGSc6w1`** — use this exact ID as the Firestore document ID.
+
+## Public website (visitors) — must allow read without login
+
+After publishing `firebase/firestore.rules`, open the homepage and confirm the console shows:
+
+- `[HAIBO] destinations from Firestore` or `Realtime update received`
+- **Not** `permission-denied`
+
+Optional: enable **Authentication → Sign-in method → Anonymous** in Firebase Console (helps if old rules required any signed-in user).
 
 ## Option A — Firebase Console (fastest)
 
