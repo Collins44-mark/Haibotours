@@ -4,8 +4,9 @@
 import { getHaiboApp, getHaiboDb, getHaiboAuth } from '../../js/firebase-app.mjs';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from '../../js/firebase-cdn.mjs';
 
-export const LOGIN_URL = '/admin/login.html';
-export const DASHBOARD_URL = '/admin/dashboard.html';
+export const LOGIN_URL = '/admin/login';
+/** Clean URL — matches vercel.json rewrite (avoids POST-to-.html 405 on some hosts). */
+export const DASHBOARD_URL = '/admin/dashboard';
 
 export function getApp() {
   return getHaiboApp();

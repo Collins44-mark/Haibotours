@@ -37,6 +37,7 @@ function setBusy(busy) {
 
 form?.addEventListener('submit', async (e) => {
   e.preventDefault();
+  e.stopPropagation();
   showError('');
 
   if (!globalThis.isFirebaseConfigured?.()) {
