@@ -47,7 +47,8 @@ export async function publishPublicCmsManifest(options = {}) {
     return { ok: false, reason: 'no-destinations' };
   }
 
-  const result = await cloudinaryUploadRawJson(manifest, 'cms/public-content');
+  const hour = Math.floor(Date.now() / 3600000);
+  const result = await cloudinaryUploadRawJson(manifest, `cms/m-${hour}-${Date.now()}`);
   console.log('[HAIBO] Public CMS manifest published', result.secure_url);
   if (!silent) {
     adminToast('Website content published (live manifest).', 'success');

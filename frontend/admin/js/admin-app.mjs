@@ -751,6 +751,9 @@ function initAdminAppHandlers() {
     }
   });
   document.getElementById('btn-seed')?.addEventListener('click', () => seedAllDefaults());
+  document.getElementById('btn-publish-website')?.addEventListener('click', () =>
+    publishPublicCmsManifest()
+  );
 
   document.getElementById('form-hero')?.addEventListener('submit', saveHeroForm);
   document.getElementById('form-about')?.addEventListener('submit', saveAboutForm);

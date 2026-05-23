@@ -7,23 +7,46 @@ function cloudinaryConfig() {
   return globalThis.CLOUDINARY_CONFIG || {};
 }
 
-export function getCmsPublicManifestUrl() {
-  const { cloudName, baseFolder = 'haibo' } = cloudinaryConfig();
+function manifestUrlForPublicId(publicId) {
+  const { cloudName } = cloudinaryConfig();
   if (!cloudName) return null;
-  const id = `${baseFolder}/cms/public-content`;
-  return `https://res.cloudinary.com/${cloudName}/raw/upload/${id}.json`;
+  return `https://res.cloudinary.com/${cloudName}/raw/upload/${publicId}.json`;
 }
 
-export async function fetchCmsPublicManifest() {
-  const base = getCmsPublicManifestUrl();
-  if (!base) return null;
-  const res = await fetch(`${base}?_=${Date.now()}`, { cache: 'no-store' });
+/** Unsigned uploads cannot overwrite — try stable seed file, then recent hour buckets. */
+function recentManifestPublicIds() {
+  const { baseFolder = 'haibo' } = cloudinaryConfig();
+  const hour = Math.floor(Date.now() / 3600000);
+  const ids = [`${baseFolder}/cms/site-manifest`];
+  for (let i = 0; i < 6; i++) {
+    ids.push(`${baseFolder}/cms/m-${hour - i}`);
+  }
+  return ids;
+}
+
+async function fetchManifestByPublicId(publicId) {
+  const url = manifestUrlForPublicId(publicId);
+  if (!url) return null;
+  const res = await fetch(`${url}?_=${Date.now()}`, { cache: 'no-store' });
   if (!res.ok) return null;
   try {
     return await res.json();
   } catch {
     return null;
   }
+}
+
+export async function fetchCmsPublicManifest() {
+  const ids = recentManifestPublicIds();
+  const results = await Promise.all(ids.map((id) => fetchManifestByPublicId(id)));
+  let best = null;
+  for (const manifest of results) {
+    if (!manifest?.destinations?.length) continue;
+    if (!best || (manifest.updatedAt || 0) > (best.updatedAt || 0)) {
+      best = manifest;
+    }
+  }
+  return best;
 }
 
 /**
@@ -64,12 +87,29 @@ export function applyCmsPublicManifest(manifest) {
   return true;
 }
 
-export async function tryLoadCmsPublicManifest() {
+let lastAppliedManifestAt = 0;
+
+export async function tryLoadCmsPublicManifest(options = {}) {
+  const { force = false } = options;
   const manifest = await fetchCmsPublicManifest();
+  if (!manifest) {
+    return { ok: false, count: 0, updatedAt: null, skipped: false };
+  }
+  const updatedAt = manifest.updatedAt ?? 0;
+  if (!force && lastAppliedManifestAt && updatedAt <= lastAppliedManifestAt) {
+    return {
+      ok: true,
+      count: window.HAIBO_FIRESTORE_DESTINATIONS?.length ?? 0,
+      updatedAt,
+      skipped: true,
+    };
+  }
   const applied = applyCmsPublicManifest(manifest);
+  if (applied) lastAppliedManifestAt = updatedAt;
   return {
     ok: applied,
     count: applied ? window.HAIBO_FIRESTORE_DESTINATIONS?.length ?? 0 : 0,
-    updatedAt: manifest?.updatedAt ?? null,
+    updatedAt,
+    skipped: false,
   };
 }

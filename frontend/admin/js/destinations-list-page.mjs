@@ -225,6 +225,10 @@ async function boot(user) {
     const { seedAllDefaults } = await import('./admin-app.mjs');
     await seedAllDefaults();
   });
+  document.getElementById('btn-publish-website')?.addEventListener('click', async () => {
+    const { publishPublicCmsManifest } = await import('./admin-cms-publish.mjs');
+    await publishPublicCmsManifest();
+  });
 
   document.getElementById('btn-menu-mobile')?.addEventListener('click', () => {
     document.getElementById('haibo-sidebar')?.classList.toggle('is-open');

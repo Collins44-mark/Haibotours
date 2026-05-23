@@ -56,13 +56,17 @@ export async function cloudinaryUpload(file, folder, onProgress) {
   });
 }
 
-/** Unsigned raw upload — public JSON manifest for the live site */
+/** Unsigned raw upload — public JSON manifest for the live site (unique public_id; preset cannot overwrite). */
 export async function cloudinaryUploadRawJson(data, publicIdSuffix) {
   const cfg = globalThis.CLOUDINARY_CONFIG;
   if (!cfg?.cloudName || !cfg?.uploadPreset) {
     throw new Error('Cloudinary is not configured');
   }
-  const publicId = `${cfg.baseFolder || 'haibo'}/${publicIdSuffix || 'cms/public-content'}`;
+  const hour = Math.floor(Date.now() / 3600000);
+  const publicId =
+    publicIdSuffix != null
+      ? `${cfg.baseFolder || 'haibo'}/${publicIdSuffix}`
+      : `${cfg.baseFolder || 'haibo'}/cms/m-${hour}-${Date.now()}`;
   const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
   const form = new FormData();
   form.append('file', blob, 'public-content.json');

@@ -2,7 +2,7 @@
 
 **If the public website shows empty destinations or never updates:** Firestore is returning `permission-denied` to visitors. The rules in this repo allow **public read** on `destinations`, `hero`, `gallery`, etc. They must be **published** in Firebase Console.
 
-**Until rules are published:** the site can still load CMS data from a **Cloudinary JSON manifest**. After you save or import destinations in admin, the app publishes `haibo/cms/public-content.json` automatically. Visitors see that content (not Firestore realtime). Publish Firestore rules when you want instant `onSnapshot` updates without re-saving.
+**Until rules are published:** the site loads CMS data from a **Cloudinary JSON manifest** (`haibo/cms/site-manifest.json` and hourly snapshots). After you save or import destinations in admin, click **Publish to website** (or save a destination). For repeated overwrites on the same file, enable **Overwrite** on your Cloudinary upload preset `ml_default`.
 
 Your UID: **`2Fon2CNGTfSHF84miZ4GsKGSc6w1`** — use this exact ID as the Firestore document ID.
 

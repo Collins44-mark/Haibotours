@@ -43,41 +43,75 @@ function firebaseConfigured() {
 const FIRESTORE_RULES_CONSOLE_URL =
   'https://console.firebase.google.com/project/haibo-tours/firestore/databases/-default-/rules';
 
-function showFirestorePermissionBanner() {
-  if (document.getElementById('haibo-firestore-perm-banner')) return;
-  const el = document.createElement('div');
-  el.id = 'haibo-firestore-perm-banner';
-  el.setAttribute('role', 'alert');
-  el.style.cssText =
-    'position:fixed;bottom:0;left:0;right:0;z-index:99999;background:#7f1d1d;color:#fff;padding:14px 16px;font-size:0.9rem;text-align:center;line-height:1.5';
-  const manifestHint = window.HAIBO_CMS_MANIFEST_MODE
-    ? ' Showing content from the Cloudinary manifest (save in admin to refresh).'
-    : ' Save a destination in admin to publish a public manifest, or publish Firestore rules.';
-  el.innerHTML =
-    'Firestore public read is blocked on <strong>haibo-tours</strong>.' +
-    manifestHint +
-    ' For full realtime: copy <code>firebase/COPY_PASTE_RULES.txt</code> → Rules → Publish. ' +
-    `<a href="${FIRESTORE_RULES_CONSOLE_URL}" target="_blank" rel="noopener noreferrer" style="color:#fecaca;text-decoration:underline;margin-left:6px">Open Rules editor</a>`;
-  document.body.appendChild(el);
+function ensureCmsStatusBanner() {
+  let el = document.getElementById('haibo-firestore-perm-banner');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'haibo-firestore-perm-banner';
+    el.setAttribute('role', 'status');
+    el.style.cssText =
+      'position:fixed;bottom:0;left:0;right:0;z-index:99999;padding:12px 16px;font-size:0.85rem;text-align:center;line-height:1.5';
+    document.body.appendChild(el);
+  }
+  return el;
 }
 
-let manifestFallbackAttempted = false;
+function updateCmsStatusBanner({ manifestOk = false, count = 0 } = {}) {
+  const el = ensureCmsStatusBanner();
+  if (manifestOk && count > 0) {
+    el.style.background = '#1e3a2f';
+    el.style.color = '#d1fae5';
+    el.innerHTML =
+      `Live site: <strong>${count}</strong> destinations from CMS manifest. ` +
+      'Edits appear after you save in admin (or click <strong>Publish to website</strong>). ' +
+      `<a href="${FIRESTORE_RULES_CONSOLE_URL}" target="_blank" rel="noopener noreferrer" style="color:#6ee7b7;text-decoration:underline">Optional: enable Firestore realtime</a>`;
+    return;
+  }
+  el.setAttribute('role', 'alert');
+  el.style.background = '#7f1d1d';
+  el.style.color = '#fff';
+  el.innerHTML =
+    'Firestore public read is blocked on <strong>haibo-tours</strong>. ' +
+    'In admin: <strong>Import website defaults</strong> or <strong>Publish to website</strong>. ' +
+    'Or publish <code>firebase/COPY_PASTE_RULES.txt</code>. ' +
+    `<a href="${FIRESTORE_RULES_CONSOLE_URL}" target="_blank" rel="noopener noreferrer" style="color:#fecaca;text-decoration:underline">Open Rules editor</a>`;
+}
 
-async function tryManifestFallback(reason) {
-  if (manifestFallbackAttempted) return;
-  manifestFallbackAttempted = true;
+let manifestFallbackInFlight = false;
+let manifestPollTimer = null;
+
+function startManifestPolling() {
+  if (manifestPollTimer) return;
+  manifestPollTimer = setInterval(() => {
+    void refreshManifestFromCloud('poll', true);
+  }, 45000);
+}
+
+async function refreshManifestFromCloud(reason, force = false) {
+  if (manifestFallbackInFlight) return;
+  manifestFallbackInFlight = true;
   // #region agent log
-  dbgLog('F', 'content-store.mjs:tryManifestFallback', 'attempt', { reason });
+  dbgLog('F', 'content-store.mjs:refreshManifest', 'attempt', { reason, force });
   // #endregion
-  const result = await tryLoadCmsPublicManifest();
-  // #region agent log
-  dbgLog('F', 'content-store.mjs:tryManifestFallback', 'result', result);
-  // #endregion
-  if (!result.ok) return;
-  console.log('[HAIBO] Loaded CMS from public manifest', result.count, 'destinations');
-  rebuildDestinationsFromFirestore();
-  schedulePublish(false);
-  showFirestorePermissionBanner();
+  try {
+    const result = await tryLoadCmsPublicManifest({ force });
+    // #region agent log
+    dbgLog('F', 'content-store.mjs:refreshManifest', 'result', result);
+    // #endregion
+    if (!result.ok) {
+      updateCmsStatusBanner({ manifestOk: false });
+      return;
+    }
+    if (!result.skipped) {
+      console.log('[HAIBO] CMS manifest applied', result.count, 'destinations', reason);
+      rebuildDestinationsFromFirestore();
+      schedulePublish(false);
+    }
+    updateCmsStatusBanner({ manifestOk: true, count: result.count });
+    startManifestPolling();
+  } finally {
+    manifestFallbackInFlight = false;
+  }
 }
 
 const DOC_MAIN = 'main';
@@ -325,8 +359,7 @@ function bindCollectionListener(db, coll, applyItems, collectionOptions = {}) {
           // #endregion
           if (err?.code === 'permission-denied') {
             setFirestoreStatus({ loading: false, error: 'permission-denied' });
-            showFirestorePermissionBanner();
-            void tryManifestFallback(`permission-denied:${coll}`);
+            void refreshManifestFromCloud(`permission-denied:${coll}`);
           }
           if (!initialComplete) tickInitial();
         },
@@ -458,7 +491,7 @@ function startRealtimeListeners() {
   initialLoadTimer = setTimeout(() => {
     if (!initialComplete) {
       console.warn('[HAIBO] Firestore init timeout — trying manifest fallback.');
-      void tryManifestFallback('init-timeout').finally(() => {
+      void refreshManifestFromCloud('init-timeout').finally(() => {
         if (!initialComplete) forceInitialPublish();
       });
     }
