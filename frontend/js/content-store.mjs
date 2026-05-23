@@ -4,6 +4,15 @@
 import { getHaiboDb } from './firebase-app.mjs';
 import { subscribeDocument, subscribeCollection, unsubscribeAllRealtime } from './firestore-realtime.mjs';
 
+/** Classic scripts expose config on globalThis — bare names are not visible in ES modules. */
+function firestorePaths() {
+  return globalThis.FIRESTORE_PATHS || {};
+}
+
+function firebaseConfigured() {
+  return globalThis.isFirebaseConfigured?.() ?? false;
+}
+
 const DOC_MAIN = 'main';
 const PUBLISH_DEBOUNCE_MS = 40;
 const INITIAL_LOAD_TIMEOUT_MS = 6000;
@@ -19,6 +28,27 @@ window.HAIBO_CONTENT = {
   weatherCards: [],
   search: { enabledDestinationIds: [] },
 };
+
+/** Raw Firestore destination docs — merged once into HAIBO_CONTENT.destinations */
+window.HAIBO_FIRESTORE_DESTINATIONS = [];
+
+function rebuildDestinationsFromFirestore() {
+  const raw = window.HAIBO_FIRESTORE_DESTINATIONS || [];
+  try {
+    window.HAIBO_CONTENT.destinations =
+      typeof haiboMergeDestinationsList === 'function'
+        ? haiboMergeDestinationsList(raw)
+        : raw;
+    if (typeof syncHaiboDestinations === 'function') {
+      syncHaiboDestinations();
+    }
+  } catch (err) {
+    console.warn('[HAIBO] destination merge failed, keeping static catalog.', err);
+    window.HAIBO_CONTENT.destinations =
+      window.HAIBO_DESTINATIONS_STATIC?.map((x) => ({ ...x })) ||
+      (typeof DESTINATIONS !== 'undefined' ? DESTINATIONS.map((x) => ({ ...x })) : []);
+  }
+}
 
 window.HAIBO_CONTENT_LOADED = false;
 window.HAIBO_FIRESTORE_STATUS = {
@@ -109,9 +139,11 @@ function ensureDefaults() {
       window.HAIBO_DESTINATIONS_STATIC ||
       (typeof DESTINATIONS !== 'undefined' ? DESTINATIONS.map((x) => ({ ...x })) : []);
     if (typeof haiboMergeDestinationsList === 'function') {
-      window.HAIBO_CONTENT.destinations = haiboMergeDestinationsList(
-        window.HAIBO_CONTENT.destinations
-      );
+      if (window.HAIBO_FIRESTORE_DESTINATIONS?.length > 0) {
+        rebuildDestinationsFromFirestore();
+      } else if (!window.HAIBO_CONTENT.destinations?.length) {
+        window.HAIBO_CONTENT.destinations = haiboMergeDestinationsList([]);
+      }
     } else if (!window.HAIBO_CONTENT.destinations?.length && staticDests.length) {
       window.HAIBO_CONTENT.destinations = staticDests.map((x) => ({ ...x }));
     }
@@ -141,26 +173,33 @@ function forceInitialPublish() {
   publish(true);
 }
 
+function applyLiveContentToPage() {
+  if (typeof window.applyHaiboContent === 'function') window.applyHaiboContent();
+  if (typeof window.refreshHaiboLiveContent === 'function') {
+    window.refreshHaiboLiveContent();
+  } else if (typeof haiboBootDestinationGrids === 'function') {
+    haiboBootDestinationGrids();
+  }
+}
+
 function publish(isInitial) {
   ensureDefaults();
   syncSearchIds();
   applyDestinations();
   applyConfigFromContent();
+  applyLiveContentToPage();
 
-  if (typeof haiboBootDestinationGrids === 'function') {
-    haiboBootDestinationGrids();
-  }
-
-  if (isInitial && !initialComplete) {
+  const firstLoad = !initialComplete;
+  if (firstLoad) {
     initialComplete = true;
     window.HAIBO_CONTENT_LOADED = true;
     setFirestoreStatus({ loading: false, error: null });
     window.dispatchEvent(new Event('haiboContentReady'));
     console.log('[HAIBO] content ready (realtime listeners active)');
-  } else if (initialComplete) {
-    window.dispatchEvent(new Event('haiboContentUpdated'));
+  } else {
     console.log('[HAIBO] content updated (live)');
   }
+  window.dispatchEvent(new Event('haiboContentUpdated'));
 }
 
 function schedulePublish(isInitial) {
@@ -214,17 +253,21 @@ function bindCollectionListener(db, coll, applyItems) {
 
 function upsertDestinationInContent(data) {
   if (!data?.id) return;
-  const list = Array.isArray(window.HAIBO_CONTENT.destinations)
-    ? [...window.HAIBO_CONTENT.destinations]
-    : [];
-  const merged =
-    typeof haiboMergeDestinationsList === 'function'
-      ? haiboMergeDestinationsList([data])[0]
-      : data;
-  const idx = list.findIndex((d) => d.id === merged.id);
-  if (idx >= 0) list[idx] = merged;
-  else list.push(merged);
-  window.HAIBO_CONTENT.destinations = list;
+  const key =
+    typeof haiboNormalizeDestId === 'function'
+      ? haiboNormalizeDestId(data.id)
+      : String(data.id).trim().toLowerCase();
+  const raw = [...(window.HAIBO_FIRESTORE_DESTINATIONS || [])];
+  const idx = raw.findIndex((d) => {
+    const id =
+      typeof haiboNormalizeDestId === 'function' ? haiboNormalizeDestId(d.id) : d.id;
+    return id === key;
+  });
+  const row = { ...data, id: data.id, _fromFirestore: true };
+  if (idx >= 0) raw[idx] = { ...raw[idx], ...row };
+  else raw.push(row);
+  window.HAIBO_FIRESTORE_DESTINATIONS = raw;
+  rebuildDestinationsFromFirestore();
 }
 
 /** Extra listener on destination detail pages for instant package/pricing updates. */
@@ -243,11 +286,14 @@ function bindDestinationDetailListener(db) {
     }
   }
 
+  const paths = firestorePaths();
+  if (!paths.destinations) return;
+
   detailDestUnsub = trackListener(
-    subscribeDocument(db, FIRESTORE_PATHS.destinations, destId, {
+    subscribeDocument(db, paths.destinations, destId, {
       onData: (data) => {
         if (!data) return;
-        upsertDestinationInContent({ id: destId, ...data });
+        upsertDestinationInContent({ id: destId, ...data, _fromFirestore: true });
         schedulePublish(false);
       },
     })
@@ -256,7 +302,14 @@ function bindDestinationDetailListener(db) {
 
 function startRealtimeListeners() {
   const db = getHaiboDb();
+  const paths = firestorePaths();
   if (!db) {
+    ensureDefaults();
+    publish(true);
+    return;
+  }
+  if (!paths.destinations) {
+    console.error('[HAIBO] FIRESTORE_PATHS missing — load js/firebase-config.js before content-store.mjs');
     ensureDefaults();
     publish(true);
     return;
@@ -264,27 +317,24 @@ function startRealtimeListeners() {
 
   setFirestoreStatus({ loading: true, error: null });
 
-  bindDocListener(db, FIRESTORE_PATHS.hero, 'hero');
-  bindDocListener(db, FIRESTORE_PATHS.about, 'about');
-  bindDocListener(db, FIRESTORE_PATHS.contact, 'contact');
-  bindDocListener(db, FIRESTORE_PATHS.socials, 'socials');
-  bindDocListener(db, FIRESTORE_PATHS.settings, 'settings');
+  bindDocListener(db, paths.hero, 'hero');
+  bindDocListener(db, paths.about, 'about');
+  bindDocListener(db, paths.contact, 'contact');
+  bindDocListener(db, paths.socials, 'socials');
+  bindDocListener(db, paths.settings, 'settings');
 
-  bindCollectionListener(db, FIRESTORE_PATHS.destinations, (items) => {
-    try {
-      window.HAIBO_CONTENT.destinations =
-        typeof haiboMergeDestinationsList === 'function'
-          ? haiboMergeDestinationsList(items)
-          : items;
-    } catch (err) {
-      console.warn('[HAIBO] destination merge failed, keeping static catalog.', err);
-      window.HAIBO_CONTENT.destinations =
-        window.HAIBO_DESTINATIONS_STATIC?.map((x) => ({ ...x })) ||
-        (typeof DESTINATIONS !== 'undefined' ? DESTINATIONS.map((x) => ({ ...x })) : []);
+  bindCollectionListener(db, paths.destinations, (items) => {
+    window.HAIBO_FIRESTORE_DESTINATIONS = (items || []).map((d) => ({
+      ...d,
+      _fromFirestore: true,
+    }));
+    rebuildDestinationsFromFirestore();
+    if (items?.length) {
+      console.log('[HAIBO] destinations from Firestore:', items.length);
     }
   });
 
-  bindCollectionListener(db, FIRESTORE_PATHS.gallery, (items) => {
+  bindCollectionListener(db, paths.gallery, (items) => {
     window.HAIBO_CONTENT.gallery =
       typeof haiboMergeGalleryCollection === 'function'
         ? haiboMergeGalleryCollection(items)
@@ -294,7 +344,7 @@ function startRealtimeListeners() {
           };
   });
 
-  bindCollectionListener(db, FIRESTORE_PATHS.weatherCards, (items) => {
+  bindCollectionListener(db, paths.weatherCards, (items) => {
     window.HAIBO_CONTENT.weatherCards =
       typeof haiboMergeWeatherCardsList === 'function'
         ? haiboMergeWeatherCardsList(items)
@@ -337,7 +387,7 @@ export function initHaiboContentRealtime() {
   ensureDefaults();
   applyDestinations();
 
-  if (!isFirebaseConfigured()) {
+  if (!firebaseConfigured()) {
     setFirestoreStatus({ loading: false, error: 'Firebase not configured' });
     publish(true);
     return;

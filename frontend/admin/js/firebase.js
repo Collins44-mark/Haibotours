@@ -5,6 +5,7 @@ import {
   getHaiboApp,
   getHaiboDb,
   getHaiboAuth,
+  ensureHaiboAuthReady,
 } from '../../js/firebase-app.mjs';
 import {
   signInWithEmailAndPassword,
@@ -38,7 +39,7 @@ export function isAdminDocument(data) {
   return data.admin === true || data.admin === 'admin' || data.role === 'admin';
 }
 
-export async function checkUserIsAdmin(user) {
+export async function checkUserIsAdmin(user, timeoutMs = 8000) {
   if (!user?.uid) return false;
   if (globalThis.HAIBO_TRUST_AUTHENTICATED_USERS === true) return true;
 
@@ -48,10 +49,19 @@ export async function checkUserIsAdmin(user) {
     return false;
   }
 
-  try {
+  const check = async () => {
     const snap = await getDoc(doc(db, ADMIN_COLLECTION, user.uid));
     if (!snap.exists()) return false;
     return isAdminDocument(snap.data());
+  };
+
+  try {
+    return await Promise.race([
+      check(),
+      new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Firestore admin check timed out')), timeoutMs);
+      }),
+    ]);
   } catch (err) {
     console.error(LOG, 'admin check failed', err?.code, err?.message);
     return false;
@@ -68,6 +78,10 @@ export async function signOutAdmin() {
   const auth = getAuth();
   if (auth) await signOut(auth);
   log('signed out');
+}
+
+export function ensureAuthReady(timeoutMs = 5000) {
+  return ensureHaiboAuthReady(timeoutMs);
 }
 
 export { onAuthStateChanged, getHaiboApp };

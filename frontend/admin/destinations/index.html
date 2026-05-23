@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Destinations — HAIBO CMS</title>
+  <link rel="icon" href="/assets/logo/logo.png" type="image/png" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/css/admin-saas.css">
+  <link rel="stylesheet" href="/admin/css/admin.css">
+</head>
+<body>
+  <div id="admin-auth-loading" class="admin-auth-loading" aria-live="polite" aria-busy="true">
+    <div class="admin-auth-loading__inner">
+      <div class="admin-auth-loading__spinner" aria-hidden="true"></div>
+      <p>Checking admin access…</p>
+    </div>
+  </div>
+
+  <div id="app" class="haibo-admin" hidden>
+    <div id="sidebar-mount"></div>
+    <div class="haibo-main">
+      <header class="haibo-topbar">
+        <div class="haibo-topbar__title">
+          <button type="button" id="btn-menu-mobile" class="haibo-icon-btn" aria-label="Menu" style="display:none">☰</button>
+          <div>
+            <h1>Destinations</h1>
+            <p>Manage all destinations</p>
+          </div>
+        </div>
+        <div class="haibo-topbar__actions">
+          <a href="/admin/destinations/edit.html" class="haibo-btn haibo-btn--primary">+ Add Destination</a>
+          <button type="button" class="haibo-icon-btn" id="btn-more" aria-label="More">⋯</button>
+          <button type="button" class="haibo-profile-chip" id="top-profile" title="Profile">AU</button>
+        </div>
+      </header>
+
+      <div class="haibo-content">
+        <div class="haibo-toolbar">
+          <div class="haibo-search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3-3"/></svg>
+            <input type="search" class="haibo-input" id="dest-search" placeholder="Search destinations…" style="width:100%" />
+          </div>
+          <select class="haibo-select" id="filter-region"><option value="">All Regions</option></select>
+          <select class="haibo-select" id="filter-status">
+            <option value="">All Status</option>
+            <option value="published">Published</option>
+            <option value="draft">Draft</option>
+          </select>
+          <select class="haibo-select" id="sort-by">
+            <option value="updated">Sort: Newest</option>
+            <option value="name">Sort: A–Z</option>
+            <option value="order">Sort: Order</option>
+          </select>
+        </div>
+
+        <div id="dest-list" class="haibo-dest-list"></div>
+        <div id="dest-pagination" class="haibo-pagination"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="haibo-toast" class="haibo-toast" role="status"></div>
+
+  <script src="/js/firebase-config.js"></script>
+  <script src="/js/destinations-data.js"></script>
+  <script src="/js/haibo-defaults.js"></script>
+  <script type="module" src="/admin/js/destinations-list-page.mjs"></script>
+</body>
+</html>

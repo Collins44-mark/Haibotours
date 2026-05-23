@@ -46,6 +46,22 @@
       "source": "/admin",
       "destination": "/frontend/admin/dashboard.html"
     },
+    {
+      "source": "/admin/destinations/",
+      "destination": "/frontend/admin/destinations/index.html"
+    },
+    {
+      "source": "/admin/destinations",
+      "destination": "/frontend/admin/destinations/index.html"
+    },
+    {
+      "source": "/admin/destinations/edit/",
+      "destination": "/frontend/admin/destinations/edit.html"
+    },
+    {
+      "source": "/admin/destinations/edit",
+      "destination": "/frontend/admin/destinations/edit.html"
+    },
     { "source": "/", "destination": "/frontend/index.html" },
     { "source": "/(.*)", "destination": "/frontend/$1" }
   ],

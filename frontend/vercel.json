@@ -43,6 +43,22 @@
     {
       "source": "/admin-dashboard/",
       "destination": "/admin/dashboard.html"
+    },
+    {
+      "source": "/admin/destinations",
+      "destination": "/admin/destinations/index.html"
+    },
+    {
+      "source": "/admin/destinations/",
+      "destination": "/admin/destinations/index.html"
+    },
+    {
+      "source": "/admin/destinations/edit",
+      "destination": "/admin/destinations/edit.html"
+    },
+    {
+      "source": "/admin/destinations/edit/",
+      "destination": "/admin/destinations/edit.html"
     }
   ],
   "headers": [

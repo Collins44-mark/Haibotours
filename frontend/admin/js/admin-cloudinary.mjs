@@ -131,6 +131,7 @@ export function createUploadZone(input, options = {}) {
   });
 
   if (zone) {
+    zone.addEventListener('click', () => input.click());
     zone.addEventListener('dragover', (e) => {
       e.preventDefault();
       zone.classList.add('is-dragover');

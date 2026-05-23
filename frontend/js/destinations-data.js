@@ -356,15 +356,25 @@ window.DESTINATIONS = DESTINATIONS;
 
 function getHaiboDestinations() {
   const staticList = window.HAIBO_DESTINATIONS_STATIC || DESTINATIONS;
-  const fromContent = window.HAIBO_CONTENT?.destinations;
-  if (typeof haiboMergeDestinationsList === 'function' && Array.isArray(fromContent)) {
-    return haiboMergeDestinationsList(fromContent);
-  }
-  const fromWindow = Array.isArray(window.DESTINATIONS) ? window.DESTINATIONS : [];
   const pick = (arr) =>
     arr
       .filter((d) => d && d.id && d.active !== false)
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+  const fromContent = window.HAIBO_CONTENT?.destinations;
+  if (Array.isArray(fromContent) && fromContent.length) {
+    return pick(fromContent);
+  }
+
+  if (
+    typeof haiboMergeDestinationsList === 'function' &&
+    Array.isArray(window.HAIBO_FIRESTORE_DESTINATIONS) &&
+    window.HAIBO_FIRESTORE_DESTINATIONS.length
+  ) {
+    return pick(haiboMergeDestinationsList(window.HAIBO_FIRESTORE_DESTINATIONS));
+  }
+
+  const fromWindow = Array.isArray(window.DESTINATIONS) ? window.DESTINATIONS : [];
   const live = pick(fromWindow);
   return live.length ? live : staticList;
 }
@@ -469,34 +479,24 @@ function haiboEscapeHtml(str) {
 }
 
 function haiboResolveCardImage(dest) {
-  const key =
-    typeof haiboNormalizeDestId === 'function'
-      ? haiboNormalizeDestId(dest?.id)
-      : String(dest?.id || '').toLowerCase();
-  const staticD = (window.HAIBO_DESTINATIONS_STATIC || DESTINATIONS).find((d) =>
-    typeof haiboNormalizeDestId === 'function'
-      ? haiboNormalizeDestId(d.id) === key
-      : d.id === key
-  );
-  const img = dest?.image || dest?.imageUrl || '';
-  if (typeof haiboIsAdminUploadedUrl === 'function' && haiboIsAdminUploadedUrl(img)) {
-    return img;
+  if (typeof window.haiboResolveCardImage === 'function') {
+    return window.haiboResolveCardImage(dest);
   }
-  if (typeof haiboValidMediaUrl === 'function' && haiboValidMediaUrl(img)) {
-    return img;
-  }
-  return staticD?.image || '';
+  const img = dest?.image || dest?.imageUrl || dest?.cardImage || '';
+  if (typeof haiboValidMediaUrl === 'function' && haiboValidMediaUrl(img)) return img;
+  return '';
 }
 
 /** Safari card HTML — shared by app.js and paint routine */
 function haiboBuildDestinationCard(dest) {
   const href = destinationDetailUrl(dest.id);
+  const fromCms = dest && (dest._fromFirestore || dest.updatedAt != null);
   const imageUrl = haiboResolveCardImage(dest);
   const staticD =
     typeof haiboStaticDestination === 'function'
       ? haiboStaticDestination(dest.id)
       : (window.HAIBO_DESTINATIONS_STATIC || DESTINATIONS).find((d) => d.id === dest.id);
-  const fallbackUrl = staticD?.image || '';
+  const fallbackUrl = fromCms ? '' : staticD?.image || '';
   const safeUrl = imageUrl || fallbackUrl;
   const bg = safeUrl.replace(/'/g, '%27').replace(/"/g, '%22');
   const imgSrc =
@@ -504,9 +504,10 @@ function haiboBuildDestinationCard(dest) {
       ? window.haiboOptimizeImage(safeUrl, { width: 800 })
       : safeUrl;
   const alt = `${dest.name} safari — ${dest.subtitle}`;
-  const fbAttr = fallbackUrl
-    ? ` data-fallback="${haiboEscapeHtml(fallbackUrl)}" onerror="(function(img){var u=img.dataset.fallback;if(!u)return;img.classList.add('haibo-img-broken');var m=img.closest('.dest-card-media');if(m)m.style.backgroundImage='url('+u+')';img.onerror=null;})(this)"`
-    : '';
+  const fbAttr =
+    !fromCms && fallbackUrl
+      ? ` data-fallback="${haiboEscapeHtml(fallbackUrl)}" onerror="(function(img){var u=img.dataset.fallback;if(!u)return;img.classList.add('haibo-img-broken');var m=img.closest('.dest-card-media');if(m)m.style.backgroundImage='url('+u+')';img.onerror=null;})(this)"`
+      : '';
   const img = safeUrl
     ? `<img src="${haiboEscapeHtml(imgSrc)}" alt="${haiboEscapeHtml(alt)}" loading="lazy" decoding="async" class="haibo-media dest-card-img w-full object-cover" width="800" height="533"${fbAttr}>`
     : '';
@@ -547,27 +548,6 @@ function haiboPaintDestinationCards(containerId, limit) {
     console.warn('HAIBO: using static destinations after error', err);
     list = staticList;
   }
-  list = list.map((d) => {
-    const key =
-      typeof haiboNormalizeDestId === 'function'
-        ? haiboNormalizeDestId(d.id)
-        : d.id;
-    const base = staticList.find((s) =>
-      typeof haiboNormalizeDestId === 'function'
-        ? haiboNormalizeDestId(s.id) === key
-        : s.id === key
-    );
-    if (!base) return d;
-    return {
-      ...base,
-      ...d,
-      image: haiboResolveCardImage({ ...d, id: key }),
-      heroImage:
-        typeof haiboIsAdminUploadedUrl === 'function' && haiboIsAdminUploadedUrl(d.heroImage)
-          ? d.heroImage
-          : base.heroImage || base.image,
-    };
-  });
 
   if (!list.length) return false;
   if (limit) list = list.slice(0, limit);

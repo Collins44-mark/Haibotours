@@ -379,6 +379,9 @@ function initWhatsAppFloat(customMessage) {
 }
 
 function resolveDestinationImage(dest) {
+  if (typeof window.haiboResolveCardImage === 'function') {
+    return window.haiboResolveCardImage(dest);
+  }
   if (typeof haiboResolveCardImage === 'function') {
     return haiboResolveCardImage(dest);
   }
@@ -495,11 +498,12 @@ function renderDestinationDetail() {
 
   const staticD =
     typeof haiboStaticDestination === 'function' ? haiboStaticDestination(dest.id) : null;
-  let heroRaw = dest.heroImage;
-  if (
-    typeof haiboIsAdminUploadedUrl === 'function' &&
-    !haiboIsAdminUploadedUrl(heroRaw)
-  ) {
+  const fromCms = dest._fromFirestore || dest.updatedAt != null;
+  let heroRaw =
+    typeof haiboResolveHeroImage === 'function'
+      ? haiboResolveHeroImage(dest)
+      : dest.heroImage || dest.image || '';
+  if (!fromCms && typeof haiboIsAdminUploadedUrl === 'function' && !haiboIsAdminUploadedUrl(heroRaw)) {
     heroRaw = staticD?.heroImage || staticD?.image || heroRaw;
   }
   const heroImg =
@@ -510,16 +514,19 @@ function renderDestinationDetail() {
   const waMessage = `Hello HAIBO Tours! I'm interested in the ${dest.name} (${dest.subtitle}) package. Please share details and availability.`;
   initWhatsAppFloat(waMessage);
 
-  const packages =
-    Array.isArray(dest.packages) && dest.packages.length
+  const packages = fromCms
+    ? dest.packages || []
+    : Array.isArray(dest.packages) && dest.packages.length
       ? dest.packages
       : staticD?.packages || [];
-  const gallery =
-    Array.isArray(dest.gallery) && dest.gallery.length
+  const gallery = fromCms
+    ? dest.gallery || []
+    : Array.isArray(dest.gallery) && dest.gallery.length
       ? dest.gallery
       : staticD?.gallery || [];
-  const highlights =
-    Array.isArray(dest.highlights) && dest.highlights.length
+  const highlights = fromCms
+    ? dest.highlights || []
+    : Array.isArray(dest.highlights) && dest.highlights.length
       ? dest.highlights
       : staticD?.highlights || [];
 
@@ -547,7 +554,7 @@ function renderDestinationDetail() {
     )
     .join('');
 
-  const exp = dest.experience || staticD?.experience;
+  const exp = fromCms ? dest.experience : dest.experience || staticD?.experience;
   const experienceHtml = exp
     ? exp.items
         .map(
@@ -562,7 +569,13 @@ function renderDestinationDetail() {
     : '';
 
   const galleryList = gallery.map((src, i) => {
+    if (typeof haiboResolveGalleryImage === 'function') {
+      return haiboResolveGalleryImage(src, dest, i);
+    }
     const staticSrc = staticD?.gallery?.[i];
+    if (fromCms && typeof haiboValidMediaUrl === 'function' && haiboValidMediaUrl(src)) {
+      return src;
+    }
     if (typeof haiboIsAdminUploadedUrl === 'function' && haiboIsAdminUploadedUrl(src)) {
       return src;
     }
@@ -692,6 +705,7 @@ function runHaiboApp() {
 }
 
 function refreshHaiboLiveContent() {
+  if (typeof syncHaiboDestinations === 'function') syncHaiboDestinations();
   if (typeof window.applyHaiboContent === 'function') {
     window.applyHaiboContent();
   }
@@ -745,5 +759,7 @@ function bootHaiboApp() {
   }
   window.addEventListener('haiboContentUpdated', refreshHaiboLiveContent);
 }
+
+window.refreshHaiboLiveContent = refreshHaiboLiveContent;
 
 document.addEventListener('DOMContentLoaded', bootHaiboApp);

@@ -20,6 +20,13 @@ import {
   createUploadZone,
   getRecentUploads,
 } from './admin-cloudinary.mjs';
+import {
+  mergeDestinationsForAdmin,
+  renderDestinationsList,
+  bindDestinationsListFilters,
+} from './admin-destinations.mjs';
+import { subscribeAdminCollections } from './admin-realtime.mjs';
+import { initTopbarMenu, initMobileSidebar } from './admin-ui.mjs';
 
 const FIRESTORE_PATHS = globalThis.FIRESTORE_PATHS;
 
@@ -181,27 +188,7 @@ function renderRecentUploads() {
     .join('');
 }
 
-function initMobileSidebar() {
-  const sidebar = document.getElementById('admin-sidebar');
-  const backdrop = document.getElementById('sidebar-backdrop');
-  const toggle = document.getElementById('btn-menu');
-
-  const close = () => {
-    sidebar?.classList.remove('is-open');
-    backdrop?.classList.remove('is-visible');
-  };
-
-  toggle?.addEventListener('click', () => {
-    sidebar?.classList.toggle('is-open');
-    backdrop?.classList.toggle('is-visible');
-  });
-  backdrop?.addEventListener('click', close);
-  document.querySelectorAll('.admin-nav__btn[data-panel]').forEach((btn) => {
-    btn.addEventListener('click', close);
-  });
-}
-
-async function seedAllDefaults() {
+export async function seedAllDefaults() {
   if (!confirm('Import website defaults into Firestore? This merges data.')) return;
 
   try {
@@ -362,7 +349,7 @@ async function loadAllAdminData() {
   state.gallery = await dbList(FIRESTORE_PATHS.gallery);
   state.weatherCards = await dbList(FIRESTORE_PATHS.weatherCards);
   state.heroDoc = await dbGetDoc(FIRESTORE_PATHS.hero);
-  renderDestinationsList();
+  refreshDestinationsListUi();
   showDestinationsImportBanner();
   renderGalleryList();
   renderWeatherList();
@@ -522,118 +509,29 @@ async function saveSettingsForm(e) {
   adminToast('Settings saved', 'success');
 }
 
-function renderDestinationsList() {
+function refreshDestinationsListUi() {
   const el = document.getElementById('destinations-list');
+  const panel = document.querySelector('.admin-dest-panel');
   if (!el) return;
-  const sorted = getAdminDestinationsForUi();
-  el.innerHTML =
-    sorted
-      .map(
-        (d) => `
-    <div class="admin-card-item">
-      <img src="${d.image || ''}" alt="" class="admin-thumb" />
-      <div class="admin-card-item__body">
-        <strong>${d.name}</strong>
-        <span class="admin-muted">${d.id} · ${d.region || ''}${d._source === 'static' ? ' · default (save to publish)' : ''}</span>
-      </div>
-      <button type="button" class="admin-btn admin-btn--ghost" data-edit-dest="${d.id}">Edit</button>
-      ${d._source === 'firestore' ? `<button type="button" class="admin-btn admin-btn--danger" data-del-dest="${d.id}">Delete</button>` : ''}
-    </div>`
-      )
-      .join('') || '<p class="admin-muted">No destinations. Import defaults or add new.</p>';
+  const list = mergeDestinationsForAdmin(state.destinations);
+  renderDestinationsList(el, list, { onRefresh: () => loadAllAdminData() });
 
-  el.querySelectorAll('[data-edit-dest]').forEach((btn) => {
-    btn.addEventListener('click', () => openDestinationEditor(btn.dataset.editDest));
-  });
-  el.querySelectorAll('[data-del-dest]').forEach((btn) => {
-    btn.addEventListener('click', () => deleteDestination(btn.dataset.delDest));
-  });
-}
-
-function openDestinationEditor(id) {
-  const d = (id ? getAdminDestinationById(id) : null) || {
-    id: '',
-    name: '',
-    subtitle: '',
-    region: '',
-    image: '',
-    heroImage: '',
-    description: '',
-    bestTime: '',
-    highlights: [],
-    gallery: [],
-    packages: [],
-    experience: { label: '', title: '', intro: '', items: [] },
-    active: true,
-    order: state.destinations.length || getStaticDestinations().length,
-  };
-  const f = document.getElementById('form-destination');
-  f.dataset.editId = d.id || '';
-  f.id.value = d.id;
-  f.id.disabled = Boolean(id);
-  f.name.value = d.name || '';
-  f.subtitle.value = d.subtitle || '';
-  f.region.value = d.region || '';
-  f.image.value = d.image || '';
-  f.heroImage.value = d.heroImage || '';
-  f.description.value = d.description || '';
-  f.bestTime.value = d.bestTime || '';
-  f.highlights.value = (d.highlights || []).join('\n');
-  f.gallery.value = (d.gallery || []).join('\n');
-  f.packagesJson.value = JSON.stringify(d.packages || [], null, 2);
-  f.experienceJson.value = JSON.stringify(d.experience || {}, null, 2);
-  f.active.checked = d.active !== false;
-  document.getElementById('dest-editor-title').textContent = id ? `Edit: ${d.name}` : 'New destination';
-  showPanel('destinations');
-}
-
-async function saveDestinationForm(e) {
-  e.preventDefault();
-  const f = e.target;
-  const editId = f.dataset.editId;
-  const id = (editId || slugify(f.name.value)).trim();
-  if (!id) {
-    adminToast('Destination ID required', 'error');
-    return;
+  const regionSelect = panel?.querySelector('[data-dest-filter-region]');
+  if (regionSelect && regionSelect.options.length <= 1) {
+    const regions = [...new Set(list.map((d) => d.region).filter(Boolean))].sort();
+    regions.forEach((r) => {
+      const opt = document.createElement('option');
+      opt.value = r;
+      opt.textContent = r;
+      regionSelect.appendChild(opt);
+    });
   }
-  let packages = [];
-  let experience = {};
-  try {
-    packages = JSON.parse(f.packagesJson.value || '[]');
-    experience = JSON.parse(f.experienceJson.value || '{}');
-  } catch {
-    adminToast('Invalid packages or experience JSON', 'error');
-    return;
-  }
-  await dbSetDoc(
-    FIRESTORE_PATHS.destinations,
-    {
-      id,
-      name: f.name.value,
-      subtitle: f.subtitle.value,
-      region: f.region.value,
-      image: f.image.value,
-      heroImage: f.heroImage.value || f.image.value,
-      description: f.description.value,
-      bestTime: f.bestTime.value,
-      highlights: f.highlights.value.split('\n').map((s) => s.trim()).filter(Boolean),
-      gallery: f.gallery.value.split('\n').map((s) => s.trim()).filter(Boolean),
-      packages,
-      experience,
-      active: f.active.checked,
-      order: Number(f.order.value) || 0,
-    },
-    id
-  );
-  adminToast('Destination saved', 'success');
-  await loadAllAdminData();
 }
 
-async function deleteDestination(id) {
-  if (!confirm(`Delete destination "${id}"?`)) return;
-  await dbDeleteDoc(FIRESTORE_PATHS.destinations, id);
-  adminToast('Destination deleted', 'success');
-  await loadAllAdminData();
+function openDestinationsPanelFromHash() {
+  if (window.location.hash === '#destinations') {
+    window.location.href = '/admin/destinations/index.html';
+  }
 }
 
 function renderGalleryList() {
@@ -802,10 +700,39 @@ async function saveSearchSettings() {
 
 function initAdminAppHandlers() {
   initMobileSidebar();
+  initTopbarMenu();
+  openDestinationsPanelFromHash();
+  window.addEventListener('hashchange', openDestinationsPanelFromHash);
+
+  const destPanel = document.querySelector('.admin-dest-panel');
+  bindDestinationsListFilters(destPanel, refreshDestinationsListUi);
+
+  subscribeAdminCollections({
+    onDestinations: (items) => {
+      state.destinations = items;
+      refreshDestinationsListUi();
+      renderDashboardStats();
+    },
+    onGallery: (items) => {
+      state.gallery = items;
+      renderGalleryList();
+    },
+    onWeather: (items) => {
+      state.weatherCards = items;
+      renderWeatherList();
+    },
+  });
+
   window.addEventListener('haiboAdminUpload', () => renderRecentUploads());
 
   document.querySelectorAll('.admin-nav__btn[data-panel]').forEach((btn) => {
-    btn.addEventListener('click', () => showPanel(btn.dataset.panel));
+    btn.addEventListener('click', () => {
+      if (btn.dataset.panel === 'destinations') {
+        window.location.href = '/admin/destinations/index.html';
+        return;
+      }
+      showPanel(btn.dataset.panel);
+    });
   });
   document.querySelectorAll('[data-goto]').forEach((btn) => {
     btn.addEventListener('click', () => showPanel(btn.dataset.goto));
@@ -825,11 +752,9 @@ function initAdminAppHandlers() {
   document.getElementById('form-contact')?.addEventListener('submit', saveContactForm);
   document.getElementById('form-socials')?.addEventListener('submit', saveSocialsForm);
   document.getElementById('form-settings')?.addEventListener('submit', saveSettingsForm);
-  document.getElementById('form-destination')?.addEventListener('submit', saveDestinationForm);
   document.getElementById('form-gallery-add')?.addEventListener('submit', addGalleryImage);
   document.getElementById('form-weather')?.addEventListener('submit', saveWeatherForm);
   document.getElementById('btn-save-search')?.addEventListener('click', saveSearchSettings);
-  document.getElementById('btn-new-dest')?.addEventListener('click', () => openDestinationEditor(''));
   document.getElementById('btn-new-weather')?.addEventListener('click', () => openWeatherEditor(''));
 
   const bindZone = (inputId, previewId, folder, onUrl) => {
@@ -844,12 +769,6 @@ function initAdminAppHandlers() {
   });
   bindZone('about-upload', 'about-preview', 'about', (url) => {
     document.querySelector('#form-about [name="imageUrl"]').value = url;
-  });
-  bindZone('dest-card-upload', 'dest-card-preview', 'destinations', (url) => {
-    document.querySelector('#form-destination [name="image"]').value = url;
-  });
-  bindZone('dest-hero-upload', 'dest-hero-preview', 'destinations', (url) => {
-    document.querySelector('#form-destination [name="heroImage"]').value = url;
   });
   bindZone('logo-upload', 'logo-preview', 'settings', (url) => {
     document.querySelector('#form-settings [name="logoUrl"]').value = url;

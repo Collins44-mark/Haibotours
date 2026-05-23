@@ -221,6 +221,11 @@ window.applyHaiboContent = applyHaiboContent;
 
 function afterContentRender() {
   applyHaiboContent();
+  if (typeof window.refreshHaiboLiveContent === 'function') {
+    window.refreshHaiboLiveContent();
+  } else if (typeof haiboBootDestinationGrids === 'function') {
+    haiboBootDestinationGrids();
+  }
   if (typeof window.haiboEnhanceImages === 'function') window.haiboEnhanceImages();
 }
 

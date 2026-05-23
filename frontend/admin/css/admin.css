@@ -64,12 +64,16 @@ body.admin-authenticated #admin-app-root {
   transition: opacity 0.35s ease;
 }
 
-body.admin-dashboard-page .admin-auth-loading {
+body.admin-dashboard-page .admin-auth-loading:not([hidden]):not(.is-hiding) {
   display: flex;
 }
 
-body.admin-dashboard-page.admin-ready .admin-auth-loading {
-  display: none;
+body.admin-dashboard-page.admin-ready .admin-auth-loading,
+.admin-auth-loading[hidden],
+.admin-auth-loading.is-hiding {
+  display: none !important;
+  opacity: 0;
+  pointer-events: none;
 }
 
 body.admin-authenticated #admin-login-gate {
@@ -120,10 +124,48 @@ body.admin-login-ready.admin-login-page #admin-auth-loading {
   align-items: center;
   justify-content: center;
   background: radial-gradient(ellipse at 50% 0%, rgba(217, 139, 43, 0.12), transparent 55%), var(--admin-bg);
+  opacity: 1;
+  transition: opacity 0.28s ease;
 }
 
-.admin-auth-loading[hidden] {
-  display: none;
+.admin-auth-loading[hidden],
+.admin-auth-loading.is-hiding {
+  display: none !important;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.admin-auth-loading__error {
+  margin: 0 0 1.25rem;
+  max-width: 22rem;
+  line-height: 1.5;
+  color: #f87171;
+}
+
+.admin-auth-loading__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  justify-content: center;
+}
+
+.admin-auth-retry {
+  padding: 0.55rem 1.1rem;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, var(--admin-gold), #b8862e);
+  color: #0d0d0d;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-auth-login-link {
+  padding: 0.55rem 1.1rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--admin-text);
+  text-decoration: none;
+  font-size: 0.9rem;
 }
 
 .admin-auth-loading__inner {

@@ -36,14 +36,21 @@ function setBusy(busy) {
 async function redirectIfAlreadyAdmin() {
   const auth = getAuth();
   if (!auth) return;
-  if (typeof auth.authStateReady === 'function') {
-    await auth.authStateReady();
-  }
-  const user = auth.currentUser;
-  if (!user) return;
-  if (await checkUserIsAdmin(user)) {
-    log('redirect event → dashboard (existing session)');
-    window.location.replace(DASHBOARD_URL);
+  try {
+    if (typeof auth.authStateReady === 'function') {
+      await Promise.race([
+        auth.authStateReady(),
+        new Promise((resolve) => setTimeout(resolve, 5000)),
+      ]);
+    }
+    const user = auth.currentUser;
+    if (!user) return;
+    if (await checkUserIsAdmin(user, 5000)) {
+      log('redirect event → dashboard (existing session)');
+      window.location.replace(DASHBOARD_URL);
+    }
+  } catch (err) {
+    console.warn('[HAIBO Admin] session check skipped', err?.message);
   }
 }
 

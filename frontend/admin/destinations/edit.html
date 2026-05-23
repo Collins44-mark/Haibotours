@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Edit destination — HAIBO CMS</title>
+  <link rel="icon" href="/assets/logo/logo.png" type="image/png" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/css/admin-saas.css">
+  <link rel="stylesheet" href="/admin/css/admin.css">
+</head>
+<body>
+  <div id="admin-auth-loading" class="admin-auth-loading" aria-live="polite" aria-busy="true">
+    <div class="admin-auth-loading__inner">
+      <div class="admin-auth-loading__spinner" aria-hidden="true"></div>
+      <p>Checking admin access…</p>
+    </div>
+  </div>
+
+  <div id="app" class="haibo-admin" hidden>
+    <div id="sidebar-mount"></div>
+    <div class="haibo-main">
+      <header class="haibo-topbar">
+        <div class="haibo-topbar__title">
+          <div class="haibo-edit-header" style="margin:0">
+            <a href="/admin/destinations/index.html" class="haibo-edit-header__back">← Back to Destinations</a>
+            <div class="haibo-breadcrumb"><a href="/admin/destinations/index.html">Destinations</a> &gt; <span id="bc-name">Edit</span></div>
+            <h1 style="margin:0.35rem 0 0">Edit Destination</h1>
+            <p style="margin:0.25rem 0 0;color:#9ca3af;font-size:0.875rem">Update destination details and content</p>
+            <p class="haibo-autosave" id="autosave-status">✓ All changes saved</p>
+          </div>
+        </div>
+        <div class="haibo-topbar__actions">
+          <a href="/admin/destinations/index.html" class="haibo-btn haibo-btn--ghost">Cancel</a>
+          <button type="button" id="btn-save" class="haibo-btn haibo-btn--primary" onclick="window.haiboSaveDestination && window.haiboSaveDestination()">Save Changes</button>
+        </div>
+      </header>
+
+      <div class="haibo-content">
+        <form id="form-edit" class="haibo-edit-layout" novalidate>
+          <nav class="haibo-section-nav" id="section-nav" aria-label="Form sections">
+            <button type="button" data-section="general" class="is-active">General Info</button>
+            <button type="button" data-section="images">Images</button>
+            <button type="button" data-section="highlights">Highlights</button>
+            <button type="button" data-section="packages">Packages</button>
+            <button type="button" data-section="experiences">Experiences</button>
+            <button type="button" data-section="seo">SEO &amp; Meta</button>
+            <button type="button" data-section="status">Status</button>
+          </nav>
+
+          <div class="haibo-form-panels">
+            <section class="haibo-form-panel" data-panel="general">
+              <h2>General Information</h2>
+              <div class="haibo-grid-2">
+                <div class="haibo-field">
+                  <label>Destination Name <span class="req">*</span></label>
+                  <input class="haibo-input" name="name" required style="width:100%" />
+                </div>
+                <div class="haibo-field">
+                  <label>Slug <span class="req">*</span></label>
+                  <input class="haibo-input" name="id" required style="width:100%" />
+                </div>
+                <div class="haibo-field">
+                  <label>Region</label>
+                  <select class="haibo-select" name="region" style="width:100%">
+                    <option value="">Select region</option>
+                    <option>Northern Tanzania</option>
+                    <option>Southern Tanzania</option>
+                    <option>Coastal Tanzania</option>
+                    <option>Western Tanzania</option>
+                  </select>
+                </div>
+                <div class="haibo-field">
+                  <label>Best Time to Visit</label>
+                  <select class="haibo-select" name="bestTime" style="width:100%">
+                    <option value="">Select season</option>
+                    <option>Year-round</option>
+                    <option>June – October (dry season)</option>
+                    <option>January – February</option>
+                  </select>
+                </div>
+              </div>
+              <div class="haibo-field">
+                <label>Short Description</label>
+                <textarea class="haibo-input" name="subtitle" rows="3" maxlength="160" style="width:100%"></textarea>
+                <div class="haibo-field-hint"><span id="short-count">0</span>/160 characters</div>
+              </div>
+              <div class="haibo-field">
+                <label>Full Description</label>
+                <div class="haibo-richtext-toolbar" data-toolbar>
+                  <button type="button" data-cmd="bold" title="Bold">B</button>
+                  <button type="button" data-cmd="italic" title="Italic">I</button>
+                  <button type="button" data-cmd="ul" title="List">≡</button>
+                </div>
+                <textarea class="haibo-richtext" name="description" rows="6" maxlength="2000"></textarea>
+                <div class="haibo-field-hint"><span id="full-count">0</span>/2000 characters</div>
+              </div>
+            </section>
+
+            <section class="haibo-form-panel" data-panel="images" hidden>
+              <h2>Images</h2>
+              <div class="haibo-image-pair">
+                <div class="haibo-image-block" data-image-block="card">
+                  <label>Card Image</label>
+                  <div class="haibo-image-preview"><img id="preview-card" alt="" hidden /></div>
+                  <div class="haibo-image-preview__actions">
+                    <button type="button" class="haibo-btn haibo-btn--ghost haibo-btn--sm" data-pick="dest-card-upload">Replace Image</button>
+                    <button type="button" class="haibo-btn haibo-btn--danger haibo-btn--sm" data-clear-image="image">Remove</button>
+                  </div>
+                  <input type="file" id="dest-card-upload" accept="image/*" hidden />
+                  <div class="haibo-dropzone" data-drop="card">
+                    <strong>Click to upload</strong> or drag and drop<br />PNG, JPG, WebP up to 5MB
+                  </div>
+                  <input type="hidden" name="image" />
+                </div>
+                <div class="haibo-image-block" data-image-block="hero">
+                  <label>Hero Image</label>
+                  <div class="haibo-image-preview"><img id="preview-hero" alt="" hidden /></div>
+                  <div class="haibo-image-preview__actions">
+                    <button type="button" class="haibo-btn haibo-btn--ghost haibo-btn--sm" data-pick="dest-hero-upload">Replace Image</button>
+                    <button type="button" class="haibo-btn haibo-btn--danger haibo-btn--sm" data-clear-image="heroImage">Remove</button>
+                  </div>
+                  <input type="file" id="dest-hero-upload" accept="image/*" hidden />
+                  <div class="haibo-dropzone" data-drop="hero">
+                    <strong>Click to upload</strong> or drag and drop<br />PNG, JPG, WebP up to 5MB
+                  </div>
+                  <input type="hidden" name="heroImage" />
+                </div>
+              </div>
+              <div class="haibo-field" style="margin-top:1.25rem">
+                <label>Gallery image URLs (one per line)</label>
+                <textarea class="haibo-input" name="galleryUrls" rows="4" style="width:100%"></textarea>
+              </div>
+            </section>
+
+            <section class="haibo-form-panel" data-panel="highlights" hidden>
+              <h2>Highlights</h2>
+              <div id="highlights-root" data-highlights-root>
+                <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem">
+                  <input type="text" class="haibo-input" data-chip-input placeholder="Add highlight" style="flex:1" />
+                  <button type="button" class="haibo-btn haibo-btn--ghost" data-chip-add>+ Add</button>
+                </div>
+                <div class="haibo-chips" data-chip-list></div>
+              </div>
+            </section>
+
+            <section class="haibo-form-panel" data-panel="packages" hidden>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+                <h2 style="margin:0">Safari Packages</h2>
+                <button type="button" class="haibo-btn haibo-btn--ghost haibo-btn--sm" data-add-package>+ Add Package</button>
+              </div>
+              <div data-packages-list></div>
+            </section>
+
+            <section class="haibo-form-panel" data-panel="experiences" hidden>
+              <h2>Experience</h2>
+              <div data-exp-meta class="haibo-grid-2" style="margin-bottom:1rem">
+                <div class="haibo-field"><label>Label</label><input class="haibo-input" data-exp-label style="width:100%" /></div>
+                <div class="haibo-field"><label>Section title</label><input class="haibo-input" data-exp-title style="width:100%" /></div>
+              </div>
+              <div class="haibo-field"><label>Intro</label><textarea class="haibo-input" data-exp-intro rows="2" style="width:100%"></textarea></div>
+              <div data-exp-items></div>
+              <button type="button" class="haibo-btn haibo-btn--ghost haibo-btn--sm" data-add-exp-item style="margin-top:0.75rem">+ Add Experience</button>
+            </section>
+
+            <section class="haibo-form-panel" data-panel="seo" hidden>
+              <h2>SEO &amp; Meta</h2>
+              <div class="haibo-field">
+                <label>Sort order (homepage listing)</label>
+                <input class="haibo-input" name="order" type="number" value="0" style="width:100%;max-width:120px" />
+              </div>
+              <p class="admin-muted" style="color:#9ca3af;font-size:0.85rem">Slug is used in the public URL: /destinations/your-slug</p>
+            </section>
+
+            <section class="haibo-form-panel" data-panel="status" hidden>
+              <h2>Status</h2>
+              <label class="admin-check" style="display:flex;align-items:center;gap:0.5rem;font-size:1rem">
+                <input type="checkbox" name="active" checked style="width:18px;height:18px" />
+                Published on live website
+              </label>
+              <p style="color:#9ca3af;font-size:0.85rem;margin-top:0.75rem">Unpublished destinations stay in the CMS but are hidden from visitors.</p>
+            </section>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="haibo-toast" class="haibo-toast"></div>
+
+  <script src="/js/firebase-config.js"></script>
+  <script src="/js/destinations-data.js"></script>
+  <script src="/js/haibo-defaults.js"></script>
+  <script type="module" src="/admin/js/destination-edit-page.mjs"></script>
+</body>
+</html>

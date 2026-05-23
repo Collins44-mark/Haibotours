@@ -14,6 +14,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/admin/css/admin.css">
+  <link rel="stylesheet" href="/admin/css/admin-premium.css">
   <link rel="stylesheet" href="/css/cards-mobile.css">
 </head>
 <body class="admin-dashboard-page">
@@ -45,10 +46,10 @@
           <svg class="admin-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 16l4-8 4 6 4-10 4 12"/><rect x="2" y="2" width="20" height="20" rx="2"/></svg>
           Hero
         </button>
-        <button type="button" class="admin-nav__btn" data-panel="destinations">
+        <a href="/admin/destinations/index.html" class="admin-nav__btn">
           <svg class="admin-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8 6 4 8 4 13a8 8 0 1016 0c0-5-4-7-8-11z"/></svg>
           Destinations
-        </button>
+        </a>
         <button type="button" class="admin-nav__btn" data-panel="search">
           <svg class="admin-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3-3"/></svg>
           Search
@@ -92,8 +93,14 @@
           <h1 id="admin-page-title">Dashboard</h1>
         </div>
         <div class="admin-topbar__actions">
-          <button type="button" id="btn-seed" class="admin-btn admin-btn--ghost">Import website defaults</button>
-          <a href="/" target="_blank" rel="noopener" class="admin-btn admin-btn--ghost">View site</a>
+          <input type="search" class="admin-input admin-topbar__search" placeholder="Search CMS…" id="admin-global-search" aria-label="Search" />
+          <div class="admin-actions-menu">
+            <button type="button" id="btn-actions-menu" class="admin-actions-menu__btn" aria-expanded="false" aria-haspopup="true">⋯</button>
+            <div id="admin-actions-dropdown" class="admin-dropdown" hidden>
+              <button type="button" id="btn-seed">Import website defaults</button>
+              <a href="/" target="_blank" rel="noopener">View live site</a>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -111,7 +118,7 @@
             <p class="admin-muted">Your live website always shows built-in defaults until you save content to Firestore. Admin uploads override instantly.</p>
             <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:1rem">
               <button type="button" class="admin-btn admin-btn--primary admin-btn--sm" data-goto="hero">Edit hero</button>
-              <button type="button" class="admin-btn admin-btn--ghost admin-btn--sm" data-goto="destinations">Manage destinations</button>
+              <a href="/admin/destinations/index.html" class="admin-btn admin-btn--ghost admin-btn--sm">Manage destinations</a>
               <button type="button" class="admin-btn admin-btn--ghost admin-btn--sm" data-goto="gallery">Manage gallery</button>
             </div>
           </div>
@@ -143,44 +150,34 @@
           </form>
         </section>
 
-        <section id="panel-destinations" class="admin-panel">
+        <section id="panel-destinations" class="admin-panel admin-dest-panel">
           <div class="admin-glass">
-            <h2>Destinations</h2>
-            <button type="button" id="btn-new-dest" class="admin-btn admin-btn--primary">Add destination</button>
-            <div id="destinations-list" style="margin-top:1rem"></div>
+            <div class="admin-section__head">
+              <div>
+                <h2>Destinations</h2>
+                <p class="admin-muted">Manage safari destinations — changes go live instantly on the website.</p>
+              </div>
+              <a href="/admin/destinations/edit.html" class="admin-btn admin-btn--primary" id="btn-new-dest">+ Add destination</a>
+            </div>
+            <div class="admin-dest-panel__toolbar">
+              <input type="search" class="admin-input" data-dest-search placeholder="Search destinations…" />
+              <select class="admin-input" data-dest-filter-region aria-label="Filter region">
+                <option value="">All regions</option>
+              </select>
+              <select class="admin-input" data-dest-filter-status aria-label="Filter status">
+                <option value="">All statuses</option>
+                <option value="published">Published</option>
+                <option value="draft">Draft</option>
+                <option value="default">Site defaults only</option>
+              </select>
+              <select class="admin-input" data-dest-sort aria-label="Sort">
+                <option value="order">Sort: order</option>
+                <option value="name">Sort: A–Z</option>
+                <option value="updated">Sort: recently updated</option>
+              </select>
+            </div>
+            <div id="destinations-list"></div>
           </div>
-          <form id="form-destination" class="admin-glass" data-edit-id="">
-            <h2 id="dest-editor-title">Edit destination</h2>
-            <div class="admin-grid-2">
-              <div class="admin-field"><label>ID (slug)</label><input name="id" required placeholder="serengeti" /></div>
-              <div class="admin-field"><label>Order</label><input name="order" type="number" value="0" /></div>
-              <div class="admin-field"><label>Name</label><input name="name" required /></div>
-              <div class="admin-field"><label>Subtitle</label><input name="subtitle" /></div>
-              <div class="admin-field"><label>Region</label><input name="region" /></div>
-              <div class="admin-field"><label>Best time</label><input name="bestTime" /></div>
-            </div>
-            <div class="admin-upload-zone">
-              <label>Card image</label>
-              <input type="file" id="dest-card-upload" accept="image/*" />
-              <div class="admin-upload-progress" hidden><div class="admin-upload-progress__bar"></div><span class="admin-upload-progress__label"></span></div>
-              <img id="dest-card-preview" class="admin-preview hidden" alt="Card preview" />
-            </div>
-            <div class="admin-field"><label>Card image URL</label><input name="image" /></div>
-            <div class="admin-upload-zone">
-              <label>Hero image</label>
-              <input type="file" id="dest-hero-upload" accept="image/*" />
-              <div class="admin-upload-progress" hidden><div class="admin-upload-progress__bar"></div><span class="admin-upload-progress__label"></span></div>
-              <img id="dest-hero-preview" class="admin-preview hidden" alt="Hero preview" />
-            </div>
-            <div class="admin-field"><label>Hero image URL</label><input name="heroImage" /></div>
-            <div class="admin-field"><label>Description</label><textarea name="description" rows="4"></textarea></div>
-            <div class="admin-field"><label>Highlights (one per line)</label><textarea name="highlights" rows="4"></textarea></div>
-            <div class="admin-field"><label>Gallery URLs (one per line)</label><textarea name="gallery" rows="3"></textarea></div>
-            <div class="admin-field"><label>Packages (JSON)</label><textarea name="packagesJson" rows="8"></textarea></div>
-            <div class="admin-field"><label>Experience (JSON)</label><textarea name="experienceJson" rows="6"></textarea></div>
-            <label class="admin-check"><input name="active" type="checkbox" checked /> Active on website</label>
-            <button type="submit" class="admin-btn admin-btn--primary">Save destination</button>
-          </form>
         </section>
 
         <section id="panel-search" class="admin-panel">

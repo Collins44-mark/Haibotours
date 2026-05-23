@@ -125,40 +125,143 @@ function haiboPickDestinationImage(d) {
   return d.image || d.imageUrl || d.cardImage || d.thumbnail || '';
 }
 
+function haiboIsCmsLive(live) {
+  return Boolean(live && (live._fromFirestore || live.updatedAt != null));
+}
+
+/** Bust browser cache when admin replaces an image (same path, new file). */
+function haiboCacheBustUrl(url, version) {
+  if (!url || version == null) return url || '';
+  const sep = String(url).includes('?') ? '&' : '?';
+  return `${url}${sep}cms=${version}`;
+}
+
+/** Card/listing image for a destination. */
+function haiboResolveCardImage(dest) {
+  if (!dest) return '';
+  const fromCms = haiboIsCmsLive(dest);
+  const img = haiboPickDestinationImage(dest) || dest?.heroImage || '';
+
+  if (fromCms) {
+    if (haiboValidMediaUrl(img)) return haiboCacheBustUrl(img, dest.updatedAt || Date.now());
+    return '';
+  }
+
+  if (haiboValidMediaUrl(img)) return img;
+
+  const staticD = haiboStaticDestination(dest.id);
+  return staticD?.image || '';
+}
+
+/** Hero banner image for destination detail page. */
+function haiboResolveHeroImage(dest) {
+  if (!dest) return '';
+  const fromCms = haiboIsCmsLive(dest);
+  const hero = dest?.heroImage || dest?.hero_image || '';
+  const card = haiboPickDestinationImage(dest);
+
+  if (fromCms) {
+    const pick = haiboValidMediaUrl(hero) ? hero : haiboValidMediaUrl(card) ? card : '';
+    return pick ? haiboCacheBustUrl(pick, dest.updatedAt || Date.now()) : '';
+  }
+
+  if (haiboValidMediaUrl(hero)) return hero;
+  if (haiboValidMediaUrl(card)) return card;
+  const staticD = haiboStaticDestination(dest.id);
+  return staticD?.heroImage || staticD?.image || '';
+}
+
+/** Gallery item URL — prefer CMS URLs on detail pages. */
+function haiboResolveGalleryImage(src, dest, index) {
+  const fromCms = haiboIsCmsLive(dest);
+  if (fromCms && haiboValidMediaUrl(src)) {
+    return haiboCacheBustUrl(src, (dest.updatedAt || 0) + index);
+  }
+  if (haiboValidMediaUrl(src)) return src;
+  const staticD = haiboStaticDestination(dest?.id);
+  return staticD?.gallery?.[index] || src || '';
+}
+
 function haiboMergeDestination(live, staticDest) {
   const base = staticDest ? { ...staticDest } : {};
+  const fromCms = haiboIsCmsLive(live);
   const merged = { ...base, ...live };
 
   const liveImage = haiboPickDestinationImage(live);
   const liveHero = live?.heroImage || live?.hero_image || '';
   const baseImage = base.image || haiboPickDestinationImage(base);
-  merged.image = haiboIsAdminUploadedUrl(liveImage) ? liveImage : baseImage;
-  merged.heroImage = haiboIsAdminUploadedUrl(liveHero)
-    ? liveHero
-    : base.heroImage || baseImage || merged.image;
 
-  if (!Array.isArray(merged.packages) || !merged.packages.length) {
+  if (fromCms) {
+    if (Object.prototype.hasOwnProperty.call(live, 'image') || Object.prototype.hasOwnProperty.call(live, 'imageUrl')) {
+      merged.image = liveImage || '';
+      merged.imageUrl = liveImage || '';
+    }
+    if (
+      Object.prototype.hasOwnProperty.call(live, 'heroImage') ||
+      Object.prototype.hasOwnProperty.call(live, 'hero_image')
+    ) {
+      merged.heroImage = liveHero || liveImage || '';
+    } else if (liveImage) {
+      merged.heroImage = liveImage;
+    }
+    merged._fromFirestore = true;
+    if (live.updatedAt != null) merged.updatedAt = live.updatedAt;
+  } else {
+    merged.image = haiboValidMediaUrl(liveImage) ? liveImage : baseImage;
+    merged.heroImage = haiboValidMediaUrl(liveHero)
+      ? liveHero
+      : base.heroImage || baseImage || merged.image;
+  }
+
+  if (live && Array.isArray(live.packages)) {
+    merged.packages = live.packages;
+  } else if (!Array.isArray(merged.packages) || !merged.packages.length) {
     merged.packages = base.packages || [];
   }
-  const liveGallery = merged.gallery || merged.galleryImages;
-  if (!Array.isArray(liveGallery) || !liveGallery.length) {
+
+  const liveGallery = live?.gallery ?? live?.galleryImages ?? merged.gallery;
+  if (live && (Array.isArray(live.gallery) || Array.isArray(live.galleryImages))) {
+    merged.gallery = Array.isArray(live.gallery) ? live.gallery : live.galleryImages;
+  } else if (!Array.isArray(liveGallery) || !liveGallery.length) {
     merged.gallery = base.gallery || [];
   } else {
     merged.gallery = liveGallery;
   }
   delete merged.galleryImages;
 
-  if (!Array.isArray(merged.highlights) || !merged.highlights.length) {
+  if (live && Array.isArray(live.highlights)) {
+    merged.highlights = live.highlights;
+  } else if (!Array.isArray(merged.highlights) || !merged.highlights.length) {
     merged.highlights = base.highlights || [];
   }
-  if (!merged.experience && base.experience) {
+
+  if (live?.experience && typeof live.experience === 'object') {
+    merged.experience = live.experience;
+  } else if (!merged.experience && base.experience) {
     merged.experience = base.experience;
   }
-  if (!merged.description && base.description) merged.description = base.description;
-  if (!merged.bestTime && base.bestTime) merged.bestTime = base.bestTime;
-  if (!merged.region && base.region) merged.region = base.region;
-  if (!merged.subtitle && base.subtitle) merged.subtitle = base.subtitle;
-  if (!merged.name && base.name) merged.name = base.name;
+
+  if (fromCms && live) {
+    ['name', 'subtitle', 'description', 'region', 'bestTime'].forEach((key) => {
+      if (Object.prototype.hasOwnProperty.call(live, key)) {
+        merged[key] = live[key];
+      }
+    });
+    if (Object.prototype.hasOwnProperty.call(live, 'active')) merged.active = live.active;
+    if (Object.prototype.hasOwnProperty.call(live, 'order')) merged.order = live.order;
+    if (Array.isArray(live.packages)) merged.packages = live.packages;
+    if (Array.isArray(live.highlights)) merged.highlights = live.highlights;
+    if (live.experience && typeof live.experience === 'object') merged.experience = live.experience;
+    if (Array.isArray(live.gallery)) merged.gallery = live.gallery;
+  } else if (live) {
+    ['name', 'subtitle', 'description', 'region', 'bestTime'].forEach((key) => {
+      if (Object.prototype.hasOwnProperty.call(live, key) && live[key]) {
+        merged[key] = live[key];
+      }
+    });
+    if (Object.prototype.hasOwnProperty.call(live, 'active')) merged.active = live.active;
+    if (Object.prototype.hasOwnProperty.call(live, 'order')) merged.order = live.order;
+  }
   if (merged.id == null || String(merged.id).trim() === '') {
     merged.id = base.id || live?.id;
   }
@@ -317,7 +420,12 @@ function mergeHaiboContentWithDefaults() {
     c.settings.logoUrl = d.settings.logoUrl;
   }
 
-  c.destinations = haiboMergeDestinationsList(c.destinations);
+  const firestoreDests = window.HAIBO_FIRESTORE_DESTINATIONS;
+  if (Array.isArray(firestoreDests) && firestoreDests.length > 0) {
+    c.destinations = haiboMergeDestinationsList(firestoreDests);
+  } else if (!c.destinations?.length) {
+    c.destinations = haiboMergeDestinationsList([]);
+  }
   c.gallery = haiboNormalizeGalleryObject(c.gallery);
 
   c.weatherCards = haiboMergeWeatherCardsList(c.weatherCards);
@@ -337,5 +445,10 @@ window.haiboMergeGalleryCollection = haiboMergeGalleryCollection;
 window.haiboNormalizeGalleryObject = haiboNormalizeGalleryObject;
 window.haiboStaticDestination = haiboStaticDestination;
 window.haiboPickDestinationImage = haiboPickDestinationImage;
+window.haiboResolveCardImage = haiboResolveCardImage;
+window.haiboResolveHeroImage = haiboResolveHeroImage;
+window.haiboResolveGalleryImage = haiboResolveGalleryImage;
+window.haiboCacheBustUrl = haiboCacheBustUrl;
+window.haiboIsCmsLive = haiboIsCmsLive;
 window.haiboNormalizeDestId = haiboNormalizeDestId;
 window.haiboMergeWeatherCardsList = haiboMergeWeatherCardsList;
