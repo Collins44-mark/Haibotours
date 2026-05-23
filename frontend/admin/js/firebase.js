@@ -80,7 +80,8 @@ export async function signOutAdmin() {
   log('signed out');
 }
 
-export function ensureAuthReady(timeoutMs = 5000) {
+/** @deprecated Prefer ensureHaiboAuthReady from firebase-app.mjs */
+export async function ensureAuthReady(timeoutMs = 5000) {
   return ensureHaiboAuthReady(timeoutMs);
 }
 

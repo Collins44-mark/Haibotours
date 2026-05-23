@@ -1,9 +1,8 @@
 /**
  * Shared admin auth gate — wait for persisted session, then verify admins/{uid}.
  */
+import { ensureHaiboAuthReady } from '../../js/firebase-app.mjs';
 import {
-  getAuth,
-  ensureAuthReady,
   checkUserIsAdmin,
   signOutAdmin,
   waitForSignedInUser,
@@ -86,7 +85,7 @@ export function runAdminAuthGate(onAuthenticated) {
 
   void (async () => {
     try {
-      const auth = await ensureAuthReady(AUTH_GATE_TIMEOUT_MS);
+      const auth = await ensureHaiboAuthReady(AUTH_GATE_TIMEOUT_MS);
       if (!auth) {
         done();
         showAuthLoaderError('Firebase Auth could not start. Check firebase-config.js.');
