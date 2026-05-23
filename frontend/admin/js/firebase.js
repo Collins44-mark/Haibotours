@@ -35,10 +35,15 @@ export function isAdminEmail(email) {
   return list.some((e) => String(e).trim().toLowerCase() === normalized);
 }
 
-/** Admin = signed-in user with allowlisted email (see firebase-config.js). */
+/** Admin = signed-in Firebase user (optional email allowlist in firebase-config.js). */
 export async function isAdminUser(user) {
   if (!user) return false;
   if (globalThis.HAIBO_TRUST_AUTHENTICATED_USERS === true) return true;
+
+  const list = globalThis.HAIBO_ADMIN_EMAIL_ALLOWLIST || [];
+  if (!list.length) {
+    return true;
+  }
   return isAdminEmail(user.email);
 }
 

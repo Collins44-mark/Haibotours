@@ -13,7 +13,7 @@ import {
 } from './firebase.js';
 
 const UNAUTHORIZED_MSG =
-  'Unauthorized. Add your email to HAIBO_ADMIN_EMAIL_ALLOWLIST in firebase-config.js.';
+  'This account is not allowed. Use the email/password from Firebase Authentication → Users.';
 
 const form = document.getElementById('login-form');
 const errEl = document.getElementById('login-error');
