@@ -8,7 +8,7 @@ import { renderSidebar, initSidebar, userDisplayFromAuth, closeAllMenus } from '
 import { mergeDestinationsForAdmin, destinationEditUrl } from './admin-destinations.mjs';
 import { confirmDialog, formatRelativeTime } from './admin-ui.mjs';
 import { dbDeleteDoc, dbSetDoc, adminToast } from './admin-db.mjs';
-import { handleAdminLogout } from './admin-auth-guard.mjs';
+import { signOutAdmin, LOGIN_URL } from './firebase.js';
 
 const PAGE_SIZE = 5;
 let allDestinations = [];
@@ -210,11 +210,17 @@ async function boot(user) {
   if (booted) return;
   booted = true;
 
+  const app = document.getElementById('app');
+  if (app) app.hidden = false;
+
   renderSidebar(document.getElementById('sidebar-mount'), 'destinations', userDisplayFromAuth(user));
   initSidebar();
 
   document.getElementById('top-profile').textContent = userDisplayFromAuth(user).initials;
-  document.getElementById('btn-logout-sidebar')?.addEventListener('click', () => handleAdminLogout());
+  document.getElementById('btn-logout-sidebar')?.addEventListener('click', async () => {
+    await signOutAdmin();
+    window.location.replace(LOGIN_URL);
+  });
   document.getElementById('btn-more')?.addEventListener('click', async () => {
     const { seedAllDefaults } = await import('./admin-app.mjs');
     await seedAllDefaults();
@@ -226,8 +232,6 @@ async function boot(user) {
 
   bindFilters();
   subscribeDestinations();
-
-  document.getElementById('app').hidden = false;
 }
 
 runAdminAuthGate((user) => boot(user));

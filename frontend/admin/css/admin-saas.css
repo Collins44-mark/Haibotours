@@ -862,6 +862,15 @@ html, body {
   color: var(--muted);
 }
 
+/* CMS sub-pages (destinations list / edit) */
+body.admin-cms-page.admin-ready #app {
+  visibility: visible;
+}
+
+body.admin-cms-page:not(.admin-ready) #app {
+  visibility: hidden;
+}
+
 /* Auth loader (destinations + edit pages) */
 #admin-auth-loading {
   position: fixed;

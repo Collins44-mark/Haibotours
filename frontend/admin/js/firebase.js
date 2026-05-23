@@ -84,4 +84,30 @@ export function ensureAuthReady(timeoutMs = 5000) {
   return ensureHaiboAuthReady(timeoutMs);
 }
 
+/** Wait for Firebase Auth persistence to restore a signed-in user (ignore the first null tick). */
+export function waitForSignedInUser(auth, timeoutMs = 8000) {
+  if (!auth) return Promise.resolve(null);
+  if (auth.currentUser) return Promise.resolve(auth.currentUser);
+
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (user) => {
+      if (settled) return;
+      settled = true;
+      try {
+        unsub();
+      } catch {
+        /* ignore */
+      }
+      resolve(user ?? auth.currentUser ?? null);
+    };
+
+    const unsub = onAuthStateChanged(auth, (user) => {
+      if (user) finish(user);
+    });
+
+    window.setTimeout(() => finish(auth.currentUser), timeoutMs);
+  });
+}
+
 export { onAuthStateChanged, getHaiboApp };

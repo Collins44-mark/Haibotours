@@ -1,19 +1,19 @@
 /**
- * Shared admin auth gate — one listener, 5s timeout, no infinite loader.
+ * Shared admin auth gate — wait for persisted session, then verify admins/{uid}.
  */
 import {
   getAuth,
   ensureAuthReady,
   checkUserIsAdmin,
   signOutAdmin,
+  waitForSignedInUser,
   LOGIN_URL,
-  onAuthStateChanged,
   log,
 } from './firebase.js';
 
-export const AUTH_GATE_TIMEOUT_MS = 5000;
-
-let gateActive = false;
+export const AUTH_GATE_TIMEOUT_MS = 10000;
+const SESSION_RESTORE_MS = 8000;
+const SAFETY_TIMEOUT_MS = 15000;
 
 function escapeHtml(s) {
   return String(s ?? '')
@@ -63,9 +63,6 @@ function redirectToLogin() {
  * @param {(user: import('firebase/auth').User) => void | Promise<void>} onAuthenticated
  */
 export function runAdminAuthGate(onAuthenticated) {
-  if (gateActive) return;
-  gateActive = true;
-
   if (!globalThis.isFirebaseConfigured?.()) {
     showAuthLoaderError('Firebase is not configured. Edit frontend/js/firebase-config.js.', {
       showRetry: false,
@@ -73,75 +70,25 @@ export function runAdminAuthGate(onAuthenticated) {
     return;
   }
 
-  let settled = false;
-  let unsubscribe = () => {};
+  let finished = false;
 
-  const gateTimer = window.setTimeout(() => {
-    if (settled) return;
-    settled = true;
-    try {
-      unsubscribe();
-    } catch {
-      /* ignore */
-    }
-    log('auth gate timed out');
+  const done = () => {
+    finished = true;
+    window.clearTimeout(safetyTimer);
+  };
+
+  const safetyTimer = window.setTimeout(() => {
+    if (finished) return;
+    done();
+    console.warn('[HAIBO Admin] auth safety timeout');
     showAuthLoaderError('Sign-in check timed out. Check your connection, then retry or sign in again.');
-  }, AUTH_GATE_TIMEOUT_MS);
-
-  const settle = () => {
-    settled = true;
-    window.clearTimeout(gateTimer);
-    try {
-      unsubscribe();
-    } catch {
-      /* ignore */
-    }
-  };
-
-  const handleUser = async (user) => {
-    if (settled) return;
-
-    if (!user) {
-      settle();
-      redirectToLogin();
-      return;
-    }
-
-    try {
-      const isAdmin = await Promise.race([
-        checkUserIsAdmin(user),
-        new Promise((_, reject) => {
-          window.setTimeout(() => reject(new Error('Admin verification timed out')), AUTH_GATE_TIMEOUT_MS);
-        }),
-      ]);
-
-      if (settled) return;
-
-      if (!isAdmin) {
-        settle();
-        log('not an admin', user.uid);
-        await signOutAdmin().catch(() => {});
-        redirectToLogin();
-        return;
-      }
-
-      settle();
-      hideAuthLoader();
-      await onAuthenticated(user);
-    } catch (err) {
-      if (settled) return;
-      settle();
-      console.error('[HAIBO Admin] auth gate error', err);
-      showAuthLoaderError(err?.message || 'Could not verify admin access.');
-    }
-  };
+  }, SAFETY_TIMEOUT_MS);
 
   void (async () => {
     try {
       const auth = await ensureAuthReady(AUTH_GATE_TIMEOUT_MS);
       if (!auth) {
-        settled = true;
-        window.clearTimeout(gateTimer);
+        done();
         showAuthLoaderError('Firebase Auth could not start. Check firebase-config.js.');
         return;
       }
@@ -149,26 +96,41 @@ export function runAdminAuthGate(onAuthenticated) {
       if (typeof auth.authStateReady === 'function') {
         await Promise.race([
           auth.authStateReady(),
-          new Promise((resolve) => window.setTimeout(resolve, AUTH_GATE_TIMEOUT_MS)),
+          new Promise((resolve) => window.setTimeout(resolve, SESSION_RESTORE_MS)),
         ]);
       }
 
-      const existing = auth.currentUser;
-      if (existing) {
-        await handleUser(existing);
-        if (settled) return;
+      const user = await waitForSignedInUser(auth, SESSION_RESTORE_MS);
+
+      if (!user) {
+        done();
+        redirectToLogin();
+        return;
       }
 
-      unsubscribe = onAuthStateChanged(auth, (user) => {
-        log('auth state', user?.uid || 'signed-out');
-        void handleUser(user);
-      });
+      const isAdmin = await checkUserIsAdmin(user, AUTH_GATE_TIMEOUT_MS);
+      if (!isAdmin) {
+        done();
+        log('not an admin', user.uid);
+        await signOutAdmin().catch(() => {});
+        redirectToLogin();
+        return;
+      }
+
+      done();
+      hideAuthLoader();
+
+      try {
+        await onAuthenticated(user);
+      } catch (err) {
+        console.error('[HAIBO Admin] page boot failed', err);
+        showAuthLoaderError(err?.message || 'Page failed to load.');
+      }
     } catch (err) {
-      if (settled) return;
-      settled = true;
-      window.clearTimeout(gateTimer);
-      console.error('[HAIBO Admin] auth init failed', err);
-      showAuthLoaderError(err?.message || 'Firebase failed to load.');
+      if (finished) return;
+      done();
+      console.error('[HAIBO Admin] auth gate error', err);
+      showAuthLoaderError(err?.message || 'Could not verify admin access.');
     }
   })();
 }
