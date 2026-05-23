@@ -25,6 +25,7 @@ import {
   renderDestinationsList,
   bindDestinationsListFilters,
 } from './admin-destinations.mjs';
+import { publishPublicCmsManifest } from './admin-cms-publish.mjs';
 import { subscribeAdminCollections } from './admin-realtime.mjs';
 import { initTopbarMenu, initMobileSidebar } from './admin-ui.mjs';
 
@@ -339,6 +340,9 @@ export async function seedAllDefaults() {
   adminToast('Defaults imported to Firestore', 'success');
   await loadAllAdminData();
   showDestinationsImportBanner();
+  await publishPublicCmsManifest({ silent: true }).catch((err) => {
+    console.warn('[HAIBO] Public manifest publish after import failed', err?.message || err);
+  });
   } catch (err) {
     adminToast(err.message || formatAdminError(err, 'Import'), 'error');
   }

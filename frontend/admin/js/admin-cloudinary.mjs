@@ -56,6 +56,33 @@ export async function cloudinaryUpload(file, folder, onProgress) {
   });
 }
 
+/** Unsigned raw upload — public JSON manifest for the live site */
+export async function cloudinaryUploadRawJson(data, publicIdSuffix) {
+  const cfg = globalThis.CLOUDINARY_CONFIG;
+  if (!cfg?.cloudName || !cfg?.uploadPreset) {
+    throw new Error('Cloudinary is not configured');
+  }
+  const publicId = `${cfg.baseFolder || 'haibo'}/${publicIdSuffix || 'cms/public-content'}`;
+  const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+  const form = new FormData();
+  form.append('file', blob, 'public-content.json');
+  form.append('upload_preset', cfg.uploadPreset);
+  form.append('public_id', publicId);
+
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${cfg.cloudName}/raw/upload`, {
+    method: 'POST',
+    body: form,
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(body.error?.message || 'Cloudinary manifest upload failed');
+  }
+  return {
+    secure_url: body.secure_url,
+    public_id: body.public_id,
+  };
+}
+
 export function createUploadZone(input, options = {}) {
   const {
     previewEl,

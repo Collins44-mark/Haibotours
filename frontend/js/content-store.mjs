@@ -1,9 +1,10 @@
 /**
  * Firestore realtime listeners — live public site (no refresh needed).
  */
-import { getHaiboDb, ensurePublicSiteFirestoreRead } from './firebase-app.mjs';
+import { getHaiboDb } from './firebase-app.mjs';
 import { subscribeDocument, subscribeCollection, unsubscribeAllRealtime } from './firestore-realtime.mjs';
 import { haiboDestinationsFromFirestoreDocs } from './haibo-live-content.mjs';
+import { tryLoadCmsPublicManifest } from './cms-public-manifest.mjs';
 
 // #region agent log
 function dbgLog(hypothesisId, location, message, data = {}) {
@@ -39,6 +40,9 @@ function firebaseConfigured() {
   return globalThis.isFirebaseConfigured?.() ?? false;
 }
 
+const FIRESTORE_RULES_CONSOLE_URL =
+  'https://console.firebase.google.com/project/haibo-tours/firestore/databases/-default-/rules';
+
 function showFirestorePermissionBanner() {
   if (document.getElementById('haibo-firestore-perm-banner')) return;
   const el = document.createElement('div');
@@ -46,9 +50,34 @@ function showFirestorePermissionBanner() {
   el.setAttribute('role', 'alert');
   el.style.cssText =
     'position:fixed;bottom:0;left:0;right:0;z-index:99999;background:#7f1d1d;color:#fff;padding:14px 16px;font-size:0.9rem;text-align:center;line-height:1.5';
+  const manifestHint = window.HAIBO_CMS_MANIFEST_MODE
+    ? ' Showing content from the Cloudinary manifest (save in admin to refresh).'
+    : ' Save a destination in admin to publish a public manifest, or publish Firestore rules.';
   el.innerHTML =
-    'Live CMS data is blocked by Firestore security rules. Publish <strong>firebase/firestore.rules</strong> in Firebase Console → Firestore → Rules (see <code>firebase/PUBLISH_RULES.md</code>).';
+    'Firestore public read is blocked on <strong>haibo-tours</strong>.' +
+    manifestHint +
+    ' For full realtime: copy <code>firebase/COPY_PASTE_RULES.txt</code> → Rules → Publish. ' +
+    `<a href="${FIRESTORE_RULES_CONSOLE_URL}" target="_blank" rel="noopener noreferrer" style="color:#fecaca;text-decoration:underline;margin-left:6px">Open Rules editor</a>`;
   document.body.appendChild(el);
+}
+
+let manifestFallbackAttempted = false;
+
+async function tryManifestFallback(reason) {
+  if (manifestFallbackAttempted) return;
+  manifestFallbackAttempted = true;
+  // #region agent log
+  dbgLog('F', 'content-store.mjs:tryManifestFallback', 'attempt', { reason });
+  // #endregion
+  const result = await tryLoadCmsPublicManifest();
+  // #region agent log
+  dbgLog('F', 'content-store.mjs:tryManifestFallback', 'result', result);
+  // #endregion
+  if (!result.ok) return;
+  console.log('[HAIBO] Loaded CMS from public manifest', result.count, 'destinations');
+  rebuildDestinationsFromFirestore();
+  schedulePublish(false);
+  showFirestorePermissionBanner();
 }
 
 const DOC_MAIN = 'main';
@@ -297,6 +326,7 @@ function bindCollectionListener(db, coll, applyItems, collectionOptions = {}) {
           if (err?.code === 'permission-denied') {
             setFirestoreStatus({ loading: false, error: 'permission-denied' });
             showFirestorePermissionBanner();
+            void tryManifestFallback(`permission-denied:${coll}`);
           }
           if (!initialComplete) tickInitial();
         },
@@ -398,7 +428,11 @@ function startRealtimeListeners() {
     db,
     paths.destinations,
     (items) => {
-      console.log('[HAIBO] Realtime update received — destinations collection', items?.length ?? 0);
+      const n = items?.length ?? 0;
+      console.log('[HAIBO] Realtime update received — destinations collection', n);
+      // #region agent log
+      dbgLog('A', 'content-store.mjs:destinations', 'snapshot ok', { count: n });
+      // #endregion
       window.HAIBO_FIRESTORE_DESTINATIONS = items || [];
       rebuildDestinationsFromFirestore();
     },
@@ -423,8 +457,10 @@ function startRealtimeListeners() {
 
   initialLoadTimer = setTimeout(() => {
     if (!initialComplete) {
-      console.warn('[HAIBO] Firestore init timeout — publishing empty/loaded state.');
-      forceInitialPublish();
+      console.warn('[HAIBO] Firestore init timeout — trying manifest fallback.');
+      void tryManifestFallback('init-timeout').finally(() => {
+        if (!initialComplete) forceInitialPublish();
+      });
     }
   }, INITIAL_LOAD_TIMEOUT_MS);
 }
@@ -462,10 +498,6 @@ export async function initHaiboContentRealtime() {
   }
 
   try {
-    const authOk = await ensurePublicSiteFirestoreRead();
-    // #region agent log
-    dbgLog('A', 'content-store.mjs:init', 'public firestore auth', { authOk });
-    // #endregion
     startRealtimeListeners();
   } catch (err) {
     console.error('[HAIBO] Firebase realtime failed', err);

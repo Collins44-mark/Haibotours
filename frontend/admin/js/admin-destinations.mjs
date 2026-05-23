@@ -2,6 +2,7 @@
  * Destination list + save helpers (shared dashboard & edit page).
  */
 import { dbSetDoc, dbDeleteDoc, dbGetDocOptional, adminToast, slugify } from './admin-db.mjs';
+import { publishPublicCmsManifest } from './admin-cms-publish.mjs';
 import { confirmDialog, formatRelativeTime, showToast } from './admin-ui.mjs';
 
 function firestorePaths() {
@@ -92,6 +93,9 @@ export async function saveDestinationRecord(payload) {
   console.log('[HAIBO] Saving destination', row.id);
   await dbSetDoc(firestorePaths().destinations, row, row.id);
   console.log('[HAIBO] Firestore update successful', row.id);
+  void publishPublicCmsManifest({ silent: true }).catch((err) => {
+    console.warn('[HAIBO] Public manifest publish failed', err?.message || err);
+  });
   return row;
 }
 
