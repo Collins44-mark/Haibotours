@@ -82,12 +82,16 @@ export async function saveDestinationRecord(payload) {
   const row = {
     ...rest,
     id: String(rest.id).trim(),
+    slug: String(rest.id).trim(),
     active: rest.active !== false,
+    published: rest.active !== false,
     updatedAt: Date.now(),
     _fromFirestore: true,
   };
 
+  console.log('[HAIBO] Saving destination', row.id);
   await dbSetDoc(firestorePaths().destinations, row, row.id);
+  console.log('[HAIBO] Firestore update successful', row.id);
   return row;
 }
 

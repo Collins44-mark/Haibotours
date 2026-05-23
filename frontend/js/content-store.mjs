@@ -3,6 +3,32 @@
  */
 import { getHaiboDb } from './firebase-app.mjs';
 import { subscribeDocument, subscribeCollection, unsubscribeAllRealtime } from './firestore-realtime.mjs';
+import { haiboDestinationsFromFirestoreDocs } from './haibo-live-content.mjs';
+
+// #region agent log
+function dbgLog(hypothesisId, location, message, data = {}) {
+  const entry = {
+    sessionId: 'ad576b',
+    hypothesisId,
+    location,
+    message,
+    data,
+    timestamp: Date.now(),
+  };
+  try {
+    const arr = JSON.parse(sessionStorage.getItem('haibo_dbg') || '[]');
+    arr.push(entry);
+    sessionStorage.setItem('haibo_dbg', JSON.stringify(arr.slice(-40)));
+  } catch {
+    /* ignore */
+  }
+  fetch('http://127.0.0.1:7522/ingest/2f5036d2-b0da-4c2a-a7f2-17706d91dcab', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'ad576b' },
+    body: JSON.stringify(entry),
+  }).catch(() => {});
+}
+// #endregion
 
 /** Classic scripts expose config on globalThis — bare names are not visible in ES modules. */
 function firestorePaths() {
@@ -32,21 +58,39 @@ window.HAIBO_CONTENT = {
 /** Raw Firestore destination docs — merged once into HAIBO_CONTENT.destinations */
 window.HAIBO_FIRESTORE_DESTINATIONS = [];
 
+function paintDestinationsLive() {
+  applyDestinations();
+  if (typeof haiboBootDestinationGrids === 'function') haiboBootDestinationGrids();
+  if (typeof window.refreshHaiboLiveContent === 'function') {
+    window.refreshHaiboLiveContent();
+  }
+}
+
 function rebuildDestinationsFromFirestore() {
   const raw = window.HAIBO_FIRESTORE_DESTINATIONS || [];
+  console.log('[HAIBO] Realtime update received — rebuilding destinations', raw.length);
+  // #region agent log
+  dbgLog('B', 'content-store.mjs:rebuildDestinations', 'rebuild from firestore', {
+    count: raw.length,
+    ids: raw.slice(0, 8).map((d) => d.id),
+  });
+  // #endregion
   try {
-    window.HAIBO_CONTENT.destinations =
-      typeof haiboMergeDestinationsList === 'function'
-        ? haiboMergeDestinationsList(raw)
-        : raw;
-    if (typeof syncHaiboDestinations === 'function') {
-      syncHaiboDestinations();
-    }
+    const list = haiboDestinationsFromFirestoreDocs(raw);
+    window.HAIBO_CONTENT.destinations = list;
+    window.DESTINATIONS = list;
+    if (typeof syncHaiboDestinations === 'function') syncHaiboDestinations();
+    paintDestinationsLive();
+    // #region agent log
+    dbgLog('D', 'content-store.mjs:rebuildDestinations', 'painted live', {
+      rendered: list.length,
+      first: list[0]?.name,
+    });
+    // #endregion
   } catch (err) {
-    console.warn('[HAIBO] destination merge failed, keeping static catalog.', err);
-    window.HAIBO_CONTENT.destinations =
-      window.HAIBO_DESTINATIONS_STATIC?.map((x) => ({ ...x })) ||
-      (typeof DESTINATIONS !== 'undefined' ? DESTINATIONS.map((x) => ({ ...x })) : []);
+    console.error('[HAIBO] destination normalize failed', err);
+    window.HAIBO_CONTENT.destinations = [];
+    window.DESTINATIONS = [];
   }
 }
 
@@ -106,22 +150,11 @@ function applyConfigFromContent() {
 }
 
 function applyDestinations() {
-  if (typeof syncHaiboDestinations === 'function') {
-    syncHaiboDestinations();
-    return;
-  }
-  const staticList =
-    window.HAIBO_DESTINATIONS_STATIC ||
-    (typeof DESTINATIONS !== 'undefined' ? DESTINATIONS : []);
-  const list = window.HAIBO_CONTENT.destinations;
-  if (Array.isArray(list) && list.length > 0) {
-    const live = list
-      .filter((d) => d && d.id && d.active !== false)
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    window.DESTINATIONS = live.length ? live : staticList;
-  } else {
-    window.DESTINATIONS = [...staticList];
-  }
+  const list = Array.isArray(window.HAIBO_CONTENT?.destinations)
+    ? window.HAIBO_CONTENT.destinations
+    : [];
+  window.DESTINATIONS = list;
+  if (typeof syncHaiboDestinations === 'function') syncHaiboDestinations();
 }
 
 function syncSearchIds() {
@@ -135,17 +168,11 @@ function ensureDefaults() {
   if (typeof mergeHaiboContentWithDefaults === 'function') {
     mergeHaiboContentWithDefaults();
   } else {
-    const staticDests =
-      window.HAIBO_DESTINATIONS_STATIC ||
-      (typeof DESTINATIONS !== 'undefined' ? DESTINATIONS.map((x) => ({ ...x })) : []);
-    if (typeof haiboMergeDestinationsList === 'function') {
-      if (window.HAIBO_FIRESTORE_DESTINATIONS?.length > 0) {
-        rebuildDestinationsFromFirestore();
-      } else if (!window.HAIBO_CONTENT.destinations?.length) {
-        window.HAIBO_CONTENT.destinations = haiboMergeDestinationsList([]);
-      }
-    } else if (!window.HAIBO_CONTENT.destinations?.length && staticDests.length) {
-      window.HAIBO_CONTENT.destinations = staticDests.map((x) => ({ ...x }));
+    if (window.HAIBO_FIRESTORE_DESTINATIONS?.length > 0) {
+      rebuildDestinationsFromFirestore();
+    } else if (!window.HAIBO_CONTENT.destinations?.length) {
+      window.HAIBO_CONTENT.destinations = [];
+      window.DESTINATIONS = [];
     }
     if (typeof haiboNormalizeGalleryObject === 'function') {
       window.HAIBO_CONTENT.gallery = haiboNormalizeGalleryObject(window.HAIBO_CONTENT.gallery);
@@ -198,6 +225,11 @@ function publish(isInitial) {
     console.log('[HAIBO] content ready (realtime listeners active)');
   } else {
     console.log('[HAIBO] content updated (live)');
+    // #region agent log
+    dbgLog('D', 'content-store.mjs:publish', 'live publish', {
+      destCount: window.HAIBO_CONTENT?.destinations?.length ?? 0,
+    });
+    // #endregion
   }
   window.dispatchEvent(new Event('haiboContentUpdated'));
 }
@@ -221,15 +253,15 @@ function bindDocListener(db, coll, key) {
         if (!initialComplete) tickInitial();
         else schedulePublish(false);
       },
-      onError: () => {
-        ensureDefaults();
+      onError: (err) => {
+        console.warn('[HAIBO] document listener error', key, err?.message || err);
         if (!initialComplete) tickInitial();
       },
     })
   );
 }
 
-function bindCollectionListener(db, coll, applyItems) {
+function bindCollectionListener(db, coll, applyItems, collectionOptions = {}) {
   initialPending += 1;
   trackListener(
     subscribeCollection(
@@ -241,12 +273,24 @@ function bindCollectionListener(db, coll, applyItems) {
           if (!initialComplete) tickInitial();
           else schedulePublish(false);
         },
-        onError: () => {
-          ensureDefaults();
+        onError: (err) => {
+          console.error('[HAIBO] collection listener error', coll, err);
+          // #region agent log
+          dbgLog('A', 'content-store.mjs:bindCollectionListener', 'listener error', {
+            coll,
+            code: err?.code,
+            message: err?.message,
+          });
+          // #endregion
           if (!initialComplete) tickInitial();
         },
       },
-      { orderField: 'order', orderDirection: 'asc', useOrdering: true }
+      {
+        orderField: 'order',
+        orderDirection: 'asc',
+        useOrdering: true,
+        ...collectionOptions,
+      }
     )
   );
 }
@@ -304,16 +348,27 @@ function startRealtimeListeners() {
   const db = getHaiboDb();
   const paths = firestorePaths();
   if (!db) {
-    ensureDefaults();
+    console.error('[HAIBO] Firestore DB unavailable');
+    // #region agent log
+    dbgLog('A', 'content-store.mjs:startRealtimeListeners', 'no db', {});
+    // #endregion
+    setFirestoreStatus({ loading: false, error: 'Firestore unavailable' });
     publish(true);
     return;
   }
   if (!paths.destinations) {
     console.error('[HAIBO] FIRESTORE_PATHS missing — load js/firebase-config.js before content-store.mjs');
-    ensureDefaults();
+    setFirestoreStatus({ loading: false, error: 'FIRESTORE_PATHS missing' });
     publish(true);
     return;
   }
+
+  console.log('[HAIBO] Fetching destinations from Firestore');
+  // #region agent log
+  dbgLog('A', 'content-store.mjs:startRealtimeListeners', 'listeners starting', {
+    destinations: paths.destinations,
+  });
+  // #endregion
 
   setFirestoreStatus({ loading: true, error: null });
 
@@ -323,25 +378,22 @@ function startRealtimeListeners() {
   bindDocListener(db, paths.socials, 'socials');
   bindDocListener(db, paths.settings, 'settings');
 
-  bindCollectionListener(db, paths.destinations, (items) => {
-    window.HAIBO_FIRESTORE_DESTINATIONS = (items || []).map((d) => ({
-      ...d,
-      _fromFirestore: true,
-    }));
-    rebuildDestinationsFromFirestore();
-    if (items?.length) {
-      console.log('[HAIBO] destinations from Firestore:', items.length);
-    }
-  });
+  bindCollectionListener(
+    db,
+    paths.destinations,
+    (items) => {
+      console.log('[HAIBO] Realtime update received — destinations collection', items?.length ?? 0);
+      window.HAIBO_FIRESTORE_DESTINATIONS = items || [];
+      rebuildDestinationsFromFirestore();
+    },
+    { useOrdering: false }
+  );
 
   bindCollectionListener(db, paths.gallery, (items) => {
     window.HAIBO_CONTENT.gallery =
       typeof haiboMergeGalleryCollection === 'function'
         ? haiboMergeGalleryCollection(items)
-        : {
-            images: typeof GALLERY_IMAGES !== 'undefined' ? [...GALLERY_IMAGES] : [],
-            videos: typeof GALLERY_VIDEOS !== 'undefined' ? [...GALLERY_VIDEOS] : [],
-          };
+        : { images: [], videos: [] };
   });
 
   bindCollectionListener(db, paths.weatherCards, (items) => {
@@ -355,7 +407,7 @@ function startRealtimeListeners() {
 
   initialLoadTimer = setTimeout(() => {
     if (!initialComplete) {
-      console.warn('[HAIBO] Firestore init timeout — showing local defaults.');
+      console.warn('[HAIBO] Firestore init timeout — publishing empty/loaded state.');
       forceInitialPublish();
     }
   }, INITIAL_LOAD_TIMEOUT_MS);
@@ -384,8 +436,8 @@ export function teardownHaiboContentRealtime() {
 }
 
 export function initHaiboContentRealtime() {
-  ensureDefaults();
-  applyDestinations();
+  window.HAIBO_CONTENT.destinations = [];
+  window.DESTINATIONS = [];
 
   if (!firebaseConfigured()) {
     setFirestoreStatus({ loading: false, error: 'Firebase not configured' });
@@ -396,9 +448,8 @@ export function initHaiboContentRealtime() {
   try {
     startRealtimeListeners();
   } catch (err) {
-    console.warn('[HAIBO] Firebase realtime failed, using defaults.', err);
+    console.error('[HAIBO] Firebase realtime failed', err);
     setFirestoreStatus({ loading: false, error: err?.message || 'Realtime failed' });
-    ensureDefaults();
     publish(true);
   }
 }

@@ -235,19 +235,14 @@ function safariSearchRedirectUrl(slug) {
 }
 
 function getDestinationsForUi() {
-  const staticList =
-    window.HAIBO_DESTINATIONS_STATIC ||
-    (typeof DESTINATIONS !== 'undefined' ? DESTINATIONS : []);
   try {
     if (typeof getHaiboDestinations === 'function') {
-      const merged = getHaiboDestinations();
-      if (merged.length) return merged;
+      return getHaiboDestinations();
     }
   } catch (err) {
     console.warn('HAIBO getDestinationsForUi:', err);
   }
-  if (Array.isArray(window.DESTINATIONS) && window.DESTINATIONS.length) return window.DESTINATIONS;
-  return staticList;
+  return Array.isArray(window.DESTINATIONS) ? window.DESTINATIONS : [];
 }
 
 function initSearchBar() {
@@ -460,11 +455,12 @@ function renderDestinationCards(containerId, limit) {
   } catch (err) {
     console.warn('HAIBO renderDestinationCards:', err);
   }
-  if (!all.length) {
-    all = window.HAIBO_DESTINATIONS_STATIC || (typeof DESTINATIONS !== 'undefined' ? DESTINATIONS : []);
-  }
   const list = limit ? all.slice(0, limit) : all;
-  if (!list.length) return;
+  if (!list.length) {
+    container.innerHTML =
+      '<p class="haibo-empty-state" style="text-align:center;color:#9ca3af;padding:2rem">Destinations will appear here once published in the CMS.</p>';
+    return;
+  }
   container.innerHTML = list.map(renderDestinationCard).join('');
   container.dataset.haiboRendered = '1';
 }
@@ -738,7 +734,10 @@ function primeHaiboLocalContent() {
   if (typeof mergeHaiboContentWithDefaults === 'function') {
     mergeHaiboContentWithDefaults();
   }
-  if (typeof syncHaiboDestinations === 'function') {
+  if (
+    typeof syncHaiboDestinations === 'function' &&
+    (window.HAIBO_CONTENT?.destinations?.length || window.HAIBO_FIRESTORE_DESTINATIONS?.length)
+  ) {
     syncHaiboDestinations();
   }
 }

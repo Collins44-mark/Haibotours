@@ -136,50 +136,28 @@ function haiboCacheBustUrl(url, version) {
   return `${url}${sep}cms=${version}`;
 }
 
-/** Card/listing image for a destination. */
+/** Card/listing image for a destination (Firestore URLs only). */
 function haiboResolveCardImage(dest) {
   if (!dest) return '';
-  const fromCms = haiboIsCmsLive(dest);
   const img = haiboPickDestinationImage(dest) || dest?.heroImage || '';
-
-  if (fromCms) {
-    if (haiboValidMediaUrl(img)) return haiboCacheBustUrl(img, dest.updatedAt || Date.now());
-    return '';
-  }
-
-  if (haiboValidMediaUrl(img)) return img;
-
-  const staticD = haiboStaticDestination(dest.id);
-  return staticD?.image || '';
+  if (!haiboValidMediaUrl(img)) return '';
+  return haiboCacheBustUrl(img, dest.updatedAt || Date.now());
 }
 
-/** Hero banner image for destination detail page. */
+/** Hero banner image for destination detail page (Firestore URLs only). */
 function haiboResolveHeroImage(dest) {
   if (!dest) return '';
-  const fromCms = haiboIsCmsLive(dest);
   const hero = dest?.heroImage || dest?.hero_image || '';
   const card = haiboPickDestinationImage(dest);
-
-  if (fromCms) {
-    const pick = haiboValidMediaUrl(hero) ? hero : haiboValidMediaUrl(card) ? card : '';
-    return pick ? haiboCacheBustUrl(pick, dest.updatedAt || Date.now()) : '';
-  }
-
-  if (haiboValidMediaUrl(hero)) return hero;
-  if (haiboValidMediaUrl(card)) return card;
-  const staticD = haiboStaticDestination(dest.id);
-  return staticD?.heroImage || staticD?.image || '';
+  const pick = haiboValidMediaUrl(hero) ? hero : haiboValidMediaUrl(card) ? card : '';
+  if (!pick) return '';
+  return haiboCacheBustUrl(pick, dest.updatedAt || Date.now());
 }
 
-/** Gallery item URL — prefer CMS URLs on detail pages. */
+/** Gallery item URL (Firestore URLs only). */
 function haiboResolveGalleryImage(src, dest, index) {
-  const fromCms = haiboIsCmsLive(dest);
-  if (fromCms && haiboValidMediaUrl(src)) {
-    return haiboCacheBustUrl(src, (dest.updatedAt || 0) + index);
-  }
-  if (haiboValidMediaUrl(src)) return src;
-  const staticD = haiboStaticDestination(dest?.id);
-  return staticD?.gallery?.[index] || src || '';
+  if (!haiboValidMediaUrl(src)) return '';
+  return haiboCacheBustUrl(src, (dest?.updatedAt || 0) + index);
 }
 
 function haiboMergeDestination(live, staticDest) {
@@ -420,11 +398,9 @@ function mergeHaiboContentWithDefaults() {
     c.settings.logoUrl = d.settings.logoUrl;
   }
 
-  const firestoreDests = window.HAIBO_FIRESTORE_DESTINATIONS;
-  if (Array.isArray(firestoreDests) && firestoreDests.length > 0) {
-    c.destinations = haiboMergeDestinationsList(firestoreDests);
-  } else if (!c.destinations?.length) {
-    c.destinations = haiboMergeDestinationsList([]);
+  /* Destinations: Firestore only — content-store.mjs sets c.destinations via onSnapshot */
+  if (!Array.isArray(c.destinations)) {
+    c.destinations = [];
   }
   c.gallery = haiboNormalizeGalleryObject(c.gallery);
 

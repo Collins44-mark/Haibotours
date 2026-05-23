@@ -350,33 +350,16 @@ const DESTINATIONS = [
   },
 ];
 
-/** Immutable local defaults — used when Firestore is empty or unavailable */
+/** Admin seed catalog only — public site does NOT render this array */
 window.HAIBO_DESTINATIONS_STATIC = DESTINATIONS.map((d) => ({ ...d }));
-window.DESTINATIONS = DESTINATIONS;
+window.DESTINATIONS = [];
 
 function getHaiboDestinations() {
-  const staticList = window.HAIBO_DESTINATIONS_STATIC || DESTINATIONS;
-  const pick = (arr) =>
-    arr
-      .filter((d) => d && d.id && d.active !== false)
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-
-  const fromContent = window.HAIBO_CONTENT?.destinations;
-  if (Array.isArray(fromContent) && fromContent.length) {
-    return pick(fromContent);
-  }
-
-  if (
-    typeof haiboMergeDestinationsList === 'function' &&
-    Array.isArray(window.HAIBO_FIRESTORE_DESTINATIONS) &&
-    window.HAIBO_FIRESTORE_DESTINATIONS.length
-  ) {
-    return pick(haiboMergeDestinationsList(window.HAIBO_FIRESTORE_DESTINATIONS));
-  }
-
-  const fromWindow = Array.isArray(window.DESTINATIONS) ? window.DESTINATIONS : [];
-  const live = pick(fromWindow);
-  return live.length ? live : staticList;
+  const list = window.HAIBO_CONTENT?.destinations;
+  if (!Array.isArray(list)) return [];
+  return list
+    .filter((d) => d && d.id && d.active !== false)
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 }
 
 function syncHaiboDestinations() {
@@ -399,14 +382,7 @@ function getDestinationById(id) {
         : d.id === key
     ) || null;
 
-  try {
-    const live = getHaiboDestinations();
-    const found = match(live);
-    if (found) return found;
-  } catch {
-    /* fall through to static */
-  }
-  return match(window.HAIBO_DESTINATIONS_STATIC || DESTINATIONS);
+  return match(getHaiboDestinations());
 }
 
 /** Match user input or slug to a destination id */
@@ -490,24 +466,15 @@ function haiboResolveCardImage(dest) {
 /** Safari card HTML — shared by app.js and paint routine */
 function haiboBuildDestinationCard(dest) {
   const href = destinationDetailUrl(dest.id);
-  const fromCms = dest && (dest._fromFirestore || dest.updatedAt != null);
   const imageUrl = haiboResolveCardImage(dest);
-  const staticD =
-    typeof haiboStaticDestination === 'function'
-      ? haiboStaticDestination(dest.id)
-      : (window.HAIBO_DESTINATIONS_STATIC || DESTINATIONS).find((d) => d.id === dest.id);
-  const fallbackUrl = fromCms ? '' : staticD?.image || '';
-  const safeUrl = imageUrl || fallbackUrl;
+  const safeUrl = imageUrl || dest?.cardImage || dest?.image || dest?.imageUrl || '';
   const bg = safeUrl.replace(/'/g, '%27').replace(/"/g, '%22');
   const imgSrc =
     typeof window.haiboOptimizeImage === 'function'
       ? window.haiboOptimizeImage(safeUrl, { width: 800 })
       : safeUrl;
   const alt = `${dest.name} safari — ${dest.subtitle}`;
-  const fbAttr =
-    !fromCms && fallbackUrl
-      ? ` data-fallback="${haiboEscapeHtml(fallbackUrl)}" onerror="(function(img){var u=img.dataset.fallback;if(!u)return;img.classList.add('haibo-img-broken');var m=img.closest('.dest-card-media');if(m)m.style.backgroundImage='url('+u+')';img.onerror=null;})(this)"`
-      : '';
+  const fbAttr = '';
   const img = safeUrl
     ? `<img src="${haiboEscapeHtml(imgSrc)}" alt="${haiboEscapeHtml(alt)}" loading="lazy" decoding="async" class="haibo-media dest-card-img w-full object-cover" width="800" height="533"${fbAttr}>`
     : '';
@@ -532,28 +499,23 @@ function haiboBuildDestinationCard(dest) {
     </a>`;
 }
 
-/** Paint destination cards from local data — runs even if Firebase/CMS fails */
+/** Paint destination cards from Firestore (HAIBO_CONTENT) only */
 function haiboPaintDestinationCards(containerId, limit) {
   const container = document.getElementById(containerId);
   if (!container) return false;
 
-  const staticList = window.HAIBO_DESTINATIONS_STATIC || DESTINATIONS;
-  let list = staticList;
-  try {
-    if (typeof getHaiboDestinations === 'function') {
-      const merged = getHaiboDestinations();
-      if (merged.length) list = merged;
-    }
-  } catch (err) {
-    console.warn('HAIBO: using static destinations after error', err);
-    list = staticList;
+  let list = typeof getHaiboDestinations === 'function' ? getHaiboDestinations() : [];
+
+  if (!list.length) {
+    container.innerHTML =
+      '<p class="haibo-empty-state" style="text-align:center;color:#9ca3af;padding:2rem">Destinations will appear here once published in the CMS.</p>';
+    container.dataset.haiboRendered = '0';
+    return false;
   }
 
-  if (!list.length) return false;
   if (limit) list = list.slice(0, limit);
 
   container.innerHTML = list.map((dest) => haiboBuildDestinationCard(dest)).join('');
-
   container.dataset.haiboRendered = '1';
   return true;
 }
@@ -566,9 +528,3 @@ function haiboBootDestinationGrids() {
 window.haiboPaintDestinationCards = haiboPaintDestinationCards;
 window.haiboBuildDestinationCard = haiboBuildDestinationCard;
 window.haiboBootDestinationGrids = haiboBootDestinationGrids;
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', haiboBootDestinationGrids);
-} else {
-  haiboBootDestinationGrids();
-}
