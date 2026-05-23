@@ -1,35 +1,14 @@
-import { doc } from '../../js/firebase-cdn.mjs';
-
-import {
-  dbSetDoc,
-  dbGetDoc,
-  dbList,
-  dbDeleteDoc,
-  getDbBatch,
-  requireDb,
-  adminToast,
-  slugify,
-  ADMIN_DOC,
-} from './admin-db.mjs';
-
+import { adminToast, slugify } from './admin-db.mjs';
 import { signOutAdmin, LOGIN_URL } from './firebase.js';
-
 import { formatAdminError } from './admin-errors.mjs';
-
-import {
-  createUploadZone,
-  getRecentUploads,
-} from './admin-cloudinary.mjs';
+import { createUploadZone, getRecentUploads } from './admin-cloudinary.mjs';
 import {
   mergeDestinationsForAdmin,
   renderDestinationsList,
   bindDestinationsListFilters,
 } from './admin-destinations.mjs';
-import { publishPublicCmsManifest } from './admin-cms-publish.mjs';
-import { subscribeAdminCollections } from './admin-realtime.mjs';
+import { getAdminCms, loadAdminCms, syncCmsToWebsite } from './admin-cms.mjs';
 import { initTopbarMenu, initMobileSidebar } from './admin-ui.mjs';
-
-const FIRESTORE_PATHS = globalThis.FIRESTORE_PATHS;
 
 /** HAIBO Admin — section managers */
 let state = {
@@ -82,20 +61,8 @@ function getStaticDestinations() {
   );
 }
 
-/** Firestore rows merged with static defaults for admin editing */
 function getAdminDestinationsForUi() {
-  const staticList = getStaticDestinations();
-  const fromDb = state.destinations;
-  if (!fromDb.length) {
-    return staticList.map((d, i) => ({ ...d, order: i, _source: 'static' }));
-  }
-  const byId = new Map(fromDb.map((d) => [d.id, { ...d, _source: 'firestore' }]));
-  staticList.forEach((d, i) => {
-    if (!byId.has(d.id)) {
-      byId.set(d.id, { ...d, order: 500 + i, _source: 'static' });
-    }
-  });
-  return [...byId.values()].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  return mergeDestinationsForAdmin();
 }
 
 function getAdminDestinationById(id) {
@@ -119,9 +86,9 @@ function showDestinationsImportBanner() {
   banner.className = 'admin-glass admin-import-banner';
   banner.innerHTML = `
     <h2>Website content ready to import</h2>
-    <p class="admin-muted">All ${getStaticDestinations().length} destinations, packages, and gallery data from the live site are listed below. Click <strong>Import website defaults</strong> to copy them into Firestore, or open any destination, edit, and save to publish changes to the website.</p>
+    <p class="admin-muted">Click <strong>Import website defaults</strong> to load the starter content onto the live site, or add destinations and save — changes go live automatically.</p>
     <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:1rem">
-      <button type="button" class="admin-btn admin-btn--primary admin-btn--sm" id="btn-seed-inline">Import all defaults to Firestore</button>
+      <button type="button" class="admin-btn admin-btn--primary admin-btn--sm" id="btn-seed-inline">Import website defaults</button>
     </div>
   `;
   panel.insertBefore(banner, panel.firstChild);
@@ -130,7 +97,7 @@ function showDestinationsImportBanner() {
 
 async function renderDashboard() {
   const dests = getAdminDestinationsForUi();
-  const hero = state.heroDoc || (await dbGetDoc(FIRESTORE_PATHS.hero));
+  const hero = state.heroDoc || getAdminCms().hero;
   const hasHero = Boolean(hero?.backgroundImageUrl);
   const pkgCount = countPackages(dests);
 
@@ -141,7 +108,7 @@ async function renderDashboard() {
         <div class="admin-stat-card__icon">📍</div>
         <div class="admin-stat-card__value">${dests.length}</div>
         <div class="admin-stat-card__label">Destinations</div>
-        <div class="admin-stat-card__meta">${state.destinations.length ? 'From Firestore' : 'Showing site defaults'}</div>
+        <div class="admin-stat-card__meta">On live website</div>
       </article>
       <article class="admin-stat-card">
         <div class="admin-stat-card__icon">📦</div>
@@ -159,7 +126,7 @@ async function renderDashboard() {
         <div class="admin-stat-card__icon">☁</div>
         <div class="admin-stat-card__value">${state.gallery.length}</div>
         <div class="admin-stat-card__label">Gallery items</div>
-        <div class="admin-stat-card__meta">${state.gallery.length ? 'In Firestore' : 'Defaults on public site'}</div>
+        <div class="admin-stat-card__meta">On live website</div>
       </article>
     `;
   }
@@ -190,169 +157,145 @@ function renderRecentUploads() {
 }
 
 export async function seedAllDefaults() {
-  if (!confirm('Import website defaults into Firestore? This merges data.')) return;
+  if (!confirm('Load default website content onto the live site?')) return;
 
   try {
-  await dbSetDoc(FIRESTORE_PATHS.hero, {
-    eyebrow: 'Explore Tanzania',
-    title: 'Discover the soul of',
-    titleAccent: 'Tanzania',
-    subtitle:
-      'Authentic safaris, luxury adventures, cultural journeys and unforgettable wildlife experiences across East Africa.',
-    backgroundImageUrl:
-      'https://images.unsplash.com/photo-1516426122078-c23e76319801?q=80&w=2070&auto=format&fit=crop',
-    ctaPrimaryText: 'Explore Safaris',
-    ctaPrimaryLink: 'destinations.html',
-    ctaSecondaryText: 'View Gallery',
-    ctaSecondaryLink: 'gallery.html',
-    homeCta: {
-      eyebrow: 'Start Your Journey',
-      title: 'Start Your Tanzania Adventure',
-      body: "Ready to explore? Contact us today and we'll craft the perfect safari itinerary for you.",
-      backgroundClass: 'cta-bg-kili',
-    },
-    updatedAt: Date.now(),
-  });
+    const cms = getAdminCms();
+    const destList = getStaticDestinations();
 
-  await dbSetDoc(FIRESTORE_PATHS.about, {
-    eyebrow: 'Why Choose Us',
-    title: 'Unforgettable Journeys Crafted For You',
-    body: 'Experience premium safari adventures with expert local guides, luxury accommodations, and unforgettable wildlife encounters.',
-    imageUrl:
-      'https://images.unsplash.com/photo-1508672019048-805c876b67e2?q=80&w=1974&auto=format&fit=crop',
-    featureCards: [
-      { title: 'SUSTAINABLE TRAVEL', subtitle: '' },
-      { title: 'Best price guarantee', subtitle: '' },
-      { title: 'Local expertise', subtitle: '' },
-      { title: '24/7', subtitle: 'Guest Support' },
-    ],
-    updatedAt: Date.now(),
-  });
+    cms.hero = {
+      eyebrow: 'Explore Tanzania',
+      title: 'Discover the soul of',
+      titleAccent: 'Tanzania',
+      subtitle:
+        'Authentic safaris, luxury adventures, cultural journeys and unforgettable wildlife experiences across East Africa.',
+      backgroundImageUrl:
+        'https://images.unsplash.com/photo-1516426122078-c23e76319801?q=80&w=2070&auto=format&fit=crop',
+      ctaPrimaryText: 'Explore Safaris',
+      ctaPrimaryLink: 'destinations.html',
+      ctaSecondaryText: 'View Gallery',
+      ctaSecondaryLink: 'gallery.html',
+    };
 
-  await dbSetDoc(FIRESTORE_PATHS.contact, {
-    phoneDisplay: HAIBO_CONFIG.phoneDisplay,
-    email: HAIBO_CONFIG.email,
-    whatsappNumber: HAIBO_CONFIG.whatsappNumber,
-    address: HAIBO_CONFIG.address,
-    officeHours: HAIBO_CONFIG.officeHours,
-    mapUrl: HAIBO_CONFIG.mapUrl,
-    defaultTourMessage: HAIBO_CONFIG.defaultTourMessage,
-    updatedAt: Date.now(),
-  });
+    cms.about = {
+      eyebrow: 'Why Choose Us',
+      title: 'Unforgettable Journeys Crafted For You',
+      body: 'Experience premium safari adventures with expert local guides, luxury accommodations, and unforgettable wildlife encounters.',
+      imageUrl:
+        'https://images.unsplash.com/photo-1508672019048-805c876b67e2?q=80&w=1974&auto=format&fit=crop',
+      featureCards: [
+        { title: 'SUSTAINABLE TRAVEL', subtitle: '' },
+        { title: 'Best price guarantee', subtitle: '' },
+        { title: 'Local expertise', subtitle: '' },
+        { title: '24/7', subtitle: 'Guest Support' },
+      ],
+    };
 
-  await dbSetDoc(FIRESTORE_PATHS.socials, {
-    instagram: HAIBO_CONFIG.social.instagram,
-    facebook: HAIBO_CONFIG.social.facebook,
-    tiktok: '',
-    whatsapp: '',
-    updatedAt: Date.now(),
-  });
+    cms.contact = {
+      phoneDisplay: HAIBO_CONFIG.phoneDisplay,
+      email: HAIBO_CONFIG.email,
+      whatsappNumber: HAIBO_CONFIG.whatsappNumber,
+      address: HAIBO_CONFIG.address,
+      officeHours: HAIBO_CONFIG.officeHours,
+      mapUrl: HAIBO_CONFIG.mapUrl,
+      defaultTourMessage: HAIBO_CONFIG.defaultTourMessage,
+    };
 
-  await dbSetDoc(FIRESTORE_PATHS.settings, {
-    logoUrl: HAIBO_CONFIG.logoPath,
-    brandName: 'HAIBO',
-    tagline: 'TOURS & SAFARIS',
-    searchEnabledIds: DESTINATIONS.map((d) => d.id),
-    destinationsSection: { eyebrow: 'Explore Tanzania', title: 'Popular Destinations' },
-    gallerySection: { eyebrow: 'Gallery', title: 'Experience Tanzania' },
-    footer: {
-      brand: 'HAIBO',
-      description:
-        'Luxury safari experiences crafted for explorers seeking unforgettable adventures in Tanzania.',
-      copyright: '© 2026 HAIBO Tours & Safaris',
-      quickLinks: [
-        { label: 'About Us', href: '#about' },
+    cms.socials = {
+      instagram: HAIBO_CONFIG.social.instagram,
+      facebook: HAIBO_CONFIG.social.facebook,
+      tiktok: '',
+      whatsapp: '',
+    };
+
+    cms.settings = {
+      logoUrl: HAIBO_CONFIG.logoPath,
+      brandName: 'HAIBO',
+      tagline: 'TOURS & SAFARIS',
+      searchEnabledIds: destList.map((d) => d.id),
+      destinationsSection: { eyebrow: 'Explore Tanzania', title: 'Popular Destinations' },
+      gallerySection: { eyebrow: 'Gallery', title: 'Experience Tanzania' },
+      footer: {
+        brand: 'HAIBO',
+        description:
+          'Luxury safari experiences crafted for explorers seeking unforgettable adventures in Tanzania.',
+        copyright: '© 2026 HAIBO Tours & Safaris',
+        quickLinks: [
+          { label: 'About Us', href: '#about' },
+          { label: 'Destinations', href: 'destinations.html' },
+          { label: 'Gallery', href: 'gallery.html' },
+          { label: 'Safaris', href: '#safaris' },
+          { label: 'Contact', href: 'contact.html' },
+        ],
+      },
+      navLinks: [
+        { label: 'Home', href: '#home' },
+        { label: 'About', href: '#about' },
+        { label: 'Safaris', href: '#safaris' },
         { label: 'Destinations', href: 'destinations.html' },
         { label: 'Gallery', href: 'gallery.html' },
-        { label: 'Safaris', href: '#safaris' },
         { label: 'Contact', href: 'contact.html' },
       ],
-    },
-    navLinks: [
-      { label: 'Home', href: '#home' },
-      { label: 'About', href: '#about' },
-      { label: 'Safaris', href: '#safaris' },
-      { label: 'Destinations', href: 'destinations.html' },
-      { label: 'Gallery', href: 'gallery.html' },
-      { label: 'Contact', href: 'contact.html' },
-    ],
-    updatedAt: Date.now(),
-  });
+    };
 
-  const db = requireDb();
-  const batch = getDbBatch();
-  DESTINATIONS.forEach((d, i) => {
-    const row = { ...d, order: i, active: true, updatedAt: Date.now() };
-    if (row.galleryImages?.length && !row.gallery?.length) {
-      row.gallery = row.galleryImages;
-    }
-    delete row.galleryImages;
-    batch.set(doc(db, FIRESTORE_PATHS.destinations, d.id), row, { merge: true });
-  });
-  await batch.commit();
-
-  const gBatch = getDbBatch();
-  (typeof GALLERY_IMAGES !== 'undefined' ? GALLERY_IMAGES : []).forEach((img, i) => {
-    const id = `img-${i}`;
-    gBatch.set(doc(db, FIRESTORE_PATHS.gallery, id), {
-      type: 'image',
-      order: i,
-      src: img.src,
-      title: img.title,
-      tag: img.tag,
-      active: true,
-      updatedAt: Date.now(),
+    cms.destinations = destList.map((d, i) => {
+      const row = { ...d, order: i, active: true, updatedAt: Date.now() };
+      if (row.galleryImages?.length && !row.gallery?.length) {
+        row.gallery = row.galleryImages;
+      }
+      delete row.galleryImages;
+      return row;
     });
-  });
-  (typeof GALLERY_VIDEOS !== 'undefined' ? GALLERY_VIDEOS : []).forEach((vid, i) => {
-    const id = `vid-${i}`;
-    gBatch.set(doc(db, FIRESTORE_PATHS.gallery, id), {
-      type: 'video',
-      order: i + 100,
-      src: vid.src,
-      thumb: vid.thumb,
-      title: vid.title,
-      tag: vid.tag,
-      active: true,
-      updatedAt: Date.now(),
-    });
-  });
-  await gBatch.commit();
 
-  const parks =
-    typeof WEATHER_PARKS_STATIC !== 'undefined'
-      ? WEATHER_PARKS_STATIC
-      : typeof WEATHER_PARKS !== 'undefined'
-        ? WEATHER_PARKS
-        : [];
-  if (parks.length) {
-    const wBatch = getDbBatch();
-    parks.forEach((w, i) => {
-      wBatch.set(
-        doc(db, FIRESTORE_PATHS.weatherCards, w.id),
-        { ...w, order: i, active: true, updatedAt: Date.now() },
-        { merge: true }
-      );
+    cms.gallery = [];
+    (typeof GALLERY_IMAGES !== 'undefined' ? GALLERY_IMAGES : []).forEach((img, i) => {
+      cms.gallery.push({
+        id: `img-${i}`,
+        type: 'image',
+        order: i,
+        src: img.src,
+        title: img.title,
+        tag: img.tag,
+        active: true,
+      });
     });
-    await wBatch.commit();
-  }
+    (typeof GALLERY_VIDEOS !== 'undefined' ? GALLERY_VIDEOS : []).forEach((vid, i) => {
+      cms.gallery.push({
+        id: `vid-${i}`,
+        type: 'video',
+        order: i + 100,
+        src: vid.src,
+        thumb: vid.thumb,
+        title: vid.title,
+        tag: vid.tag,
+        active: true,
+      });
+    });
 
-  adminToast('Defaults imported to Firestore', 'success');
-  await loadAllAdminData();
-  showDestinationsImportBanner();
-  await publishPublicCmsManifest({ silent: true }).catch((err) => {
-    console.warn('[HAIBO] Public manifest publish after import failed', err?.message || err);
-  });
+    const parks =
+      typeof WEATHER_PARKS_STATIC !== 'undefined'
+        ? WEATHER_PARKS_STATIC
+        : typeof WEATHER_PARKS !== 'undefined'
+          ? WEATHER_PARKS
+          : [];
+    cms.weatherCards = parks.map((w, i) => ({ ...w, order: i, active: true }));
+
+    await syncCmsToWebsite();
+    await loadAllAdminData();
+    showDestinationsImportBanner();
   } catch (err) {
     adminToast(err.message || formatAdminError(err, 'Import'), 'error');
   }
 }
 
 async function loadAllAdminData() {
-  state.destinations = await dbList(FIRESTORE_PATHS.destinations);
-  state.gallery = await dbList(FIRESTORE_PATHS.gallery);
-  state.weatherCards = await dbList(FIRESTORE_PATHS.weatherCards);
-  state.heroDoc = await dbGetDoc(FIRESTORE_PATHS.hero);
+  await loadAdminCms();
+  const cms = getAdminCms();
+  state.destinations = cms.destinations || [];
+  state.gallery = cms.gallery || [];
+  state.weatherCards = cms.weatherCards || [];
+  state.heroDoc = cms.hero;
+  state.settingsCache = cms.settings;
   refreshDestinationsListUi();
   showDestinationsImportBanner();
   renderGalleryList();
@@ -362,7 +305,7 @@ async function loadAllAdminData() {
 }
 
 async function loadHeroForm() {
-  const raw = await dbGetDoc(FIRESTORE_PATHS.hero);
+  const raw = getAdminCms().hero;
   state.heroDoc = raw;
   const d = mergeDoc(defaults().hero || {}, raw);
   const f = document.getElementById('form-hero');
@@ -386,7 +329,7 @@ async function loadHeroForm() {
 async function saveHeroForm(e) {
   e.preventDefault();
   const f = e.target;
-  await dbSetDoc(FIRESTORE_PATHS.hero, {
+  getAdminCms().hero = {
     eyebrow: f.eyebrow.value,
     title: f.title.value,
     titleAccent: f.titleAccent.value,
@@ -396,13 +339,14 @@ async function saveHeroForm(e) {
     ctaPrimaryLink: f.ctaPrimaryLink.value,
     ctaSecondaryText: f.ctaSecondaryText.value,
     ctaSecondaryLink: f.ctaSecondaryLink.value,
-  });
-  adminToast('Hero saved', 'success');
+  };
+  await syncCmsToWebsite({ quiet: true });
+  adminToast('Hero saved — live site updated', 'success');
   await loadHeroForm();
 }
 
 async function loadAboutForm() {
-  const d = mergeDoc(defaults().about || {}, await dbGetDoc(FIRESTORE_PATHS.about));
+  const d = mergeDoc(defaults().about || {}, getAdminCms().about);
   const f = document.getElementById('form-about');
   if (!f) return;
   f.eyebrow.value = d.eyebrow || '';
@@ -422,19 +366,20 @@ async function saveAboutForm(e) {
     title: f[`featureTitle${i}`]?.value || '',
     subtitle: f[`featureSub${i}`]?.value || '',
   }));
-  await dbSetDoc(FIRESTORE_PATHS.about, {
+  getAdminCms().about = {
     eyebrow: f.eyebrow.value,
     title: f.title.value,
     body: f.body.value,
     imageUrl: f.imageUrl.value,
     featureCards,
-  });
-  adminToast('About section saved', 'success');
+  };
+  await syncCmsToWebsite({ quiet: true });
+  adminToast('About saved — live site updated', 'success');
 }
 
 async function loadContactForm() {
   const base = { ...HAIBO_CONFIG, ...(defaults().contact || {}) };
-  const d = mergeDoc(base, await dbGetDoc(FIRESTORE_PATHS.contact));
+  const d = mergeDoc(base, getAdminCms().contact);
   const f = document.getElementById('form-contact');
   if (!f) return;
   Object.keys(d).forEach((k) => {
@@ -445,7 +390,7 @@ async function loadContactForm() {
 async function saveContactForm(e) {
   e.preventDefault();
   const f = e.target;
-  await dbSetDoc(FIRESTORE_PATHS.contact, {
+  getAdminCms().contact = {
     phoneDisplay: f.phoneDisplay.value,
     whatsappNumber: f.whatsappNumber.value,
     email: f.email.value,
@@ -453,12 +398,13 @@ async function saveContactForm(e) {
     address: f.address.value,
     officeHours: f.officeHours.value,
     defaultTourMessage: f.defaultTourMessage.value,
-  });
-  adminToast('Contact saved', 'success');
+  };
+  await syncCmsToWebsite({ quiet: true });
+  adminToast('Contact saved — live site updated', 'success');
 }
 
 async function loadSocialsForm() {
-  const d = mergeDoc(defaults().socials || {}, await dbGetDoc(FIRESTORE_PATHS.socials));
+  const d = mergeDoc(defaults().socials || {}, getAdminCms().socials);
   const f = document.getElementById('form-socials');
   if (!f) return;
   ['instagram', 'facebook', 'tiktok', 'whatsapp'].forEach((k) => {
@@ -469,12 +415,13 @@ async function loadSocialsForm() {
 async function saveSocialsForm(e) {
   e.preventDefault();
   const f = e.target;
-  await dbSetDoc(FIRESTORE_PATHS.socials, Object.fromEntries(new FormData(f)));
-  adminToast('Social links saved', 'success');
+  getAdminCms().socials = Object.fromEntries(new FormData(f));
+  await syncCmsToWebsite({ quiet: true });
+  adminToast('Social links saved — live site updated', 'success');
 }
 
 async function loadSettingsForm() {
-  const d = mergeDoc(defaults().settings || {}, await dbGetDoc(FIRESTORE_PATHS.settings));
+  const d = mergeDoc(defaults().settings || {}, getAdminCms().settings);
   const f = document.getElementById('form-settings');
   if (!f) return;
   if (f.logoUrl) f.logoUrl.value = d.logoUrl || '';
@@ -495,29 +442,30 @@ async function saveSettingsForm(e) {
     adminToast('Invalid navbar JSON', 'error');
     return;
   }
-  const existing = (await dbGetDoc(FIRESTORE_PATHS.settings)) || {};
-  await dbSetDoc(FIRESTORE_PATHS.settings, {
-    ...existing,
+  const cms = getAdminCms();
+  cms.settings = {
+    ...(cms.settings || {}),
     logoUrl: f.logoUrl.value,
     brandName: f.brandName.value,
     tagline: f.tagline.value,
     footer: {
-      ...(existing.footer || {}),
+      ...(cms.settings?.footer || {}),
       brand: f.brandName.value,
       description: f.footerDescription.value,
       copyright: f.footerCopyright.value,
-      quickLinks: existing.footer?.quickLinks || [],
+      quickLinks: cms.settings?.footer?.quickLinks || [],
     },
     navLinks,
-  });
-  adminToast('Settings saved', 'success');
+  };
+  await syncCmsToWebsite({ quiet: true });
+  adminToast('Settings saved — live site updated', 'success');
 }
 
 function refreshDestinationsListUi() {
   const el = document.getElementById('destinations-list');
   const panel = document.querySelector('.admin-dest-panel');
   if (!el) return;
-  const list = mergeDestinationsForAdmin(state.destinations);
+  const list = mergeDestinationsForAdmin();
   renderDestinationsList(el, list, { onRefresh: () => loadAllAdminData() });
 
   const regionSelect = panel?.querySelector('[data-dest-filter-region]');
@@ -559,8 +507,10 @@ function renderGalleryList() {
   el.querySelectorAll('[data-del-gallery]').forEach((btn) => {
     btn.addEventListener('click', async () => {
       if (!confirm('Delete gallery item?')) return;
-      await dbDeleteDoc(FIRESTORE_PATHS.gallery, btn.dataset.delGallery);
-      adminToast('Deleted', 'success');
+      const cms = getAdminCms();
+      cms.gallery = (cms.gallery || []).filter((g) => g.id !== btn.dataset.delGallery);
+      await syncCmsToWebsite({ quiet: true });
+      adminToast('Deleted — live site updated', 'success');
       await loadAllAdminData();
     });
   });
@@ -569,21 +519,21 @@ function renderGalleryList() {
 async function addGalleryImage(e) {
   e.preventDefault();
   const f = e.target;
-  await dbSetDoc(
-    FIRESTORE_PATHS.gallery,
-    {
-      type: f.type.value,
-      src: f.src.value,
-      thumb: f.thumb.value || f.src.value,
-      title: f.title.value,
-      tag: f.tag.value,
-      order: Number(f.order.value) || 0,
-      active: true,
-    },
-    `g-${Date.now()}`
-  );
+  const cms = getAdminCms();
+  if (!cms.gallery) cms.gallery = [];
+  cms.gallery.push({
+    id: `g-${Date.now()}`,
+    type: f.type.value,
+    src: f.src.value,
+    thumb: f.thumb.value || f.src.value,
+    title: f.title.value,
+    tag: f.tag.value,
+    order: Number(f.order.value) || 0,
+    active: true,
+  });
+  await syncCmsToWebsite({ quiet: true });
   f.reset();
-  adminToast('Gallery item added', 'success');
+  adminToast('Gallery item added — live site updated', 'success');
   await loadAllAdminData();
 }
 
@@ -610,9 +560,11 @@ function renderWeatherList() {
   el.querySelectorAll('[data-del-weather]').forEach((btn) => {
     btn.addEventListener('click', async () => {
       if (!confirm('Delete weather card?')) return;
-      await dbDeleteDoc(FIRESTORE_PATHS.weatherCards, btn.dataset.delWeather);
+      const cms = getAdminCms();
+      cms.weatherCards = (cms.weatherCards || []).filter((w) => w.id !== btn.dataset.delWeather);
+      await syncCmsToWebsite({ quiet: true });
       await loadAllAdminData();
-      adminToast('Deleted', 'success');
+      adminToast('Deleted — live site updated', 'success');
     });
   });
 }
@@ -650,56 +602,55 @@ async function saveWeatherForm(e) {
   e.preventDefault();
   const f = e.target;
   const id = (f.dataset.editId || slugify(f.shortName.value || f.name.value)).trim();
-  await dbSetDoc(
-    FIRESTORE_PATHS.weatherCards,
-    {
-      id,
-      name: f.name.value,
-      shortName: f.shortName.value,
-      lat: Number(f.lat.value),
-      lon: Number(f.lon.value),
-      facts: f.facts.value.split('\n').map((s) => s.trim()).filter(Boolean),
-      imageUrl: f.imageUrl.value,
-      displayTemp: f.displayTemp.value,
-      displayLabel: f.displayLabel.value,
-      active: f.active.checked,
-    },
-    id
-  );
-  adminToast('Weather card saved', 'success');
+  const cms = getAdminCms();
+  const row = {
+    id,
+    name: f.name.value,
+    shortName: f.shortName.value,
+    lat: Number(f.lat.value),
+    lon: Number(f.lon.value),
+    facts: f.facts.value.split('\n').map((s) => s.trim()).filter(Boolean),
+    imageUrl: f.imageUrl.value,
+    displayTemp: f.displayTemp.value,
+    displayLabel: f.displayLabel.value,
+    active: f.active.checked,
+  };
+  const list = [...(cms.weatherCards || [])];
+  const idx = list.findIndex((w) => w.id === id);
+  if (idx >= 0) list[idx] = row;
+  else list.push(row);
+  cms.weatherCards = list;
+  await syncCmsToWebsite({ quiet: true });
+  adminToast('Weather card saved — live site updated', 'success');
   await loadAllAdminData();
 }
 
 function renderSearchDestCheckboxes() {
   const el = document.getElementById('search-dest-checkboxes');
   if (!el) return;
-  const settings = state.settingsCache || {};
-  dbGetDoc(FIRESTORE_PATHS.settings).then((s) => {
-    state.settingsCache = s || {};
-    const enabled = new Set(s?.searchEnabledIds || getAdminDestinationsForUi().map((d) => d.id));
-    const sorted = getAdminDestinationsForUi();
-    el.innerHTML = sorted
-      .map(
-        (d) => `
+  const s = getAdminCms().settings || {};
+  state.settingsCache = s;
+  const enabled = new Set(s.searchEnabledIds || getAdminDestinationsForUi().map((d) => d.id));
+  const sorted = getAdminDestinationsForUi();
+  el.innerHTML = sorted
+    .map(
+      (d) => `
       <label class="admin-check">
         <input type="checkbox" name="searchDest" value="${d.id}" ${enabled.has(d.id) ? 'checked' : ''} />
         ${d.name}
       </label>`
-      )
-      .join('');
-  });
+    )
+    .join('');
 }
 
 async function saveSearchSettings() {
   const checked = [...document.querySelectorAll('#search-dest-checkboxes input:checked')].map(
     (i) => i.value
   );
-  const existing = (await dbGetDoc(FIRESTORE_PATHS.settings)) || {};
-  await dbSetDoc(FIRESTORE_PATHS.settings, {
-    ...existing,
-    searchEnabledIds: checked,
-  });
-  adminToast('Search destinations updated', 'success');
+  const cms = getAdminCms();
+  cms.settings = { ...(cms.settings || {}), searchEnabledIds: checked };
+  await syncCmsToWebsite({ quiet: true });
+  adminToast('Search updated — live site updated', 'success');
 }
 
 function initAdminAppHandlers() {
@@ -710,22 +661,6 @@ function initAdminAppHandlers() {
 
   const destPanel = document.querySelector('.admin-dest-panel');
   bindDestinationsListFilters(destPanel, refreshDestinationsListUi);
-
-  subscribeAdminCollections({
-    onDestinations: (items) => {
-      state.destinations = items;
-      refreshDestinationsListUi();
-      renderDashboardStats();
-    },
-    onGallery: (items) => {
-      state.gallery = items;
-      renderGalleryList();
-    },
-    onWeather: (items) => {
-      state.weatherCards = items;
-      renderWeatherList();
-    },
-  });
 
   window.addEventListener('haiboAdminUpload', () => renderRecentUploads());
 
@@ -751,9 +686,6 @@ function initAdminAppHandlers() {
     }
   });
   document.getElementById('btn-seed')?.addEventListener('click', () => seedAllDefaults());
-  document.getElementById('btn-publish-website')?.addEventListener('click', () =>
-    publishPublicCmsManifest()
-  );
 
   document.getElementById('form-hero')?.addEventListener('submit', saveHeroForm);
   document.getElementById('form-about')?.addEventListener('submit', saveAboutForm);
@@ -786,12 +718,14 @@ function initAdminAppHandlers() {
     if (src) src.value = url;
   });
 
-  loadHeroForm();
-  loadAboutForm();
-  loadContactForm();
-  loadSocialsForm();
-  loadSettingsForm();
-  loadAllAdminData();
+  void loadAdminCms().then(() => {
+    loadHeroForm();
+    loadAboutForm();
+    loadContactForm();
+    loadSocialsForm();
+    loadSettingsForm();
+    return loadAllAdminData();
+  });
 }
 
 let adminAppInitialized = false;

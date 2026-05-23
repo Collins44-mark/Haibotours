@@ -2,13 +2,7 @@
  * HAIBO Admin Firebase — app, auth, db only (+ minimal login helpers).
  */
 import { getHaiboApp, getHaiboDb, getHaiboAuth } from '../../js/firebase-app.mjs';
-import {
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged,
-  doc,
-  getDoc,
-} from '../../js/firebase-cdn.mjs';
+import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from '../../js/firebase-cdn.mjs';
 
 export const LOGIN_URL = '/admin/login.html';
 export const DASHBOARD_URL = '/admin/dashboard.html';
@@ -40,23 +34,11 @@ export function isAdminEmail(email) {
   return list.some((e) => String(e).trim().toLowerCase() === normalized);
 }
 
-/** Admin = allowlisted email OR Firestore document admins/{uid} exists. */
+/** Admin = signed-in user with allowlisted email (see firebase-config.js). */
 export async function isAdminUser(user) {
   if (!user) return false;
   if (globalThis.HAIBO_TRUST_AUTHENTICATED_USERS === true) return true;
-  if (isAdminEmail(user.email)) return true;
-
-  const db = getDb();
-  if (!db) return false;
-
-  try {
-    const coll = globalThis.FIRESTORE_ADMIN_COLLECTION || 'admins';
-    const snap = await getDoc(doc(db, coll, user.uid));
-    return snap.exists();
-  } catch (err) {
-    console.warn('[HAIBO Admin] could not read admins doc', err?.message);
-    return false;
-  }
+  return isAdminEmail(user.email);
 }
 
 export async function signInAdmin(email, password) {

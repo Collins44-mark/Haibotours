@@ -13,7 +13,7 @@ import {
 } from './firebase.js';
 
 const UNAUTHORIZED_MSG =
-  'Unauthorized. Add your email to HAIBO_ADMIN_EMAIL_ALLOWLIST in firebase-config.js, or create admins/YOUR_UID in Firestore.';
+  'Unauthorized. Add your email to HAIBO_ADMIN_EMAIL_ALLOWLIST in firebase-config.js.';
 
 const form = document.getElementById('login-form');
 const errEl = document.getElementById('login-error');

@@ -54,20 +54,6 @@ export async function dbSetDoc(coll, data, docId) {
   requireSignedInAdmin();
   const clean = sanitizeFirestoreData({ ...data, updatedAt: Date.now() });
   console.log('[HAIBO] Saving to Firestore', `${coll}/${id}`);
-  // #region agent log
-  fetch('http://127.0.0.1:7522/ingest/2f5036d2-b0da-4c2a-a7f2-17706d91dcab', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'ad576b' },
-    body: JSON.stringify({
-      sessionId: 'ad576b',
-      hypothesisId: 'C',
-      location: 'admin-db.mjs:dbSetDoc',
-      message: 'save start',
-      data: { coll, id, keys: Object.keys(clean || {}) },
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
-  // #endregion
   try {
     await withFirestore((database) =>
       Promise.race([
@@ -81,20 +67,6 @@ export async function dbSetDoc(coll, data, docId) {
       ])
     );
     console.log('[HAIBO] Firestore update successful', `${coll}/${id}`);
-    // #region agent log
-    fetch('http://127.0.0.1:7522/ingest/2f5036d2-b0da-4c2a-a7f2-17706d91dcab', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'ad576b' },
-      body: JSON.stringify({
-        sessionId: 'ad576b',
-        hypothesisId: 'C',
-        location: 'admin-db.mjs:dbSetDoc',
-        message: 'save ok',
-        data: { coll, id },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
   } catch (err) {
     console.error('[HAIBO] Firestore save failed', coll, id, err);
     throw err;

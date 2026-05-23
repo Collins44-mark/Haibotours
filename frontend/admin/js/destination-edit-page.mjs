@@ -1,8 +1,8 @@
 /**
  * Destination edit page — section nav, visual builders, save, autosave draft.
  */
-import { doc, onSnapshot } from '../../js/firebase-cdn.mjs';
-import { getDb, getAuth, signOutAdmin, LOGIN_URL } from './firebase.js';
+import { getAuth, signOutAdmin, LOGIN_URL } from './firebase.js';
+import { loadAdminCms } from './admin-cms.mjs';
 import { protectAdminPage } from './admin-gate.mjs';
 import { renderSidebar, initSidebar, userDisplayFromAuth } from './admin-layout.mjs';
 import {
@@ -397,17 +397,6 @@ async function loadData() {
   };
 }
 
-function subscribeLive() {
-  if (!editId) return;
-  const db = getDb();
-  const paths = globalThis.FIRESTORE_PATHS;
-  if (!db || !paths?.destinations) return;
-  onSnapshot(doc(db, paths.destinations, editId), (snap) => {
-    if (!snap.exists() || dirty || saving) return;
-    fillForm({ id: snap.id, ...snap.data() });
-  });
-}
-
 function nameInputSlugSync() {
   const name = document.querySelector('[name="name"]');
   const id = document.querySelector('[name="id"]');
@@ -441,14 +430,10 @@ async function bootPage(user) {
     bindUnsavedWarning(() => dirty);
     nameInputSlugSync();
 
+    await loadAdminCms();
     const data = await loadData();
     if (data) fillForm(data);
     watchDirty();
-    try {
-      subscribeLive();
-    } catch (err) {
-      console.warn('[HAIBO] live preview listener skipped', err);
-    }
     pageInitialized = true;
   } catch (err) {
     bootError = err;

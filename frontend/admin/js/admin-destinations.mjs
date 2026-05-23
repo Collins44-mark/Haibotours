@@ -1,17 +1,16 @@
 /**
- * Destination list + save helpers (shared dashboard & edit page).
+ * Destination list + save helpers — Cloudinary CMS only.
  */
-import { dbSetDoc, dbDeleteDoc, dbGetDocOptional, adminToast, slugify } from './admin-db.mjs';
-import { publishPublicCmsManifest } from './admin-cms-publish.mjs';
+import {
+  getAdminCms,
+  upsertDestinationInCms,
+  removeDestinationFromCms,
+  getDestinationFromCms,
+  listDestinationsForAdmin,
+  syncCmsToWebsite,
+} from './admin-cms.mjs';
+import { adminToast, slugify } from './admin-db.mjs';
 import { confirmDialog, formatRelativeTime, showToast } from './admin-ui.mjs';
-
-function firestorePaths() {
-  const paths = globalThis.FIRESTORE_PATHS;
-  if (!paths?.destinations) {
-    throw new Error('Firebase is not loaded. Refresh the page and try again.');
-  }
-  return paths;
-}
 
 export const DEST_EDIT_BASE = '/admin/destinations/edit.html';
 
@@ -26,18 +25,8 @@ export function getStaticDestinations() {
   );
 }
 
-export function mergeDestinationsForAdmin(firestoreRows) {
-  const staticList = getStaticDestinations();
-  if (!firestoreRows?.length) {
-    return staticList.map((d, i) => ({ ...d, order: i, _source: 'static', updatedAt: null }));
-  }
-  const byId = new Map(firestoreRows.map((d) => [d.id, { ...d, _source: 'firestore' }]));
-  staticList.forEach((d, i) => {
-    if (!byId.has(d.id)) {
-      byId.set(d.id, { ...d, order: 500 + i, _source: 'static', updatedAt: null });
-    }
-  });
-  return [...byId.values()].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+export function mergeDestinationsForAdmin() {
+  return listDestinationsForAdmin().map((d) => ({ ...d, _source: 'cms' }));
 }
 
 export function collectDestinationPayload(form, builders) {
@@ -80,32 +69,20 @@ export async function saveDestinationRecord(payload) {
   if (!payload.name) throw new Error('Destination name is required');
 
   const { _source, ...rest } = payload;
-  const row = {
+  const row = upsertDestinationInCms({
     ...rest,
     id: String(rest.id).trim(),
-    slug: String(rest.id).trim(),
     active: rest.active !== false,
     published: rest.active !== false,
-    updatedAt: Date.now(),
-    _fromFirestore: true,
-  };
-
-  console.log('[HAIBO] Saving destination', row.id);
-  await dbSetDoc(firestorePaths().destinations, row, row.id);
-  console.log('[HAIBO] Firestore update successful', row.id);
-  void publishPublicCmsManifest({ silent: true }).catch((err) => {
-    console.warn('[HAIBO] Public manifest publish failed', err?.message || err);
   });
+
+  await syncCmsToWebsite({ quiet: true });
   return row;
 }
 
 export async function loadDestinationById(id) {
-  const paths = globalThis.FIRESTORE_PATHS;
-  let fromDb = null;
-  if (paths?.destinations) {
-    fromDb = await dbGetDocOptional(paths.destinations, id);
-  }
-  if (fromDb) return { ...fromDb, id, _source: 'firestore' };
+  const fromCms = getDestinationFromCms(id);
+  if (fromCms) return { ...fromCms, id, _source: 'cms' };
   const stat = getStaticDestinations().find((d) => d.id === id);
   return stat ? { ...stat, _source: 'static' } : null;
 }
@@ -137,9 +114,8 @@ export function renderDestinationsList(el, destinations, { onRefresh }) {
     );
   }
   if (region) list = list.filter((d) => d.region === region);
-  if (status === 'published') list = list.filter((d) => d.active !== false && d._source === 'firestore');
+  if (status === 'published') list = list.filter((d) => d.active !== false);
   if (status === 'draft') list = list.filter((d) => d.active === false);
-  if (status === 'default') list = list.filter((d) => d._source === 'static');
 
   if (sort === 'name') list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   else if (sort === 'updated') list.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
@@ -147,7 +123,7 @@ export function renderDestinationsList(el, destinations, { onRefresh }) {
 
   if (!list.length) {
     el.innerHTML = `<div class="admin-empty">
-      <p>No destinations match your filters.</p>
+      <p>No destinations yet.</p>
       <button type="button" class="admin-btn admin-btn--primary" data-new-dest>Add destination</button>
     </div>`;
     el.querySelector('[data-new-dest]')?.addEventListener('click', () => {
@@ -158,12 +134,10 @@ export function renderDestinationsList(el, destinations, { onRefresh }) {
 
   el.innerHTML = `<div class="admin-dest-grid">${list
     .map((d) => {
-      const published = d._source === 'firestore' && d.active !== false;
+      const published = d.active !== false;
       const badge = published
-        ? '<span class="admin-badge admin-badge--success">Published</span>'
-        : d._source === 'static'
-          ? '<span class="admin-badge admin-badge--muted">Default</span>'
-          : '<span class="admin-badge admin-badge--warn">Draft</span>';
+        ? '<span class="admin-badge admin-badge--success">Live</span>'
+        : '<span class="admin-badge admin-badge--warn">Draft</span>';
       const img = d.image || d.heroImage || '';
       return `
       <article class="admin-dest-card" data-dest-id="${escapeHtml(d.id)}">
@@ -180,11 +154,7 @@ export function renderDestinationsList(el, destinations, { onRefresh }) {
         </div>
         <div class="admin-dest-card__actions">
           <a href="${destinationEditUrl(d.id)}" class="admin-btn admin-btn--primary admin-btn--sm">Edit</a>
-          ${
-            d._source === 'firestore'
-              ? `<button type="button" class="admin-btn admin-btn--ghost admin-btn--sm" data-del-dest="${escapeHtml(d.id)}">Delete</button>`
-              : ''
-          }
+          <button type="button" class="admin-btn admin-btn--ghost admin-btn--sm" data-del-dest="${escapeHtml(d.id)}">Delete</button>
         </div>
       </article>`;
     })
@@ -195,14 +165,15 @@ export function renderDestinationsList(el, destinations, { onRefresh }) {
       const id = btn.dataset.delDest;
       const ok = await confirmDialog({
         title: 'Delete destination?',
-        message: `Remove "${id}" from the live website. This cannot be undone.`,
+        message: `Remove "${id}" from the live website.`,
         confirmLabel: 'Delete',
         danger: true,
       });
       if (!ok) return;
       btn.disabled = true;
       try {
-        await dbDeleteDoc(firestorePaths().destinations, id);
+        removeDestinationFromCms(id);
+        await syncCmsToWebsite({ quiet: true });
         showToast('Destination deleted', 'success');
         onRefresh?.();
       } catch (err) {

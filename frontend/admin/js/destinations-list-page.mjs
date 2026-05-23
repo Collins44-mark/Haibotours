@@ -1,13 +1,20 @@
 /**
  * Destinations list page — mockup layout.
  */
-import { collection, onSnapshot } from '../../js/firebase-cdn.mjs';
-import { getDb } from './firebase.js';
 import { protectAdminPage } from './admin-gate.mjs';
 import { renderSidebar, initSidebar, userDisplayFromAuth, closeAllMenus } from './admin-layout.mjs';
-import { mergeDestinationsForAdmin, destinationEditUrl } from './admin-destinations.mjs';
+import {
+  mergeDestinationsForAdmin,
+  destinationEditUrl,
+} from './admin-destinations.mjs';
+import {
+  loadAdminCms,
+  removeDestinationFromCms,
+  upsertDestinationInCms,
+  syncCmsToWebsite,
+} from './admin-cms.mjs';
 import { confirmDialog, formatRelativeTime } from './admin-ui.mjs';
-import { dbDeleteDoc, dbSetDoc, adminToast } from './admin-db.mjs';
+import { adminToast } from './admin-db.mjs';
 import { signOutAdmin, LOGIN_URL } from './firebase.js';
 
 const PAGE_SIZE = 5;
@@ -39,7 +46,7 @@ function getFiltered() {
     );
   }
   if (region) list = list.filter((d) => d.region === region);
-  if (status === 'published') list = list.filter((d) => d._source === 'firestore' && d.active !== false);
+  if (status === 'published') list = list.filter((d) => d.active !== false);
   if (status === 'draft') list = list.filter((d) => d.active === false);
 
   if (sort === 'name') list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
@@ -72,7 +79,7 @@ function renderList() {
 
   listEl.innerHTML = slice
     .map((d) => {
-      const published = d._source === 'firestore' && d.active !== false;
+      const published = d.active !== false;
       const badge = published
         ? '<span class="haibo-badge haibo-badge--published">Published</span>'
         : '<span class="haibo-badge haibo-badge--draft">Draft</span>';
@@ -100,7 +107,7 @@ function renderList() {
               <a href="${destinationEditUrl(d.id)}">✎ Edit</a>
               <button type="button" data-action="duplicate" data-id="${escapeHtml(d.id)}">⧉ Duplicate</button>
               <a href="${viewDestinationUrl(d.id)}" target="_blank" rel="noopener">↗ View</a>
-              ${d._source === 'firestore' ? `<button type="button" data-action="delete" data-id="${escapeHtml(d.id)}">🗑 Delete</button>` : ''}
+              <button type="button" data-action="delete" data-id="${escapeHtml(d.id)}">🗑 Delete</button>
             </div>
           </div>
         </div>
@@ -127,7 +134,10 @@ function renderList() {
         danger: true,
       });
       if (!ok) return;
-      await dbDeleteDoc(globalThis.FIRESTORE_PATHS.destinations, btn.dataset.id);
+      removeDestinationFromCms(btn.dataset.id);
+      await syncCmsToWebsite({ quiet: true });
+      allDestinations = mergeDestinationsForAdmin();
+      renderList();
       showToast('Destination deleted', 'success');
     });
   });
@@ -140,7 +150,8 @@ function renderList() {
       const newId = `${src.id}-copy-${Date.now().toString(36).slice(-4)}`;
       const copy = { ...src, id: newId, name: `${src.name} (Copy)`, active: false };
       delete copy._source;
-      await dbSetDoc(globalThis.FIRESTORE_PATHS.destinations, copy, newId);
+      upsertDestinationInCms(copy);
+      await syncCmsToWebsite({ quiet: true });
       showToast('Destination duplicated', 'success');
       window.location.href = destinationEditUrl(newId);
     });
@@ -191,19 +202,11 @@ function bindFilters() {
   });
 }
 
-function subscribeDestinations() {
-  const db = getDb();
-  if (!db) return;
-  onSnapshot(
-    collection(db, globalThis.FIRESTORE_PATHS.destinations),
-    (snap) => {
-      const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      allDestinations = mergeDestinationsForAdmin(items);
-      fillRegionFilter();
-      renderList();
-    },
-    (err) => console.warn('[HAIBO] destinations listener', err)
-  );
+async function loadDestinationsList() {
+  await loadAdminCms();
+  allDestinations = mergeDestinationsForAdmin();
+  fillRegionFilter();
+  renderList();
 }
 
 async function boot(user) {
@@ -225,17 +228,12 @@ async function boot(user) {
     const { seedAllDefaults } = await import('./admin-app.mjs');
     await seedAllDefaults();
   });
-  document.getElementById('btn-publish-website')?.addEventListener('click', async () => {
-    const { publishPublicCmsManifest } = await import('./admin-cms-publish.mjs');
-    await publishPublicCmsManifest();
-  });
-
   document.getElementById('btn-menu-mobile')?.addEventListener('click', () => {
     document.getElementById('haibo-sidebar')?.classList.toggle('is-open');
   });
 
   bindFilters();
-  subscribeDestinations();
+  await loadDestinationsList();
 }
 
 protectAdminPage((user) => boot(user));

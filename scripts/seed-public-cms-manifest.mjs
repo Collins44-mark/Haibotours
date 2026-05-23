@@ -14,11 +14,7 @@ const end = raw.indexOf('];\n\n/** Admin seed');
 if (end < 0) throw new Error('Could not parse destinations-data.js');
 const destinations = new Function(`${raw.slice(0, end + 2)}\nreturn DESTINATIONS;`)();
 
-const cfg = {
-  cloudName: 'dae3rpnmg',
-  uploadPreset: 'ml_default',
-  baseFolder: 'haibo',
-};
+import { uploadSiteCms } from '../frontend/js/cms-cloudinary.mjs';
 
 const manifest = {
   version: 1,
@@ -46,20 +42,11 @@ const manifest = {
   },
 };
 
-const publicId = `${cfg.baseFolder}/cms/site-manifest`;
-const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
-const form = new FormData();
-form.append('file', blob, 'public-content.json');
-form.append('upload_preset', cfg.uploadPreset);
-form.append('public_id', publicId);
+globalThis.CLOUDINARY_CONFIG = {
+  cloudName: 'dae3rpnmg',
+  uploadPreset: 'ml_default',
+  baseFolder: 'haibo',
+};
 
-const res = await fetch(`https://api.cloudinary.com/v1_1/${cfg.cloudName}/raw/upload`, {
-  method: 'POST',
-  body: form,
-});
-const body = await res.json();
-if (!res.ok) {
-  console.error('Upload failed:', body.error?.message || body);
-  process.exit(1);
-}
-console.log('OK: Published', destinations.length, 'destinations to', body.secure_url);
+const saved = await uploadSiteCms(manifest);
+console.log('OK: Published', saved.destinations.length, 'destinations (updatedAt', saved.updatedAt, ')');
