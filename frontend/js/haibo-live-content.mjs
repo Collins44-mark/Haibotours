@@ -17,7 +17,12 @@ export function haiboNormalizeFirestoreDestination(doc) {
     imageUrl: cardImage,
     cardImage,
     heroImage,
-    gallery: Array.isArray(doc.gallery) ? doc.gallery : [],
+    gallery:
+      typeof haiboNormalizeDestinationGallery === 'function'
+        ? haiboNormalizeDestinationGallery(doc.gallery)
+        : Array.isArray(doc.gallery)
+          ? doc.gallery
+          : [],
     packages: Array.isArray(doc.packages) ? doc.packages : [],
     highlights: Array.isArray(doc.highlights) ? doc.highlights : [],
     experience: doc.experience && typeof doc.experience === 'object' ? doc.experience : {},

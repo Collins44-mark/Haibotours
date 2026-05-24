@@ -56,7 +56,6 @@ export function collectDestinationPayload(form, builders) {
       slugify(form.querySelector('[name="name"]')?.value)
     ).trim()
   );
-  const galleryRaw = form.querySelector('[name="galleryUrls"]')?.value || '';
   const published = form.querySelector('[name="active"]')?.checked !== false;
   return {
     id,
@@ -73,10 +72,7 @@ export function collectDestinationPayload(form, builders) {
     description: form.querySelector('[name="description"]')?.value?.trim() || '',
     bestTime: form.querySelector('[name="bestTime"]')?.value?.trim() || '',
     highlights: builders.highlights?.getValues?.() ?? [],
-    gallery: galleryRaw
-      .split('\n')
-      .map((s) => s.trim())
-      .filter(Boolean),
+    gallery: builders.gallery?.getValues?.() ?? [],
     packages: builders.packages?.getValues?.() ?? [],
     experience: builders.experience?.getValues?.() ?? {},
     active: published,

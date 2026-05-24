@@ -1,0 +1,154 @@
+/* Destination gallery manager — admin edit page */
+
+.dest-gallery-admin__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.dest-gallery-admin__count {
+  font-size: 0.8125rem;
+  color: #9ca3af;
+}
+
+.dest-gallery-admin__progress {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+}
+
+.dest-gallery-admin__progress-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #d98b2b, #ffb347);
+  transition: width 0.2s ease;
+}
+
+.dest-gallery-admin__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
+  gap: 0.75rem;
+}
+
+.dest-gallery-admin__upload-tile {
+  aspect-ratio: 3 / 4;
+  border: 2px dashed rgba(217, 139, 43, 0.45);
+  border-radius: 0.75rem;
+  background: rgba(217, 139, 43, 0.06);
+  color: #d98b2b;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.25s ease, background 0.25s ease;
+}
+
+.dest-gallery-admin__upload-tile:hover {
+  border-color: rgba(217, 139, 43, 0.75);
+  background: rgba(217, 139, 43, 0.12);
+}
+
+.dest-gallery-admin__upload-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.dest-gallery-admin__card {
+  position: relative;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #1a1a1a;
+  cursor: grab;
+}
+
+.dest-gallery-admin__card.is-dragging {
+  opacity: 0.55;
+  cursor: grabbing;
+}
+
+.dest-gallery-admin__thumb {
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  background: #0d0d0d;
+}
+
+.dest-gallery-admin__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.dest-gallery-admin__actions {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  display: flex;
+  gap: 0.25rem;
+  z-index: 2;
+}
+
+.dest-gallery-admin__btn {
+  width: 1.65rem;
+  height: 1.65rem;
+  border: none;
+  border-radius: 0.4rem;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  font-size: 0.75rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(6px);
+}
+
+.dest-gallery-admin__btn:hover {
+  background: rgba(217, 139, 43, 0.85);
+  color: #111;
+}
+
+.dest-gallery-admin__btn--danger:hover {
+  background: rgba(220, 38, 38, 0.9);
+  color: #fff;
+}
+
+.dest-gallery-admin__alt {
+  width: 100%;
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.6875rem;
+  background: rgba(0, 0, 0, 0.35);
+  color: #e5e7eb;
+}
+
+.dest-gallery-admin__hint {
+  margin: 0.75rem 0 0;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  line-height: 1.45;
+}
+
+.dest-gallery-admin.is-uploading {
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+@media (max-width: 767px) {
+  .dest-gallery-admin__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+  }
+}

@@ -15,6 +15,7 @@ import {
   saveDestinationRecord,
   collectDestinationPayload,
 } from './admin-destinations.mjs';
+import { initDestinationGallery, normalizeGalleryItems } from './admin-destination-gallery.mjs';
 import { createUploadZone } from './admin-cloudinary.mjs';
 import { adminToast, slugify } from './admin-db.mjs';
 import { bindUnsavedWarning } from './admin-ui.mjs';
@@ -29,7 +30,7 @@ const emptyBuilders = {
 let dirty = false;
 let saving = false;
 let pageInitialized = false;
-let builders = { ...emptyBuilders };
+let builders = { ...emptyBuilders, gallery: { getValues: () => [] } };
 const editId = new URLSearchParams(location.search).get('id')?.trim() || '';
 
 function showToast(msg, type) {
@@ -262,8 +263,37 @@ function bindImages() {
   bindUpload('dest-hero-upload', 'heroImage');
 }
 
+async function persistGalleryOnly() {
+  const form = document.getElementById('form-edit');
+  if (!form) return;
+  const payload = collectDestinationPayload(form, builders);
+  if (!payload.id?.trim() || !payload.name?.trim()) return;
+  await saveDestinationRecord(payload);
+  dirty = false;
+  setAutosave('Gallery published', true);
+}
+
+function bindGallery(data) {
+  const root = document.getElementById('dest-gallery-root');
+  if (!root) return;
+  const canPersist = () => Boolean(editId || formHasSlug());
+  builders.gallery = initDestinationGallery(root, {
+    initial: normalizeGalleryItems(data.gallery),
+    destName: data.name || '',
+    onChange: markDirty,
+    canPersist,
+    onPersist: persistGalleryOnly,
+  });
+}
+
+function formHasSlug() {
+  const id = document.querySelector('[name="id"]')?.value?.trim();
+  const name = document.querySelector('[name="name"]')?.value?.trim();
+  return Boolean(slugify(id || name || ''));
+}
+
 function bindBuilders(data) {
-  builders = { ...emptyBuilders };
+  builders = { ...emptyBuilders, gallery: { getValues: () => [] } };
   const hRoot = document.getElementById('highlights-root');
   const packagesPanel = document.querySelector('[data-panel="packages"]');
   const eRoot = document.querySelector('[data-panel="experiences"]');
@@ -341,8 +371,7 @@ function fillForm(data) {
   if (order) order.value = data.order ?? 0;
   const active = form.querySelector('[name="active"]');
   if (active) active.checked = data.active !== false;
-  const gallery = form.querySelector('[name="galleryUrls"]');
-  if (gallery) gallery.value = (data.gallery || []).join('\n');
+  bindGallery(data);
 
   setImagePreview('image', data.image || '');
   setImagePreview('heroImage', data.heroImage || data.image || '');

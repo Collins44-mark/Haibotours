@@ -432,6 +432,57 @@ function shortenFeatureLabel(text, max = 22) {
 }
 
 /** Premium package card — matches 2-col mobile reference (caption on image). */
+function getDestinationGalleryImageUrl(item, dest, index, staticD, fromCms) {
+  if (typeof haiboResolveGalleryImage === 'function') {
+    const resolved = haiboResolveGalleryImage(item, dest, index);
+    if (resolved) return resolved;
+  }
+  const raw = typeof item === 'string' ? item : item?.url || '';
+  if (fromCms && typeof haiboValidMediaUrl === 'function' && haiboValidMediaUrl(raw)) {
+    return raw;
+  }
+  if (typeof haiboIsAdminUploadedUrl === 'function' && haiboIsAdminUploadedUrl(raw)) {
+    return raw;
+  }
+  const staticItem = staticD?.gallery?.[index];
+  const staticUrl =
+    typeof staticItem === 'string' ? staticItem : staticItem?.url || staticItem?.src || '';
+  return staticUrl || raw;
+}
+
+function renderDestinationGalleryCard(item, dest, index, staticD, fromCms) {
+  const imgSrcRaw = getDestinationGalleryImageUrl(item, dest, index, staticD, fromCms);
+  if (!imgSrcRaw) return '';
+  const imgSrc =
+    typeof window.haiboOptimizeImage === 'function'
+      ? window.haiboOptimizeImage(imgSrcRaw, { width: 720 })
+      : imgSrcRaw;
+  const alt =
+    (typeof item === 'object' && item?.alt) ||
+    `${dest.name} safari photo ${index + 1} — Tanzania`;
+  const tag = dest.region || 'Safari';
+  const title = dest.name || 'Safari';
+  const imgTag =
+    typeof window.haiboImgTag === 'function'
+      ? window.haiboImgTag(imgSrc, alt, {
+          width: 720,
+          class: 'gallery-media-card__img',
+        })
+      : `<img src="${escapeAttrUrl(imgSrc)}" alt="${escapeHtml(alt)}" class="gallery-media-card__img" loading="lazy" decoding="async" width="480" height="640" />`;
+
+  return `
+    <article class="gallery-media-card dest-gallery-card">
+      <div class="gallery-media-card__media">
+        ${imgTag}
+        <div class="gallery-media-card__overlay" aria-hidden="true"></div>
+        <div class="gallery-media-card__body">
+          <p class="gallery-media-card__tag">${escapeHtml(tag)}</p>
+          <h3 class="gallery-media-card__title">${escapeHtml(title)}</h3>
+        </div>
+      </div>
+    </article>`;
+}
+
 function renderPackageCard(pkg, dest) {
   const imgRaw =
     dest.cardImage ||
@@ -653,29 +704,18 @@ function renderDestinationDetail() {
         .join('')
     : '';
 
-  const galleryList = gallery.map((src, i) => {
-    if (typeof haiboResolveGalleryImage === 'function') {
-      return haiboResolveGalleryImage(src, dest, i);
-    }
-    const staticSrc = staticD?.gallery?.[i];
-    if (fromCms && typeof haiboValidMediaUrl === 'function' && haiboValidMediaUrl(src)) {
-      return src;
-    }
-    if (typeof haiboIsAdminUploadedUrl === 'function' && haiboIsAdminUploadedUrl(src)) {
-      return src;
-    }
-    return staticSrc || src;
-  });
+  const galleryItems =
+    typeof haiboNormalizeDestinationGallery === 'function'
+      ? haiboNormalizeDestinationGallery(gallery)
+      : (gallery || []).map((url, i) => ({
+          url: typeof url === 'string' ? url : url?.url || '',
+          alt: '',
+          order: i,
+        }));
 
-  const galleryHtml = galleryList
-    .map((imgSrc, i) => {
-      const alt = `${dest.name} safari photo ${i + 1} — Tanzania`;
-      const cls = `haibo-media gallery-item rounded-[24px] object-cover w-full ${i === 0 ? 'md:col-span-2 md:row-span-2 h-[280px] md:h-full min-h-[280px]' : 'h-[220px] md:h-[240px]'}`;
-      if (typeof window.haiboImgTag === 'function') {
-        return window.haiboImgTag(imgSrc, alt, { width: i === 0 ? 1200 : 800, class: cls });
-      }
-      return `<img src="${imgSrc}" alt="${alt}" loading="lazy" decoding="async" class="${cls}">`;
-    })
+  const galleryHtml = galleryItems
+    .map((item, i) => renderDestinationGalleryCard(item, dest, i, staticD, fromCms))
+    .filter(Boolean)
     .join('');
 
   const highlightsHtml = highlights
@@ -718,7 +758,7 @@ function renderDestinationDetail() {
         <div>
           <p class="orange uppercase tracking-[5px] mb-3 text-center lg:text-left">Photo Gallery</p>
           <h2 class="section-title mb-8 text-center lg:text-left">Visual Journey</h2>
-          <div class="gallery grid grid-cols-2 gap-4">${galleryHtml}</div>
+          <div class="dest-gallery-grid gallery-grid-photos">${galleryHtml || '<p class="text-gray-500 text-sm">Gallery photos coming soon.</p>'}</div>
         </div>
       </div>
     </section>

@@ -154,8 +154,33 @@ function haiboResolveHeroImage(dest) {
   return haiboCacheBustUrl(pick, dest.updatedAt || Date.now());
 }
 
+/** Normalize destination gallery: strings or { url, alt, order } objects. */
+function haiboNormalizeDestinationGallery(gallery) {
+  if (!Array.isArray(gallery)) return [];
+  const items = gallery
+    .map((item, i) => {
+      if (typeof item === 'string') {
+        const url = item.trim();
+        if (!url) return null;
+        return { url, alt: '', order: i };
+      }
+      const url = String(item?.url || item?.src || '').trim();
+      if (!url) return null;
+      return {
+        url,
+        alt: String(item?.alt || item?.title || '').trim(),
+        order: Number.isFinite(Number(item?.order)) ? Number(item.order) : i,
+      };
+    })
+    .filter(Boolean);
+  items.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  return items.map((it, idx) => ({ ...it, order: idx }));
+}
+
 /** Gallery item URL (Firestore URLs only). */
-function haiboResolveGalleryImage(src, dest, index) {
+function haiboResolveGalleryImage(item, dest, index) {
+  const src =
+    typeof item === 'string' ? item : String(item?.url || item?.src || '').trim();
   if (!haiboValidMediaUrl(src)) return '';
   return haiboCacheBustUrl(src, (dest?.updatedAt || 0) + index);
 }
@@ -206,6 +231,7 @@ function haiboMergeDestination(live, staticDest) {
     merged.gallery = liveGallery;
   }
   delete merged.galleryImages;
+  merged.gallery = haiboNormalizeDestinationGallery(merged.gallery);
 
   if (live && Array.isArray(live.highlights)) {
     merged.highlights = live.highlights;
@@ -428,6 +454,7 @@ window.haiboPickDestinationImage = haiboPickDestinationImage;
 window.haiboResolveCardImage = haiboResolveCardImage;
 window.haiboResolveHeroImage = haiboResolveHeroImage;
 window.haiboResolveGalleryImage = haiboResolveGalleryImage;
+window.haiboNormalizeDestinationGallery = haiboNormalizeDestinationGallery;
 window.haiboCacheBustUrl = haiboCacheBustUrl;
 window.haiboIsCmsLive = haiboIsCmsLive;
 window.haiboNormalizeDestId = haiboNormalizeDestId;

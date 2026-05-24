@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="/admin/css/admin-saas.css">
   <link rel="stylesheet" href="/admin/css/admin.css">
   <link rel="stylesheet" href="/admin/css/admin-mobile.css">
+  <link rel="stylesheet" href="/admin/css/admin-destination-gallery.css">
 </head>
 <body class="admin-cms-page auth-loading">
   <div id="admin-auth-loading" class="admin-auth-loading" aria-live="polite" aria-busy="true">
@@ -43,6 +44,7 @@
           <nav class="haibo-section-nav" id="section-nav" aria-label="Form sections">
             <button type="button" data-section="general" class="is-active">General Info</button>
             <button type="button" data-section="images">Images</button>
+            <button type="button" data-section="gallery">Gallery</button>
             <button type="button" data-section="highlights">Highlights</button>
             <button type="button" data-section="packages">Packages</button>
             <button type="button" data-section="experiences">Experiences</button>
@@ -129,10 +131,12 @@
                   <input type="hidden" name="heroImage" />
                 </div>
               </div>
-              <div class="haibo-field" style="margin-top:1.25rem">
-                <label>Gallery image URLs (one per line)</label>
-                <textarea class="haibo-input" name="galleryUrls" rows="4" style="width:100%"></textarea>
-              </div>
+            </section>
+
+            <section class="haibo-form-panel" data-panel="gallery" hidden>
+              <h2>Destination Gallery</h2>
+              <p style="color:#9ca3af;font-size:0.875rem;margin:0 0 1rem">Photos shown on the public destination page. Upload, reorder, and replace — no manual URLs.</p>
+              <div id="dest-gallery-root" data-dest-gallery-root></div>
             </section>
 
             <section class="haibo-form-panel" data-panel="highlights" hidden>
@@ -193,6 +197,6 @@
   <script src="/js/firebase-config.js"></script>
   <script src="/js/destinations-data.js"></script>
   <script src="/js/haibo-defaults.js"></script>
-  <script type="module" src="/admin/js/destination-edit-page.mjs?v=10"></script>
+  <script type="module" src="/admin/js/destination-edit-page.mjs?v=11"></script>
 </body>
 </html>
