@@ -2,6 +2,7 @@
  * Live website content — loads from Cloudinary CMS JSON, refreshes on a timer.
  */
 import { fetchSiteCms } from './cms-cloudinary.mjs';
+import { watchCmsPointer } from './cms-pointer.mjs';
 import { haiboDestinationsFromFirestoreDocs } from './haibo-live-content.mjs';
 
 const POLL_MS = 15000;
@@ -23,6 +24,7 @@ window.HAIBO_CONTENT_LOADED = false;
 
 let lastCmsUpdatedAt = 0;
 let pollTimer = null;
+let pointerUnsub = null;
 
 function applyDestinations() {
   const list = Array.isArray(window.HAIBO_CONTENT?.destinations)
@@ -149,16 +151,30 @@ function startPolling() {
   pollTimer = setInterval(() => void refreshFromCloudinary(), POLL_MS);
 }
 
+function startCmsPointerListener() {
+  if (pointerUnsub) return;
+  pointerUnsub = watchCmsPointer((meta) => {
+    const ts = meta.updatedAt || 0;
+    if (ts <= lastCmsUpdatedAt && window.HAIBO_CONTENT_LOADED) return;
+    void refreshFromCloudinary();
+  });
+}
+
 export async function initHaiboContentRealtime() {
   document.body.classList.add('haibo-content-loading');
   await refreshFromCloudinary();
   startPolling();
+  startCmsPointerListener();
 }
 
 export function teardownHaiboContentRealtime() {
   if (pollTimer) {
     clearInterval(pollTimer);
     pollTimer = null;
+  }
+  if (pointerUnsub) {
+    pointerUnsub();
+    pointerUnsub = null;
   }
 }
 

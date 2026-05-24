@@ -1,6 +1,7 @@
 /**
- * Site CMS — JSON on Cloudinary. Saves publish to shared slots so every device sees updates.
+ * Site CMS — JSON on Cloudinary + Firestore pointer (all devices read the same URL).
  */
+import { fetchCmsPointer, publishCmsPointer } from './cms-pointer.mjs';
 
 function cfg() {
   return globalThis.CLOUDINARY_CONFIG || {};
@@ -113,8 +114,14 @@ export async function fetchRecentMinuteSlotCms() {
   return (await Promise.all(fetches)).filter(isCmsDocument);
 }
 
-/** Load CMS — API + shared slots first (all devices), then cookie, then manifest. */
+/** Load CMS — global Firestore pointer first, then API, slots, cookie, manifest. */
 export async function fetchSiteCms() {
+  const pointer = await fetchCmsPointer();
+  if (pointer?.deliveryUrl) {
+    const fromPointer = await fetchJsonUrl(pointer.deliveryUrl);
+    if (isCmsDocument(fromPointer)) return fromPointer;
+  }
+
   try {
     const apiRes = await fetch('/api/site-cms', { cache: 'no-store' });
     if (apiRes.ok) {
@@ -187,7 +194,7 @@ export async function uploadSiteCms(doc) {
     });
     if (apiRes.ok) {
       const saved = await apiRes.json();
-      if (saved._deliveryUrl) setLatestCmsDeliveryUrl(saved._deliveryUrl);
+      await rememberDelivery(saved._deliveryUrl, saved.updatedAt);
       return saved;
     }
   } catch {
@@ -200,6 +207,11 @@ export async function uploadSiteCms(doc) {
     throw new Error('Upload succeeded but no URL was returned.');
   }
 
-  setLatestCmsDeliveryUrl(deliveryUrl);
+  await rememberDelivery(deliveryUrl, payload.updatedAt);
   return { ...payload, _deliveryUrl: deliveryUrl };
+}
+
+function rememberDelivery(deliveryUrl, updatedAt) {
+  if (deliveryUrl) setLatestCmsDeliveryUrl(deliveryUrl);
+  return publishCmsPointer({ deliveryUrl, updatedAt });
 }

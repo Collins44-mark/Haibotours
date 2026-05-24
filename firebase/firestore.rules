@@ -39,6 +39,13 @@ service cloud.firestore {
       allow list: if false;
     }
 
+    // Global CMS pointer — public read (which Cloudinary JSON is live), admin write on save
+    match /cmsMeta/{document} {
+      allow read: if true;
+      allow create, update: if isAdmin();
+      allow delete: if false;
+    }
+
     // Public CMS read + backup: own admins/{uid} readable when signed in
     match /{collection}/{document} {
       allow read: if isContentCollection(collection)

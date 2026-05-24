@@ -30,7 +30,13 @@ Add environment variables on Vercel for project **haibo-tours** site:
 
 Then `/api/site-cms` can list the newest `haibo/cms/m-*` backup for all visitors (not only the browser that saved).
 
-Without API keys, saves still sync to **minute buckets** (`haibo/cms/v-*`) so phones and laptops see the same content within about a minute.
+Without API keys, saves still sync to **minute buckets** (`haibo/cms/v-*`) as a fallback.
+
+## Cross-device sync (required once)
+
+Publish `firebase/firestore.rules` (includes **`cmsMeta`** — public read, admin write).
+
+When you save in admin, the app writes **`cmsMeta/live`** with the latest Cloudinary JSON URL. Every phone and laptop reads that pointer (live listener + polling).
 
 ## First-time content
 
