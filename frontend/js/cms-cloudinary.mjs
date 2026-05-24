@@ -1,5 +1,5 @@
 /**
- * Site CMS — one JSON file on Cloudinary. Admin save → new URL in cookie → website reads it.
+ * Site CMS — JSON on Cloudinary. Saves publish to shared slots so every device sees updates.
  */
 
 function cfg() {
@@ -8,6 +8,8 @@ function cfg() {
 
 const MANIFEST_ID = 'haibo/cms/site-manifest';
 const COOKIE_NAME = 'haibo_cms_delivery';
+const MINUTE_BUCKETS = 30;
+const MINUTES_PER_DAY = 1440;
 
 export function emptyCmsDocument() {
   return {
@@ -75,7 +77,7 @@ async function fetchByPublicId(publicId) {
   return fetchJsonUrl(manifestUrl(publicId));
 }
 
-function isCmsDocument(doc) {
+export function isCmsDocument(doc) {
   if (!doc || typeof doc !== 'object' || doc.error) return false;
   return (
     doc.version != null ||
@@ -89,22 +91,48 @@ function isCmsDocument(doc) {
   );
 }
 
-/** Load CMS for the public website (newest delivery URL, then fallback manifest). */
-export async function fetchSiteCms() {
-  const direct = getLatestCmsDeliveryUrl();
-  if (direct) {
-    const doc = await fetchJsonUrl(direct);
-    if (isCmsDocument(doc)) return doc;
+export function pickNewestCms(docs) {
+  let best = null;
+  for (const doc of docs) {
+    if (!isCmsDocument(doc)) continue;
+    if (!best || (doc.updatedAt || 0) > (best.updatedAt || 0)) {
+      best = doc;
+    }
   }
+  return best;
+}
 
+/** Probe recent minute buckets (works on all devices without cookies). */
+export async function fetchRecentMinuteSlotCms() {
+  const nowMin = Math.floor(Date.now() / 60000);
+  const fetches = [];
+  for (let i = 0; i < MINUTE_BUCKETS; i++) {
+    const slot = ((nowMin - i) % MINUTES_PER_DAY + MINUTES_PER_DAY) % MINUTES_PER_DAY;
+    fetches.push(fetchByPublicId(`haibo/cms/v-${slot}`));
+  }
+  return (await Promise.all(fetches)).filter(isCmsDocument);
+}
+
+/** Load CMS — API + shared slots first (all devices), then cookie, then manifest. */
+export async function fetchSiteCms() {
   try {
-    const apiRes = await fetch('/api/site-cms', { cache: 'no-store', credentials: 'include' });
+    const apiRes = await fetch('/api/site-cms', { cache: 'no-store' });
     if (apiRes.ok) {
       const doc = await apiRes.json();
       if (isCmsDocument(doc)) return doc;
     }
   } catch {
-    /* no API on static host */
+    /* static host without API */
+  }
+
+  const slotDocs = await fetchRecentMinuteSlotCms();
+  const fromSlots = pickNewestCms(slotDocs);
+  if (fromSlots) return fromSlots;
+
+  const direct = getLatestCmsDeliveryUrl();
+  if (direct) {
+    const doc = await fetchJsonUrl(direct);
+    if (isCmsDocument(doc)) return doc;
   }
 
   const manifest = await fetchByPublicId(MANIFEST_ID);
@@ -134,6 +162,18 @@ async function unsignedUpload(payload, publicId) {
   return body;
 }
 
+/** Publish CMS for every visitor (timestamped backup + current minute slot). */
+async function publishToSharedSlots(payload) {
+  const minuteSlot = Math.floor(Date.now() / 60000) % MINUTES_PER_DAY;
+  const backup = await unsignedUpload(payload, `cms/m-${Date.now()}`);
+  try {
+    await unsignedUpload(payload, `cms/v-${minuteSlot}`);
+  } catch {
+    /* same-minute slot may already exist — backup still has the save */
+  }
+  return backup;
+}
+
 /** Save CMS and remember the Cloudinary URL so the website can load it. */
 export async function uploadSiteCms(doc) {
   const payload = { ...doc, version: 1, updatedAt: Date.now() };
@@ -154,7 +194,7 @@ export async function uploadSiteCms(doc) {
     /* fall through */
   }
 
-  const body = await unsignedUpload(payload, `cms/m-${Date.now()}`);
+  const body = await publishToSharedSlots(payload);
   const deliveryUrl = body.secure_url;
   if (!deliveryUrl) {
     throw new Error('Upload succeeded but no URL was returned.');

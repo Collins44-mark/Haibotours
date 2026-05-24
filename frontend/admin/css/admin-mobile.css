@@ -1,0 +1,366 @@
+/**
+ * HAIBO Admin — mobile / tablet layout (dashboard + destinations CMS)
+ */
+
+@media (max-width: 900px) {
+  .admin-topbar {
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    padding: 0.75rem 1rem;
+  }
+
+  .admin-topbar__left {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .admin-topbar__left h1 {
+    font-size: 1.05rem;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: min(100%, 14rem);
+  }
+
+  .admin-topbar__actions {
+    flex: 1 1 100%;
+    justify-content: flex-end;
+    gap: 0.4rem;
+  }
+
+  .admin-topbar__search {
+    display: none;
+  }
+
+  .admin-menu-toggle {
+    width: 2.75rem;
+    height: 2.75rem;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+  }
+
+  .admin-sidebar {
+    width: min(88vw, 18.5rem);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  .admin-nav__btn {
+    min-height: 2.85rem;
+    padding: 0.7rem 0.85rem;
+    font-size: 0.9rem;
+    gap: 0.75rem;
+  }
+
+  .admin-nav__icon {
+    width: 1.35rem;
+    height: 1.35rem;
+    flex-shrink: 0;
+  }
+
+  .admin-nav a.admin-nav__btn {
+    text-decoration: none;
+  }
+
+  .admin-main {
+    padding: 1rem 0.85rem 2.5rem;
+  }
+
+  .admin-glass {
+    padding: 1rem;
+    border-radius: 1rem;
+  }
+
+  .admin-stats {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.65rem;
+  }
+
+  .admin-stat-card {
+    padding: 0.85rem;
+  }
+
+  .admin-stat-card__icon {
+    width: 1.85rem;
+    height: 1.85rem;
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .admin-stat-card__value {
+    font-size: 1.35rem;
+  }
+
+  .admin-stat-card__label,
+  .admin-stat-card__meta {
+    font-size: 0.68rem;
+  }
+
+  .admin-card-item {
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    align-items: flex-start;
+  }
+
+  .admin-card-item .admin-thumb {
+    width: 3.5rem;
+    height: 3.5rem;
+  }
+
+  .admin-card-item__body {
+    flex: 1 1 8rem;
+    min-width: 0;
+  }
+
+  .admin-card-item .admin-btn {
+    min-height: 2.5rem;
+    padding: 0 0.85rem;
+    font-size: 0.8rem;
+  }
+
+  .admin-dest-panel__toolbar {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .admin-dest-panel__toolbar .admin-input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .admin-upload-zone {
+    padding: 0.85rem;
+  }
+
+  .admin-preview,
+  .admin-upload-zone img.admin-preview {
+    max-width: 100%;
+    height: auto;
+    max-height: 12rem;
+    object-fit: cover;
+  }
+
+  .admin-btn {
+    min-height: 2.65rem;
+    padding: 0 1rem;
+    font-size: 0.85rem;
+  }
+
+  .admin-actions-menu__btn {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+  }
+
+  body.admin-sidebar-open {
+    overflow: hidden;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-topbar__left h1 {
+    max-width: 10rem;
+  }
+
+  .admin-card-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-card-item .admin-btn {
+    width: 100%;
+  }
+}
+
+/* —— SaaS destinations / edit layout —— */
+@media (max-width: 900px) {
+  #btn-menu-mobile {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    margin-right: 0.35rem;
+    flex-shrink: 0;
+  }
+
+  .haibo-sidebar {
+    width: min(88vw, 18.5rem);
+    transform: translateX(-100%);
+    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.45);
+  }
+
+  .haibo-sidebar.is-open {
+    transform: translateX(0);
+  }
+
+  .haibo-sidebar.is-collapsed {
+    width: min(88vw, 18.5rem);
+  }
+
+  .haibo-sidebar.is-collapsed .haibo-sidebar__text,
+  .haibo-sidebar.is-collapsed .haibo-nav__label,
+  .haibo-sidebar.is-collapsed .haibo-nav__group,
+  .haibo-sidebar.is-collapsed .haibo-user__info,
+  .haibo-sidebar.is-collapsed .haibo-collapse span {
+    display: block;
+  }
+
+  .haibo-main {
+    margin-left: 0 !important;
+    width: 100%;
+  }
+
+  .haibo-topbar {
+    flex-wrap: wrap;
+    padding: 0.75rem 1rem;
+    gap: 0.65rem;
+  }
+
+  .haibo-topbar__title {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.25rem;
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .haibo-topbar__title h1 {
+    font-size: 1.1rem;
+    line-height: 1.2;
+  }
+
+  .haibo-topbar__title p {
+    font-size: 0.75rem;
+  }
+
+  .haibo-topbar__actions {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.4rem;
+  }
+
+  .haibo-topbar__actions .haibo-btn {
+    min-height: 2.65rem;
+    font-size: 0.82rem;
+    padding: 0 0.85rem;
+  }
+
+  .haibo-topbar__actions .haibo-btn--primary {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .haibo-icon-btn,
+  .haibo-profile-chip {
+    width: 2.65rem;
+    height: 2.65rem;
+    min-width: 2.65rem;
+    flex-shrink: 0;
+  }
+
+  .haibo-content {
+    padding: 0.85rem;
+  }
+
+  .haibo-nav__link {
+    min-height: 2.85rem;
+    padding: 0.75rem 0.9rem;
+    font-size: 0.9rem;
+  }
+
+  .haibo-nav__link svg {
+    width: 1.35rem;
+    height: 1.35rem;
+  }
+
+  .haibo-sidebar__brand img {
+    width: 36px;
+    height: 36px;
+  }
+
+  .haibo-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .haibo-toolbar .haibo-input,
+  .haibo-toolbar .haibo-select {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .haibo-dest-row {
+    grid-template-columns: 72px 1fr;
+    gap: 0.65rem;
+  }
+
+  .haibo-dest-row__thumb {
+    width: 72px;
+    height: 72px;
+  }
+
+  .haibo-edit-header__back {
+    font-size: 0.85rem;
+  }
+
+  .haibo-edit-layout {
+    gap: 0.75rem;
+  }
+
+  .haibo-section-nav {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 0.35rem;
+    padding-bottom: 0.35rem;
+    scrollbar-width: none;
+  }
+
+  .haibo-section-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .haibo-section-nav button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    font-size: 0.78rem;
+    padding: 0.55rem 0.75rem;
+    min-height: 2.5rem;
+  }
+
+  .haibo-dropzone {
+    min-height: 7rem;
+    padding: 0.85rem;
+  }
+
+  .haibo-dropzone img,
+  .haibo-image-block img {
+    max-width: 100%;
+    max-height: 10rem;
+    object-fit: cover;
+  }
+
+  body.haibo-sidebar-open {
+    overflow: hidden;
+  }
+}
+
+.haibo-sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 90;
+}
+
+.haibo-sidebar-backdrop.is-visible {
+  display: block;
+}

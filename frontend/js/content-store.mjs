@@ -4,7 +4,7 @@
 import { fetchSiteCms } from './cms-cloudinary.mjs';
 import { haiboDestinationsFromFirestoreDocs } from './haibo-live-content.mjs';
 
-const POLL_MS = 25000;
+const POLL_MS = 15000;
 
 window.HAIBO_CONTENT = {
   hero: null,

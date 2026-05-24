@@ -1,11 +1,13 @@
 /**
- * HAIBO live CMS API — serves latest Cloudinary CMS JSON to the public site.
- * Optional: CLOUDINARY_API_KEY + CLOUDINARY_API_SECRET on Vercel for signed overwrite + listing backups.
+ * HAIBO live CMS API — latest content for all devices (not browser cookies).
+ * Optional: CLOUDINARY_API_KEY + CLOUDINARY_API_SECRET for signed manifest overwrite + m-* listing.
  */
 import { createHash } from 'node:crypto';
 
 const CLOUD = process.env.CLOUDINARY_CLOUD_NAME || 'dae3rpnmg';
 const MANIFEST_ID = 'haibo/cms/site-manifest';
+const MINUTE_BUCKETS = 30;
+const MINUTES_PER_DAY = 1440;
 
 function deliveryUrl(publicId) {
   return `https://res.cloudinary.com/${CLOUD}/raw/upload/${publicId}.json`;
@@ -25,6 +27,41 @@ async function fetchJsonByPublicId(publicId) {
   return fetchJsonUrl(deliveryUrl(publicId));
 }
 
+function isCmsDocument(doc) {
+  if (!doc || typeof doc !== 'object' || doc.error) return false;
+  return (
+    doc.version != null ||
+    doc.updatedAt != null ||
+    doc.hero != null ||
+    doc.about != null ||
+    doc.contact != null ||
+    doc.settings != null ||
+    Array.isArray(doc.destinations) ||
+    Array.isArray(doc.gallery)
+  );
+}
+
+function pickNewest(docs) {
+  let best = null;
+  for (const doc of docs) {
+    if (!isCmsDocument(doc)) continue;
+    if (!best || (doc.updatedAt || 0) > (best.updatedAt || 0)) {
+      best = doc;
+    }
+  }
+  return best;
+}
+
+async function fetchRecentMinuteSlots() {
+  const nowMin = Math.floor(Date.now() / 60000);
+  const ids = [];
+  for (let i = 0; i < MINUTE_BUCKETS; i++) {
+    const slot = ((nowMin - i) % MINUTES_PER_DAY + MINUTES_PER_DAY) % MINUTES_PER_DAY;
+    ids.push(`haibo/cms/v-${slot}`);
+  }
+  return Promise.all(ids.map(fetchJsonByPublicId));
+}
+
 function readDeliveryCookie(req) {
   const match = req.headers.cookie?.match(/haibo_cms_delivery=([^;]+)/);
   return match ? decodeURIComponent(match[1]) : null;
@@ -37,7 +74,7 @@ async function fetchLatestFromAdminApi() {
 
   const auth = Buffer.from(`${key}:${secret}`).toString('base64');
   const listRes = await fetch(
-    `https://api.cloudinary.com/v1_1/${CLOUD}/resources/raw/upload?prefix=haibo/cms/m-&max_results=5&direction=desc`,
+    `https://api.cloudinary.com/v1_1/${CLOUD}/resources/raw/upload?prefix=haibo/cms/m-&max_results=30&direction=desc`,
     { headers: { Authorization: `Basic ${auth}` } }
   );
   if (!listRes.ok) return null;
@@ -46,17 +83,6 @@ async function fetchLatestFromAdminApi() {
   const latest = list.resources?.[0]?.public_id;
   if (!latest) return null;
   return fetchJsonByPublicId(latest);
-}
-
-function pickNewest(docs) {
-  let best = null;
-  for (const doc of docs) {
-    if (!doc || typeof doc !== 'object') continue;
-    if (!best || (doc.updatedAt || 0) > (best.updatedAt || 0)) {
-      best = doc;
-    }
-  }
-  return best;
 }
 
 async function signedUpload(payload, publicId) {
@@ -91,6 +117,7 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -98,12 +125,13 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     const cookieUrl = readDeliveryCookie(req);
-    const docs = await Promise.all([
+    const [cookieDoc, apiLatest, manifest, slotDocs] = await Promise.all([
       cookieUrl ? fetchJsonUrl(cookieUrl) : null,
       fetchLatestFromAdminApi(),
       fetchJsonByPublicId(MANIFEST_ID),
+      fetchRecentMinuteSlots(),
     ]);
-    const best = pickNewest(docs);
+    const best = pickNewest([cookieDoc, apiLatest, manifest, ...(slotDocs || [])]);
     if (!best) {
       return res.status(404).json({ error: 'No CMS content found' });
     }
@@ -120,14 +148,16 @@ export default async function handler(req, res) {
       };
 
       if (process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+        const minuteSlot = Math.floor(Date.now() / 60000) % MINUTES_PER_DAY;
         const backup = await signedUpload(doc, `haibo/cms/m-${Date.now()}`);
+        await signedUpload(doc, `haibo/cms/v-${minuteSlot}`);
         await signedUpload(doc, MANIFEST_ID);
         const latestUrl = backup?.secure_url || deliveryUrl(MANIFEST_ID);
         return res.status(200).json({ ...doc, _deliveryUrl: latestUrl });
       }
 
       return res.status(501).json({
-        error: 'Add CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET on Vercel for server saves.',
+        error: 'Add CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET on Vercel for instant sync on all devices.',
       });
     } catch (err) {
       return res.status(500).json({ error: err.message || 'Upload failed' });

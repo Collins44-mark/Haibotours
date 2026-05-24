@@ -69,20 +69,51 @@ export function renderSidebar(container, activeId, user) {
     </aside>`;
 }
 
+function ensureHaiboSidebarBackdrop() {
+  let backdrop = document.getElementById('haibo-sidebar-backdrop');
+  if (!backdrop) {
+    backdrop = document.createElement('div');
+    backdrop.id = 'haibo-sidebar-backdrop';
+    backdrop.className = 'haibo-sidebar-backdrop';
+    backdrop.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(backdrop);
+  }
+  return backdrop;
+}
+
 export function initSidebar() {
   const sidebar = document.getElementById('haibo-sidebar');
   const collapseBtn = document.getElementById('btn-sidebar-collapse');
+  const backdrop = ensureHaiboSidebarBackdrop();
   const stored = localStorage.getItem('haibo_sidebar_collapsed') === '1';
 
-  if (stored) sidebar?.classList.add('is-collapsed');
+  if (stored && window.matchMedia('(min-width: 901px)').matches) {
+    sidebar?.classList.add('is-collapsed');
+  }
 
   collapseBtn?.addEventListener('click', () => {
+    if (!window.matchMedia('(min-width: 901px)').matches) return;
     sidebar?.classList.toggle('is-collapsed');
     localStorage.setItem('haibo_sidebar_collapsed', sidebar?.classList.contains('is-collapsed') ? '1' : '0');
   });
 
+  const closeMobile = () => {
+    sidebar?.classList.remove('is-open');
+    backdrop?.classList.remove('is-visible');
+    document.body.classList.remove('haibo-sidebar-open');
+  };
+
   const menuBtn = document.getElementById('btn-menu-mobile');
-  menuBtn?.addEventListener('click', () => sidebar?.classList.toggle('is-open'));
+  menuBtn?.addEventListener('click', () => {
+    const open = sidebar?.classList.toggle('is-open');
+    backdrop?.classList.toggle('is-visible', Boolean(open));
+    document.body.classList.toggle('haibo-sidebar-open', Boolean(open));
+  });
+
+  backdrop?.addEventListener('click', closeMobile);
+  sidebar?.querySelectorAll('.haibo-nav__link[href]').forEach((link) => {
+    link.addEventListener('click', closeMobile);
+  });
 }
 
 export function closeAllMenus() {

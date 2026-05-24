@@ -30,6 +30,8 @@ Add environment variables on Vercel for project **haibo-tours** site:
 
 Then `/api/site-cms` can list the newest `haibo/cms/m-*` backup for all visitors (not only the browser that saved).
 
+Without API keys, saves still sync to **minute buckets** (`haibo/cms/v-*`) so phones and laptops see the same content within about a minute.
+
 ## First-time content
 
 Admin → **Import website defaults**, or run:

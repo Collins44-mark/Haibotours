@@ -102,7 +102,7 @@ export function initMobileSidebar() {
     document.body.classList.toggle('admin-sidebar-open', open);
   });
   backdrop?.addEventListener('click', close);
-  document.querySelectorAll('.admin-nav__btn[data-panel]').forEach((btn) => {
+  document.querySelectorAll('.admin-nav__btn[data-panel], .admin-nav a.admin-nav__btn').forEach((btn) => {
     btn.addEventListener('click', close);
   });
 }
