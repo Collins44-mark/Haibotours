@@ -103,26 +103,7 @@
     scroll-margin-bottom: 5.5rem;
   }
 
-  .gallery-grid-photos,
-  .gallery-grid-videos {
-    gap: 0.6rem !important;
-  }
-
-  .gallery-media-card__img,
-  .gallery-media-card__video {
-    height: clamp(6.5rem, 30vw, 8.5rem) !important;
-    min-height: 0;
-    object-fit: cover;
-    object-position: center;
-  }
-
-  .gallery-media-card__title {
-    font-size: 0.75rem !important;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    display: -webkit-box;
-    overflow: hidden;
-  }
+  /* Gallery cards — gallery-page.css */
 }
 
 /* Admin */
@@ -156,9 +137,3 @@
   }
 }
 
-/* Performance: lazy images in card grids */
-@media (max-width: 1024px) {
-  .gallery-media-card__img {
-    content-visibility: auto;
-  }
-}

@@ -79,6 +79,13 @@ img {
   height: auto;
 }
 
+/* Gallery cards: fill aspect-ratio frame (avoid black gaps from height:auto) */
+.gallery-media-card__img,
+.gallery-media-card__video {
+  max-width: none;
+  height: 100% !important;
+}
+
 img[loading='lazy'] {
   content-visibility: auto;
 }

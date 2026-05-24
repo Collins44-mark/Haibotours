@@ -140,24 +140,4 @@
   z-index: 2;
 }
 
-/* ─── Gallery media cards ─── */
-.gallery-media-card {
-  position: relative;
-  overflow: hidden;
-}
-
-.gallery-media-card__overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-}
-
-.gallery-media-card__body {
-  z-index: 2;
-}
-
-.gallery-media-card__img,
-.gallery-media-card__video {
-  position: relative;
-  z-index: 0;
-}
+/* Gallery media cards — see gallery-page.css */

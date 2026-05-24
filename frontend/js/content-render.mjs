@@ -105,8 +105,14 @@ function renderHomeGallery() {
     );
   });
   const images = fromFirestore.length ? fromFirestore : defaults;
-  const grid = document.querySelector('#gallery .gallery.grid');
+  const grid = document.querySelector('#gallery .home-gallery-preview');
   if (!grid || !images.length) return;
+
+  const esc = (s) =>
+    String(s ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/"/g, '&quot;');
 
   const slice = images.slice(0, 3);
   grid.innerHTML = slice
@@ -115,16 +121,27 @@ function renderHomeGallery() {
       const alt = img.title
         ? `${img.title} — Tanzania safari gallery`
         : 'Tanzania safari wildlife photo';
-      if (typeof window.haiboImgTag === 'function') {
-        return window.haiboImgTag(src, alt, {
-          width: 900,
-          priority: i === 0,
-          class: 'haibo-media rounded-[30px] h-[300px] md:h-[500px] object-cover w-full',
-        });
-      }
-      return `<img src="${src}" alt="${alt}" loading="${i === 0 ? 'eager' : 'lazy'}" decoding="async" class="haibo-media rounded-[30px] h-[300px] md:h-[500px] object-cover w-full">`;
+      const title = img.title || 'Safari moment';
+      const tag = img.tag || 'Tanzania';
+      const loading = i === 0 ? 'eager' : 'lazy';
+      const fetchpriority = i === 0 ? 'high' : 'auto';
+      return `
+    <a href="gallery.html" class="gallery-media-card home-gallery-card" aria-label="View gallery: ${esc(title)}">
+      <div class="gallery-media-card__media">
+        <img class="gallery-media-card__img haibo-media" src="${esc(src)}" alt="${esc(alt)}" loading="${loading}" decoding="async" fetchpriority="${fetchpriority}" width="600" height="800">
+        <div class="gallery-media-card__overlay" aria-hidden="true"></div>
+        <div class="gallery-media-card__body">
+          ${tag ? `<p class="gallery-media-card__tag">${esc(tag)}</p>` : ''}
+          <h3 class="gallery-media-card__title">${esc(title)}</h3>
+        </div>
+      </div>
+    </a>`;
     })
     .join('');
+
+  if (typeof window.haiboEnhanceImages === 'function') {
+    window.haiboEnhanceImages(grid);
+  }
 }
 
 function renderHomeCta() {

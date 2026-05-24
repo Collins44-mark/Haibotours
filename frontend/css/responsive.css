@@ -329,25 +329,7 @@ p,
 
   /* Destination & package cards — see cards-mobile.css */
 
-  /* ── Home gallery preview ── */
-  #gallery .gallery.grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 0.75rem !important;
-  }
-
-  #gallery .gallery.grid img {
-    height: 11rem !important;
-    min-height: 11rem !important;
-    border-radius: 1rem !important;
-    object-fit: cover;
-    width: 100%;
-  }
-
-  #gallery .gallery.grid img:last-child:nth-child(odd) {
-    grid-column: span 2;
-    height: 12rem !important;
-    min-height: 12rem !important;
-  }
+  /* Home gallery — gallery-page.css */
 
   /* ── About ── */
   #about .grid.md\:grid-cols-2 {
@@ -640,15 +622,7 @@ p,
     gap: 1.25rem !important;
   }
 
-  #gallery .gallery.grid {
-    grid-template-columns: repeat(3, 1fr) !important;
-  }
-
-  #gallery .gallery.grid img {
-    height: 14rem !important;
-    min-height: 14rem !important;
-    object-fit: cover;
-  }
+  /* Home gallery — gallery-page.css */
 
   #contact-cards {
     grid-template-columns: repeat(3, 1fr) !important;
