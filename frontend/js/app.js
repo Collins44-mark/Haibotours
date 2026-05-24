@@ -400,6 +400,68 @@ function escapeAttrUrl(url) {
   return String(url || '').replace(/'/g, '%27').replace(/"/g, '%22');
 }
 
+function escapeHtml(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/"/g, '&quot;');
+}
+
+/** Premium package card — image top, compact body (2-col mobile grid). */
+function renderPackageCard(pkg, dest) {
+  const imgRaw =
+    dest.cardImage ||
+    dest.image ||
+    dest.heroImage ||
+    'https://images.unsplash.com/photo-1516426122078-c23e76319801?q=80&w=800&auto=format&fit=crop';
+  const imgSrc =
+    typeof window.haiboOptimizeImage === 'function'
+      ? window.haiboOptimizeImage(imgRaw, { width: 640 })
+      : imgRaw;
+  const imgTag =
+    typeof window.haiboImgTag === 'function'
+      ? window.haiboImgTag(imgSrc, `${dest.name} safari — ${pkg.name}`, {
+          width: 640,
+          class: 'package-card__img',
+        })
+      : `<img src="${escapeAttrUrl(imgSrc)}" alt="${escapeHtml(`${dest.name} — ${pkg.name}`)}" class="package-card__img" loading="lazy" decoding="async" width="320" height="400" />`;
+  const features = (pkg.features || []).slice(0, 4);
+  const waHref = getWhatsAppUrl(
+    `Hello HAIBO Tours! I'd like to book the "${pkg.name}" package for ${dest.name}. Please assist me with dates and payment options.`
+  );
+
+  return `
+    <article class="package-card package-card--premium${pkg.popular ? ' popular' : ''}">
+      <div class="package-card__media">
+        ${imgTag}
+        <div class="package-card__media-overlay" aria-hidden="true"></div>
+        ${pkg.popular ? '<span class="package-card__badge">Most Popular</span>' : ''}
+      </div>
+      <div class="package-card__body">
+        <h3 class="package-card__title">${escapeHtml(pkg.name)}</h3>
+        <p class="package-card__duration">${escapeHtml(pkg.duration)}</p>
+        <p class="package-card__price">${escapeHtml(pkg.price)}</p>
+        ${pkg.priceNote ? `<p class="package-card__note">${escapeHtml(pkg.priceNote)}</p>` : ''}
+        ${
+          features.length
+            ? `<ul class="package-card__features" aria-label="Package highlights">
+          ${features
+            .map(
+              (f) => `
+            <li class="package-card__feature" title="${escapeHtml(f)}">
+              <span class="package-card__feature-icon" aria-hidden="true">✓</span>
+              <span class="package-card__feature-text">${escapeHtml(f)}</span>
+            </li>`
+            )
+            .join('')}
+        </ul>`
+            : ''
+        }
+        <a href="${waHref}" target="_blank" rel="noopener noreferrer" class="package-card__cta btn-main">Book</a>
+      </div>
+    </article>`;
+}
+
 function renderDestinationCard(dest) {
   if (typeof window.haiboBuildDestinationCard === 'function') {
     return window.haiboBuildDestinationCard(dest);
@@ -544,29 +606,7 @@ function renderDestinationDetail() {
       ? dest.highlights
       : staticD?.highlights || [];
 
-  const destBg = getDestinationCtaBg(dest.id);
-  const packagesHtml = packages
-    .map(
-      (pkg) => `
-    <div class="cta-cinematic package-card rounded-3xl ${pkg.popular ? 'popular' : ''}">
-      ${ctaCinematicLayers(destBg)}
-      <div class="cta-cinematic__content p-8">
-      ${pkg.popular ? '<span class="inline-block text-xs font-semibold orange bg-orange-500/10 px-3 py-1 rounded-full mb-4">Most Popular</span>' : ''}
-      <h3 class="text-2xl font-bold mb-2">${pkg.name}</h3>
-      <p class="text-gray-300 mb-4">${pkg.duration}</p>
-      <p class="text-4xl font-bold orange mb-1">${pkg.price}</p>
-      <p class="text-sm text-gray-400 mb-6">${pkg.priceNote}</p>
-      <ul class="space-y-3 text-gray-200 mb-8">
-        ${pkg.features.map((f) => `<li class="flex gap-2"><span class="orange">✓</span>${f}</li>`).join('')}
-      </ul>
-      <a href="${getWhatsAppUrl(`Hello HAIBO Tours! I'd like to book the "${pkg.name}" package for ${dest.name}. Please assist me with dates and payment options.`)}" target="_blank" rel="noopener noreferrer" class="btn-main w-full text-center py-4 rounded-2xl block">
-        Book This Package
-      </a>
-      </div>
-    </div>
-  `
-    )
-    .join('');
+  const packagesHtml = packages.map((pkg) => renderPackageCard(pkg, dest)).join('');
 
   const exp = fromCms ? dest.experience : dest.experience || staticD?.experience;
   const experienceHtml = exp
@@ -625,13 +665,13 @@ function renderDestinationDetail() {
       </div>
     </section>
 
-    <section class="py-20 px-8 md:px-20 bg-[#111]">
+    <section class="package-cards-section py-20 px-8 md:px-20 bg-[#111]">
       <div class="text-center mb-14">
         <p class="orange uppercase tracking-[5px] mb-3">Safari Packages</p>
         <h2 class="section-title">Choose Your ${dest.name} Package</h2>
         <p class="text-gray-400 mt-4 max-w-2xl mx-auto">Curated itineraries with park fees, comfortable stays, and HAIBO guest support.</p>
       </div>
-      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+      <div class="package-cards-grid max-w-6xl mx-auto">
         ${packagesHtml}
       </div>
     </section>
