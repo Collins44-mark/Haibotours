@@ -1,47 +1,50 @@
-# HAIBO CMS — how content works
+# HAIBO — Publish Firestore rules (required for live CMS)
 
-The **live website** loads content from Cloudinary (JSON + image URLs).
+## How the CMS works now
 
-The **admin panel** uses **Firebase Authentication only** (email + password). When you save, content is pushed to Cloudinary and the public site refreshes automatically.
+| What | Where |
+|------|--------|
+| **All text & structure** | **Firestore** (`hero`, `about`, `contact`, `destinations`, `gallery`, …) |
+| **Images** | **Cloudinary** (URLs saved in Firestore) |
+| **Public website** | `onSnapshot` listeners — updates on **every device instantly** |
+| **Admin save** | `setDoc` → console: `Firestore updated successfully` |
 
-## Admin access
+No CMS data in `localStorage` / cookies. Firestore is the only source of truth.
 
-1. Add your email to `HAIBO_ADMIN_EMAIL_ALLOWLIST` in `frontend/js/firebase-config.js`.
-2. Create that user in Firebase Console → Authentication.
-3. Sign in at `/admin/login`.
+## Publish rules (required)
 
-## Cloudinary upload preset (important)
+1. Open [Firebase Console](https://console.firebase.google.com) → project **haibo-tours** → **Firestore** → **Rules**
+2. Copy all of `firebase/COPY_PASTE_RULES.txt`
+3. Click **Publish**
 
-In [Cloudinary Console](https://console.cloudinary.com) → Settings → Upload → your preset `ml_default`:
+Rules must allow:
+- **Public read** on content collections (`hero`, `destinations`, `gallery`, …)
+- **Admin write** when `admins/{your-uid}` has `admin: "admin"`
 
-- Turn **Overwrite** ON if you use a fixed public id (optional; default flow uses a new URL per save).
+## Admin document
 
-Without overwrite, only the first save per file sticks; the site may show old data.
-
-## Best live updates (optional, Vercel)
-
-Add environment variables on Vercel for project **haibo-tours** site:
-
-| Variable | Purpose |
-|----------|---------|
-| `CLOUDINARY_API_KEY` | From Cloudinary dashboard |
-| `CLOUDINARY_API_SECRET` | From Cloudinary dashboard |
-| `CLOUDINARY_CLOUD_NAME` | `dae3rpnmg` (optional, default in code) |
-
-Then `/api/site-cms` can list the newest `haibo/cms/m-*` backup for all visitors (not only the browser that saved).
-
-Without API keys, saves still sync to **minute buckets** (`haibo/cms/v-*`) as a fallback.
-
-## Cross-device sync (required once)
-
-Publish `firebase/firestore.rules` (includes **`cmsMeta`** — public read, admin write).
-
-When you save in admin, the app writes **`cmsMeta/live`** with the latest Cloudinary JSON URL. Every phone and laptop reads that pointer (live listener + polling).
+Collection: `admins`  
+Document ID: your Firebase Auth UID  
+Fields: `admin` = `"admin"`, `role` = `"admin"`
 
 ## First-time content
 
-Admin → **Import website defaults**, or run:
+In admin dashboard → **Import website defaults** (writes all sections to Firestore).
 
-```bash
-node scripts/seed-public-cms-manifest.mjs
-```
+## Verify a save worked
+
+1. Save in admin → browser console should show: `Firestore updated successfully`
+2. Firebase Console → Firestore → open `destinations/{id}` or `hero/main` → fields and `updatedAt` changed
+3. Open site on phone → same content within seconds (no manual refresh needed)
+
+## Optional: Cloudinary API on Vercel
+
+Not required for CMS text. Only needed if you use server-side image tooling.
+
+## Troubleshooting
+
+| Symptom | Fix |
+|---------|-----|
+| Save works on laptop only | Publish Firestore rules; confirm `destinations/...` updates in Console |
+| `permission-denied` in console | Publish rules + `admins/{uid}` document |
+| Phone shows old images | Hard refresh once after deploy; URLs include `?v=updatedAt` cache-bust |

@@ -1,11 +1,9 @@
 /**
- * Live website content — loads from Cloudinary CMS JSON, refreshes on a timer.
+ * Live website content — Firestore realtime only (onSnapshot). No localStorage CMS cache.
  */
-import { fetchSiteCms } from './cms-cloudinary.mjs';
-import { watchCmsPointer } from './cms-pointer.mjs';
+import { subscribePublicCms } from './cms-firestore.mjs';
 import { haiboDestinationsFromFirestoreDocs } from './haibo-live-content.mjs';
-
-const POLL_MS = 15000;
+import { unsubscribeAllRealtime } from './firestore-realtime.mjs';
 
 window.HAIBO_CONTENT = {
   hero: null,
@@ -22,9 +20,7 @@ window.HAIBO_CONTENT = {
 window.HAIBO_FIRESTORE_DESTINATIONS = [];
 window.HAIBO_CONTENT_LOADED = false;
 
-let lastCmsUpdatedAt = 0;
-let pollTimer = null;
-let pointerUnsub = null;
+let cmsUnsub = null;
 
 function applyDestinations() {
   const list = Array.isArray(window.HAIBO_CONTENT?.destinations)
@@ -83,7 +79,7 @@ function applyLiveContentToPage() {
   }
 }
 
-function paintFromCms(doc) {
+function paintFromFirestoreCms(doc) {
   if (!doc) return false;
 
   const dests = Array.isArray(doc.destinations) ? doc.destinations : [];
@@ -136,46 +132,33 @@ function paintFromCms(doc) {
   return true;
 }
 
-async function refreshFromCloudinary() {
-  const doc = await fetchSiteCms();
-  if (!doc) return;
-  const ts = doc.updatedAt || 0;
-  if (ts <= lastCmsUpdatedAt && window.HAIBO_CONTENT_LOADED) return;
-  lastCmsUpdatedAt = ts;
-  console.log('[HAIBO] CMS updated from Cloudinary', doc.destinations?.length ?? 0, 'destinations');
-  paintFromCms(doc);
-}
-
-function startPolling() {
-  if (pollTimer) return;
-  pollTimer = setInterval(() => void refreshFromCloudinary(), POLL_MS);
-}
-
-function startCmsPointerListener() {
-  if (pointerUnsub) return;
-  pointerUnsub = watchCmsPointer((meta) => {
-    const ts = meta.updatedAt || 0;
-    if (ts <= lastCmsUpdatedAt && window.HAIBO_CONTENT_LOADED) return;
-    void refreshFromCloudinary();
-  });
-}
-
-export async function initHaiboContentRealtime() {
+export function initHaiboContentRealtime() {
   document.body.classList.add('haibo-content-loading');
-  await refreshFromCloudinary();
-  startPolling();
-  startCmsPointerListener();
+
+  if (cmsUnsub) {
+    cmsUnsub();
+    cmsUnsub = null;
+  }
+
+  cmsUnsub = subscribePublicCms(
+    (cms) => {
+      paintFromFirestoreCms(cms);
+    },
+    {
+      onError: (err) => {
+        console.error('[HAIBO] Firestore CMS listener failed:', err);
+        document.body.classList.remove('haibo-content-loading');
+      },
+    }
+  );
 }
 
 export function teardownHaiboContentRealtime() {
-  if (pollTimer) {
-    clearInterval(pollTimer);
-    pollTimer = null;
+  if (cmsUnsub) {
+    cmsUnsub();
+    cmsUnsub = null;
   }
-  if (pointerUnsub) {
-    pointerUnsub();
-    pointerUnsub = null;
-  }
+  unsubscribeAllRealtime();
 }
 
 window.initHaiboContent = initHaiboContentRealtime;
@@ -187,7 +170,7 @@ window.addEventListener('pagehide', (e) => {
 });
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => void initHaiboContentRealtime());
+  document.addEventListener('DOMContentLoaded', () => initHaiboContentRealtime());
 } else {
-  void initHaiboContentRealtime();
+  initHaiboContentRealtime();
 }

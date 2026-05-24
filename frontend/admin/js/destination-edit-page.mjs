@@ -15,7 +15,6 @@ import {
   saveDestinationRecord,
   collectDestinationPayload,
 } from './admin-destinations.mjs';
-import { upsertDestinationInCms, syncCmsToWebsite } from './admin-cms.mjs';
 import { createUploadZone } from './admin-cloudinary.mjs';
 import { adminToast, slugify } from './admin-db.mjs';
 import { bindUnsavedWarning } from './admin-ui.mjs';
@@ -31,7 +30,6 @@ let dirty = false;
 let saving = false;
 let pageInitialized = false;
 let builders = { ...emptyBuilders };
-let autosaveTimer = null;
 const editId = new URLSearchParams(location.search).get('id')?.trim() || '';
 
 function showToast(msg, type) {
@@ -115,8 +113,7 @@ async function save() {
 
     const saved = await saveDestinationRecord(payload);
     dirty = false;
-    sessionStorage.removeItem(`haibo_draft_${saved.id}`);
-    showToast('Saved — website updates live', 'success');
+    showToast('Saved — live on all devices', 'success');
     setAutosave('Published successfully', true);
 
     setTimeout(() => {
@@ -250,10 +247,9 @@ function bindImages() {
           } else {
             payload.heroImage = url;
           }
-          upsertDestinationInCms(payload);
-          await syncCmsToWebsite({ quiet: true });
+          await saveDestinationRecord(payload);
           dirty = false;
-          showToast('Image saved to live site', 'success');
+          showToast('Image saved — all devices updated', 'success');
           setAutosave('Published successfully', true);
         } catch (err) {
           showToast(err?.message || 'Image uploaded — click Save Changes to publish', 'info');
@@ -361,27 +357,9 @@ function fillForm(data) {
   setAutosave('All changes saved', true);
 }
 
-function scheduleDraftSave() {
-  clearTimeout(autosaveTimer);
-  autosaveTimer = setTimeout(() => {
-    try {
-      const form = document.getElementById('form-edit');
-      if (!form) return;
-      const payload = collectDestinationPayload(form, builders);
-      sessionStorage.setItem(`haibo_draft_${payload.id || 'new'}`, JSON.stringify(payload));
-      setAutosave('Draft saved locally', true);
-    } catch {
-      /* ignore */
-    }
-  }, 1500);
-}
-
 function watchDirty() {
   document.getElementById('form-edit')?.querySelectorAll('input,textarea,select').forEach((el) => {
-    el.addEventListener('input', () => {
-      markDirty();
-      scheduleDraftSave();
-    });
+    el.addEventListener('input', markDirty);
     el.addEventListener('change', markDirty);
   });
 }
@@ -395,15 +373,6 @@ async function loadData() {
       return null;
     }
     return data;
-  }
-
-  const draft = sessionStorage.getItem('haibo_draft_new');
-  if (draft) {
-    try {
-      return JSON.parse(draft);
-    } catch {
-      /* ignore */
-    }
   }
 
   return {

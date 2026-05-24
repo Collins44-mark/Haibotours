@@ -1,32 +1,37 @@
 /**
- * Admin Firestore realtime — refresh CMS state when data changes.
+ * Admin Firestore realtime — reload CMS when Firestore changes (any device).
  */
-import { collection, onSnapshot } from '../../js/firebase-cdn.mjs';
+import { doc, collection, onSnapshot } from '../../js/firebase-cdn.mjs';
 import { getDb } from './firebase.js';
 
 const unsubs = [];
 
-export function subscribeAdminCollections(handlers) {
+export function subscribeAdminFirestore(onChange) {
   const db = getDb();
-  if (!db || !globalThis.FIRESTORE_PATHS) return () => {};
-
   const paths = globalThis.FIRESTORE_PATHS;
+  if (!db || !paths || typeof onChange !== 'function') return () => {};
 
-  const bind = (coll, cb) => {
-    const unsub = onSnapshot(
-      collection(db, coll),
-      (snap) => {
-        const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        cb(items);
-      },
-      (err) => console.warn('[HAIBO Admin] realtime', coll, err)
-    );
-    unsubs.push(unsub);
+  const notify = () => {
+    console.log('[HAIBO Admin] Firestore realtime — refreshing CMS');
+    onChange();
   };
 
-  bind(paths.destinations, handlers.onDestinations);
-  bind(paths.gallery, handlers.onGallery);
-  bind(paths.weatherCards, handlers.onWeather);
+  const bindDoc = (coll) => {
+    unsubs.push(onSnapshot(doc(db, coll, 'main'), notify, (err) => console.warn('[HAIBO Admin]', coll, err)));
+  };
+
+  const bindColl = (coll) => {
+    unsubs.push(onSnapshot(collection(db, coll), notify, (err) => console.warn('[HAIBO Admin]', coll, err)));
+  };
+
+  bindDoc(paths.hero);
+  bindDoc(paths.about);
+  bindDoc(paths.contact);
+  bindDoc(paths.socials);
+  bindDoc(paths.settings);
+  bindColl(paths.destinations);
+  bindColl(paths.gallery);
+  bindColl(paths.weatherCards);
 
   return () => {
     unsubs.forEach((u) => {
@@ -38,4 +43,16 @@ export function subscribeAdminCollections(handlers) {
     });
     unsubs.length = 0;
   };
+}
+
+/** @deprecated use subscribeAdminFirestore */
+export function subscribeAdminCollections(handlers) {
+  return subscribeAdminFirestore(async () => {
+    const { loadAdminCms } = await import('./admin-cms.mjs');
+    await loadAdminCms();
+    const cms = window.HAIBO_ADMIN_CMS;
+    handlers.onDestinations?.(cms.destinations || []);
+    handlers.onGallery?.(cms.gallery || []);
+    handlers.onWeather?.(cms.weatherCards || []);
+  });
 }

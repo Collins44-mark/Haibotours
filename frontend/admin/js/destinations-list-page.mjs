@@ -11,7 +11,8 @@ import {
   loadAdminCms,
   removeDestinationFromCms,
   upsertDestinationInCms,
-  syncCmsToWebsite,
+  saveDestinationToFirestore,
+  deleteDestinationFromFirestore,
 } from './admin-cms.mjs';
 import { confirmDialog, formatRelativeTime } from './admin-ui.mjs';
 import { adminToast } from './admin-db.mjs';
@@ -134,8 +135,9 @@ function renderList() {
         danger: true,
       });
       if (!ok) return;
-      removeDestinationFromCms(btn.dataset.id);
-      await syncCmsToWebsite({ quiet: true });
+      const id = btn.dataset.id;
+      removeDestinationFromCms(id);
+      await deleteDestinationFromFirestore(id);
       allDestinations = mergeDestinationsForAdmin();
       renderList();
       showToast('Destination deleted', 'success');
@@ -151,7 +153,7 @@ function renderList() {
       const copy = { ...src, id: newId, name: `${src.name} (Copy)`, active: false };
       delete copy._source;
       upsertDestinationInCms(copy);
-      await syncCmsToWebsite({ quiet: true });
+      await saveDestinationToFirestore(copy);
       showToast('Destination duplicated', 'success');
       window.location.href = destinationEditUrl(newId);
     });

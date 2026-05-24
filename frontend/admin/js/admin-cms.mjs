@@ -1,55 +1,122 @@
 /**
- * Admin CMS — in-memory copy synced to Cloudinary on every save (live website reads the same JSON).
+ * Admin CMS — Firestore source of truth (no Cloudinary JSON, no localStorage CMS).
  */
-import { emptyCmsDocument, fetchSiteCms, uploadSiteCms } from '../../js/cms-cloudinary.mjs';
-import { adminToast } from './admin-db.mjs';
+import { emptyCmsDocument } from '../../js/cms-firestore.mjs';
+import {
+  adminToast,
+  dbSetDoc,
+  dbGetDocOptional,
+  dbListOptional,
+  dbDeleteDoc,
+  sanitizeFirestoreData,
+} from './admin-db.mjs';
 
 window.HAIBO_ADMIN_CMS = emptyCmsDocument();
+
+function paths() {
+  return globalThis.FIRESTORE_PATHS || {};
+}
 
 export function getAdminCms() {
   return window.HAIBO_ADMIN_CMS;
 }
 
 export async function loadAdminCms() {
-  const remote = await fetchSiteCms();
-  if (remote) {
-    const current = getAdminCms();
-    window.HAIBO_ADMIN_CMS = {
-      ...emptyCmsDocument(),
-      ...current,
-      ...remote,
-      destinations: remote.destinations ?? current.destinations ?? [],
-      gallery: remote.gallery ?? current.gallery ?? [],
-      weatherCards: remote.weatherCards ?? current.weatherCards ?? [],
-    };
-  }
+  const p = paths();
+  const [hero, about, contact, socials, settings, destinations, gallery, weatherCards] =
+    await Promise.all([
+      dbGetDocOptional(p.hero, 'main'),
+      dbGetDocOptional(p.about, 'main'),
+      dbGetDocOptional(p.contact, 'main'),
+      dbGetDocOptional(p.socials, 'main'),
+      dbGetDocOptional(p.settings, 'main'),
+      dbListOptional(p.destinations),
+      dbListOptional(p.gallery),
+      dbListOptional(p.weatherCards),
+    ]);
+
+  window.HAIBO_ADMIN_CMS = {
+    ...emptyCmsDocument(),
+    hero,
+    about,
+    contact,
+    socials,
+    settings,
+    destinations: destinations || [],
+    gallery: gallery || [],
+    weatherCards: weatherCards || [],
+    updatedAt: Date.now(),
+  };
+
+  console.log('[HAIBO] Loaded CMS from Firestore', {
+    destinations: window.HAIBO_ADMIN_CMS.destinations.length,
+    gallery: window.HAIBO_ADMIN_CMS.gallery.length,
+  });
+
   return window.HAIBO_ADMIN_CMS;
 }
 
-/** Push current admin CMS to Cloudinary — website picks it up automatically. */
+/** Write full in-memory CMS to Firestore (all sections). */
 export async function syncCmsToWebsite(options = {}) {
   const { quiet = false } = options;
   const cms = getAdminCms();
+  const p = paths();
+  const ts = Date.now();
 
   try {
-    const saved = await uploadSiteCms(cms);
-    const { _deliveryUrl, ...rest } = saved;
-    window.HAIBO_ADMIN_CMS = {
-      ...emptyCmsDocument(),
-      ...cms,
-      ...rest,
-    };
-    if (!quiet) {
-      adminToast('Saved — live website updated', 'success');
+    if (cms.hero) await dbSetDoc(p.hero, cms.hero, 'main');
+    if (cms.about) await dbSetDoc(p.about, cms.about, 'main');
+    if (cms.contact) await dbSetDoc(p.contact, cms.contact, 'main');
+    if (cms.socials) await dbSetDoc(p.socials, cms.socials, 'main');
+    if (cms.settings) await dbSetDoc(p.settings, cms.settings, 'main');
+
+    for (const row of cms.destinations || []) {
+      const id = String(row.id || '').trim();
+      if (!id) continue;
+      await dbSetDoc(p.destinations, { ...row, id, slug: id }, id);
     }
-    return window.HAIBO_ADMIN_CMS;
+
+    for (const row of cms.gallery || []) {
+      const id = String(row.id || '').trim();
+      if (!id) continue;
+      await dbSetDoc(p.gallery, row, id);
+    }
+
+    for (const row of cms.weatherCards || []) {
+      const id = String(row.id || '').trim();
+      if (!id) continue;
+      await dbSetDoc(p.weatherCards, row, id);
+    }
+
+    cms.updatedAt = ts;
+    console.log('[HAIBO] Firestore updated successfully — all CMS sections');
+    if (!quiet) {
+      adminToast('Saved — live on all devices', 'success');
+    }
+    return cms;
   } catch (err) {
-    const msg = err?.message || 'Could not save to the website';
-    if (!quiet) {
-      adminToast(msg, 'error');
-    }
+    const msg = err?.message || 'Firestore save failed';
+    if (!quiet) adminToast(msg, 'error');
     throw err;
   }
+}
+
+/** Save one destination document to Firestore. */
+export async function saveDestinationToFirestore(row) {
+  const p = paths();
+  const id = String(row.id || '').trim();
+  if (!id) throw new Error('Destination ID is required');
+  const clean = sanitizeFirestoreData({ ...row, id, slug: id, updatedAt: Date.now() });
+  await dbSetDoc(p.destinations, clean, id);
+  console.log('[HAIBO] Firestore updated successfully', `destinations/${id}`);
+  return clean;
+}
+
+/** Remove destination from Firestore. */
+export async function deleteDestinationFromFirestore(id) {
+  const p = paths();
+  await dbDeleteDoc(p.destinations, id);
+  console.log('[HAIBO] Firestore deleted', `destinations/${id}`);
 }
 
 export function upsertDestinationInCms(row) {
@@ -77,4 +144,37 @@ export function listDestinationsForAdmin() {
   return [...(getAdminCms().destinations || [])].sort(
     (a, b) => (a.order ?? 0) - (b.order ?? 0)
   );
+}
+
+/** Save a single top-level section doc (hero, about, contact, …). */
+export async function saveSectionToFirestore(sectionKey, data) {
+  const p = paths();
+  const coll = p[sectionKey];
+  if (!coll) throw new Error(`Unknown section: ${sectionKey}`);
+  await dbSetDoc(coll, data, 'main');
+  console.log('[HAIBO] Firestore updated successfully', `${coll}/main`);
+}
+
+export async function deleteGalleryFromFirestore(id) {
+  await dbDeleteDoc(paths().gallery, id);
+  console.log('[HAIBO] Firestore deleted', `gallery/${id}`);
+}
+
+export async function deleteWeatherFromFirestore(id) {
+  await dbDeleteDoc(paths().weatherCards, id);
+  console.log('[HAIBO] Firestore deleted', `weatherCards/${id}`);
+}
+
+export async function saveGalleryItemToFirestore(item) {
+  const id = String(item.id || '').trim();
+  if (!id) throw new Error('Gallery item id required');
+  await dbSetDoc(paths().gallery, item, id);
+  console.log('[HAIBO] Firestore updated successfully', `gallery/${id}`);
+}
+
+export async function saveWeatherCardToFirestore(row) {
+  const id = String(row.id || '').trim();
+  if (!id) throw new Error('Weather card id required');
+  await dbSetDoc(paths().weatherCards, row, id);
+  console.log('[HAIBO] Firestore updated successfully', `weatherCards/${id}`);
 }

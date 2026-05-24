@@ -6,6 +6,8 @@ import {
   getApps,
   getApp,
   getFirestore,
+  initializeFirestore,
+  memoryLocalCache,
   getAuth,
   initializeAuth,
   setPersistence,
@@ -36,7 +38,11 @@ export function getHaiboDb() {
   if (!db) {
     const haiboApp = getHaiboApp();
     if (!haiboApp) return null;
-    db = getFirestore(haiboApp);
+    try {
+      db = initializeFirestore(haiboApp, { localCache: memoryLocalCache() });
+    } catch {
+      db = getFirestore(haiboApp);
+    }
   }
   return db;
 }

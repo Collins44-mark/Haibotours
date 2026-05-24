@@ -7,7 +7,17 @@ import {
   renderDestinationsList,
   bindDestinationsListFilters,
 } from './admin-destinations.mjs';
-import { getAdminCms, loadAdminCms, syncCmsToWebsite } from './admin-cms.mjs';
+import {
+  getAdminCms,
+  loadAdminCms,
+  syncCmsToWebsite,
+  saveSectionToFirestore,
+  saveGalleryItemToFirestore,
+  saveWeatherCardToFirestore,
+  deleteGalleryFromFirestore,
+  deleteWeatherFromFirestore,
+} from './admin-cms.mjs';
+import { subscribeAdminFirestore } from './admin-realtime.mjs';
 import { initTopbarMenu, initMobileSidebar } from './admin-ui.mjs';
 
 /** HAIBO Admin — section managers */
@@ -341,8 +351,8 @@ async function saveHeroForm(e) {
       ctaSecondaryText: f.ctaSecondaryText.value,
       ctaSecondaryLink: f.ctaSecondaryLink.value,
     };
-    await syncCmsToWebsite({ quiet: true });
-    adminToast('Hero saved — live site updated', 'success');
+    await saveSectionToFirestore('hero', getAdminCms().hero);
+    adminToast('Hero saved — all devices updated', 'success');
     await loadHeroForm();
   } catch (err) {
     adminToast(err?.message || 'Could not save hero', 'error');
@@ -378,8 +388,8 @@ async function saveAboutForm(e) {
       imageUrl: f.imageUrl.value,
       featureCards,
     };
-    await syncCmsToWebsite({ quiet: true });
-    adminToast('About saved — live site updated', 'success');
+    await saveSectionToFirestore('about', getAdminCms().about);
+    adminToast('About saved — all devices updated', 'success');
   } catch (err) {
     adminToast(err?.message || 'Could not save about', 'error');
   }
@@ -408,8 +418,8 @@ async function saveContactForm(e) {
       officeHours: f.officeHours.value,
       defaultTourMessage: f.defaultTourMessage.value,
     };
-    await syncCmsToWebsite({ quiet: true });
-    adminToast('Contact saved — live site updated', 'success');
+    await saveSectionToFirestore('contact', getAdminCms().contact);
+    adminToast('Contact saved — all devices updated', 'success');
   } catch (err) {
     adminToast(err?.message || 'Could not save contact', 'error');
   }
@@ -429,8 +439,8 @@ async function saveSocialsForm(e) {
   const f = e.target;
   try {
     getAdminCms().socials = Object.fromEntries(new FormData(f));
-    await syncCmsToWebsite({ quiet: true });
-    adminToast('Social links saved — live site updated', 'success');
+    await saveSectionToFirestore('socials', getAdminCms().socials);
+    adminToast('Social links saved — all devices updated', 'success');
   } catch (err) {
     adminToast(err?.message || 'Could not save social links', 'error');
   }
@@ -474,8 +484,8 @@ async function saveSettingsForm(e) {
       },
       navLinks,
     };
-    await syncCmsToWebsite({ quiet: true });
-    adminToast('Settings saved — live site updated', 'success');
+    await saveSectionToFirestore('settings', cms.settings);
+    adminToast('Settings saved — all devices updated', 'success');
   } catch (err) {
     adminToast(err?.message || 'Could not save settings', 'error');
   }
@@ -566,8 +576,9 @@ function renderGalleryList() {
       if (!confirm('Delete gallery item?')) return;
       try {
         const cms = getAdminCms();
-        cms.gallery = (cms.gallery || []).filter((g) => g.id !== btn.dataset.delGallery);
-        await syncCmsToWebsite({ quiet: true });
+        const gid = btn.dataset.delGallery;
+        cms.gallery = (cms.gallery || []).filter((g) => g.id !== gid);
+        await deleteGalleryFromFirestore(gid);
         adminToast('Deleted — live site updated', 'success');
         resetGalleryForm();
         await loadAllAdminData();
@@ -602,7 +613,7 @@ async function addGalleryImage(e) {
     } else {
       cms.gallery.push(item);
     }
-    await syncCmsToWebsite({ quiet: true });
+    await saveGalleryItemToFirestore(item);
     resetGalleryForm();
     adminToast(editId ? 'Gallery item updated' : 'Gallery item added', 'success');
     await loadAllAdminData();
@@ -635,8 +646,9 @@ function renderWeatherList() {
     btn.addEventListener('click', async () => {
       if (!confirm('Delete weather card?')) return;
       const cms = getAdminCms();
-      cms.weatherCards = (cms.weatherCards || []).filter((w) => w.id !== btn.dataset.delWeather);
-      await syncCmsToWebsite({ quiet: true });
+      const wid = btn.dataset.delWeather;
+      cms.weatherCards = (cms.weatherCards || []).filter((w) => w.id !== wid);
+      await deleteWeatherFromFirestore(wid);
       await loadAllAdminData();
       adminToast('Deleted — live site updated', 'success');
     });
@@ -695,8 +707,8 @@ async function saveWeatherForm(e) {
     if (idx >= 0) list[idx] = row;
     else list.push(row);
     cms.weatherCards = list;
-    await syncCmsToWebsite({ quiet: true });
-    adminToast('Weather card saved — live site updated', 'success');
+    await saveWeatherCardToFirestore(row);
+    adminToast('Weather card saved — all devices updated', 'success');
     await loadAllAdminData();
   } catch (err) {
     adminToast(err?.message || 'Could not save weather card', 'error');
@@ -728,8 +740,8 @@ async function saveSearchSettings() {
     );
     const cms = getAdminCms();
     cms.settings = { ...(cms.settings || {}), searchEnabledIds: checked };
-    await syncCmsToWebsite({ quiet: true });
-    adminToast('Search updated — live site updated', 'success');
+    await saveSectionToFirestore('settings', cms.settings);
+    adminToast('Search updated — all devices updated', 'success');
   } catch (err) {
     adminToast(err?.message || 'Could not save search settings', 'error');
   }
@@ -790,10 +802,10 @@ function initAdminAppHandlers() {
     const input = document.querySelector('#form-hero [name="backgroundImageUrl"]');
     if (input) input.value = url;
     const cms = getAdminCms();
-    cms.hero = { ...(cms.hero || {}), backgroundImageUrl: url };
+    cms.hero = { ...(cms.hero || {}), backgroundImageUrl: url, updatedAt: Date.now() };
     try {
-      await syncCmsToWebsite({ quiet: true });
-      adminToast('Hero image saved to live site', 'success');
+      await saveSectionToFirestore('hero', cms.hero);
+      adminToast('Hero image saved — all devices updated', 'success');
     } catch (err) {
       adminToast(err?.message || 'Image uploaded — click Save hero to publish', 'error');
     }
@@ -802,10 +814,10 @@ function initAdminAppHandlers() {
     const input = document.querySelector('#form-about [name="imageUrl"]');
     if (input) input.value = url;
     const cms = getAdminCms();
-    cms.about = { ...(cms.about || {}), imageUrl: url };
+    cms.about = { ...(cms.about || {}), imageUrl: url, updatedAt: Date.now() };
     try {
-      await syncCmsToWebsite({ quiet: true });
-      adminToast('About image saved to live site', 'success');
+      await saveSectionToFirestore('about', cms.about);
+      adminToast('About image saved — all devices updated', 'success');
     } catch (err) {
       adminToast(err?.message || 'Image uploaded — click Save about to publish', 'error');
     }
@@ -814,10 +826,10 @@ function initAdminAppHandlers() {
     const input = document.querySelector('#form-settings [name="logoUrl"]');
     if (input) input.value = url;
     const cms = getAdminCms();
-    cms.settings = { ...(cms.settings || {}), logoUrl: url };
+    cms.settings = { ...(cms.settings || {}), logoUrl: url, updatedAt: Date.now() };
     try {
-      await syncCmsToWebsite({ quiet: true });
-      adminToast('Logo saved to live site', 'success');
+      await saveSectionToFirestore('settings', cms.settings);
+      adminToast('Logo saved — all devices updated', 'success');
     } catch (err) {
       adminToast(err?.message || 'Image uploaded — click Save settings to publish', 'error');
     }
@@ -827,13 +839,28 @@ function initAdminAppHandlers() {
     if (src) src.value = url;
   });
 
-  void loadAdminCms().then(() => {
-    loadHeroForm();
-    loadAboutForm();
-    loadContactForm();
-    loadSocialsForm();
-    loadSettingsForm();
-    return loadAllAdminData();
+  const refreshAdminFromFirestore = async () => {
+    await loadAdminCms();
+    state.destinations = getAdminCms().destinations || [];
+    state.gallery = getAdminCms().gallery || [];
+    state.weatherCards = getAdminCms().weatherCards || [];
+    state.heroDoc = getAdminCms().hero;
+    refreshDestinationsListUi();
+    renderGalleryList();
+    renderWeatherList();
+    renderSearchDestCheckboxes();
+    renderDashboard();
+    await loadHeroForm();
+    await loadAboutForm();
+    await loadContactForm();
+    await loadSocialsForm();
+    await loadSettingsForm();
+  };
+
+  void refreshAdminFromFirestore();
+
+  subscribeAdminFirestore(() => {
+    void refreshAdminFromFirestore();
   });
 }
 

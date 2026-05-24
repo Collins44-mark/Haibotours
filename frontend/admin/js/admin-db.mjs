@@ -100,6 +100,19 @@ export async function dbList(coll) {
   });
 }
 
+/** List without auth toast — for loading public CMS collections in admin. */
+export async function dbListOptional(coll) {
+  try {
+    const database = getAdminDb();
+    if (!database) return [];
+    const snap = await getDocs(collection(database, coll));
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  } catch (err) {
+    console.warn('[HAIBO Admin] list skipped', coll, err?.code || err?.message);
+    return [];
+  }
+}
+
 export async function dbDeleteDoc(coll, docId) {
   return withFirestore((database) => deleteDoc(doc(database, coll, docId)));
 }

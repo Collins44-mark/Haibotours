@@ -7,7 +7,8 @@ import {
   removeDestinationFromCms,
   getDestinationFromCms,
   listDestinationsForAdmin,
-  syncCmsToWebsite,
+  saveDestinationToFirestore,
+  deleteDestinationFromFirestore,
 } from './admin-cms.mjs';
 import { adminToast, slugify } from './admin-db.mjs';
 import { confirmDialog, formatRelativeTime, showToast } from './admin-ui.mjs';
@@ -76,15 +77,14 @@ export async function saveDestinationRecord(payload) {
     published: rest.active !== false,
   });
 
-  await syncCmsToWebsite({ quiet: true });
+  await saveDestinationToFirestore(row);
   return row;
 }
 
 export async function loadDestinationById(id) {
   const fromCms = getDestinationFromCms(id);
-  if (fromCms) return { ...fromCms, id, _source: 'cms' };
-  const stat = getStaticDestinations().find((d) => d.id === id);
-  return stat ? { ...stat, _source: 'static' } : null;
+  if (fromCms) return { ...fromCms, id, _source: 'firestore' };
+  return null;
 }
 
 function escapeHtml(s) {
@@ -173,7 +173,7 @@ export function renderDestinationsList(el, destinations, { onRefresh }) {
       btn.disabled = true;
       try {
         removeDestinationFromCms(id);
-        await syncCmsToWebsite({ quiet: true });
+        await deleteDestinationFromFirestore(id);
         showToast('Destination deleted', 'success');
         onRefresh?.();
       } catch (err) {

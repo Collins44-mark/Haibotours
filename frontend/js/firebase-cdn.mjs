@@ -8,6 +8,8 @@ export { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebase
 
 export {
   getFirestore,
+  initializeFirestore,
+  memoryLocalCache,
   doc,
   getDoc,
   setDoc,
