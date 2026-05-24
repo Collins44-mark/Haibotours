@@ -25,8 +25,26 @@ export function getStaticDestinations() {
   );
 }
 
+/** Same merge as the live site: full static catalog + Firestore overrides. */
 export function mergeDestinationsForAdmin() {
-  return listDestinationsForAdmin().map((d) => ({ ...d, _source: 'cms' }));
+  const cmsRows = listDestinationsForAdmin();
+  const staticList = getStaticDestinations();
+
+  if (typeof haiboMergeDestinationsList === 'function' && staticList.length > 0) {
+    return haiboMergeDestinationsList(cmsRows).map((d) => ({
+      ...d,
+      _source: d._fromFirestore ? 'cms' : 'catalog',
+    }));
+  }
+
+  return cmsRows.map((d) => ({ ...d, _source: 'cms' }));
+}
+
+function destinationIdKey(id) {
+  if (typeof haiboNormalizeDestId === 'function') {
+    return haiboNormalizeDestId(id);
+  }
+  return slugify(String(id || '').trim());
 }
 
 export function collectDestinationPayload(form, builders) {
@@ -109,9 +127,15 @@ export async function deleteDestinationById(id) {
 }
 
 export async function loadDestinationById(id) {
-  const fromCms = getDestinationFromCms(id);
-  if (fromCms) return { ...fromCms, id, _source: 'firestore' };
-  return null;
+  if (!id) return null;
+  const key = destinationIdKey(id);
+  const row = mergeDestinationsForAdmin().find((d) => destinationIdKey(d.id) === key);
+  if (!row) return null;
+  return {
+    ...row,
+    id: key,
+    _source: row._fromFirestore ? 'firestore' : 'catalog',
+  };
 }
 
 function escapeHtml(s) {

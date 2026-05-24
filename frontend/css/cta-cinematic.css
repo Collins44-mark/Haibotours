@@ -12,6 +12,10 @@
   isolation: isolate;
 }
 
+.cta-cinematic--contact {
+  min-height: auto;
+}
+
 .cta-cinematic--float {
   animation: ctaFloat 6s ease-in-out infinite;
 }
