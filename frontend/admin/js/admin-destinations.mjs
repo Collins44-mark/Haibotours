@@ -16,7 +16,8 @@ import { confirmDialog, formatRelativeTime, showToast } from './admin-ui.mjs';
 export const DEST_EDIT_BASE = '/admin/destinations/edit.html';
 
 export function destinationEditUrl(id) {
-  return id ? `${DEST_EDIT_BASE}?id=${encodeURIComponent(id)}` : DEST_EDIT_BASE;
+  const slug = id ? String(id).trim().toLowerCase().replace(/\s+/g, '-') : '';
+  return slug ? `${DEST_EDIT_BASE}?id=${encodeURIComponent(slug)}` : DEST_EDIT_BASE;
 }
 
 export function getStaticDestinations() {
@@ -32,12 +33,15 @@ export function mergeDestinationsForAdmin() {
 
 export function collectDestinationPayload(form, builders) {
   const slugInput = form.querySelector('[name="id"]');
-  const id = (
-    slugInput?.value?.trim() ||
-    form.dataset.editId ||
-    slugify(form.querySelector('[name="name"]')?.value)
-  ).trim();
+  const id = slugify(
+    (
+      slugInput?.value?.trim() ||
+      form.dataset.editId ||
+      slugify(form.querySelector('[name="name"]')?.value)
+    ).trim()
+  );
   const galleryRaw = form.querySelector('[name="galleryUrls"]')?.value || '';
+  const published = form.querySelector('[name="active"]')?.checked !== false;
   return {
     id,
     name: form.querySelector('[name="name"]')?.value?.trim() || '',
@@ -59,9 +63,10 @@ export function collectDestinationPayload(form, builders) {
       .filter(Boolean),
     packages: builders.packages?.getValues?.() ?? [],
     experience: builders.experience?.getValues?.() ?? {},
-    active: form.querySelector('[name="active"]')?.checked !== false,
+    active: published,
+    published,
     order: Number(form.querySelector('[name="order"]')?.value) || 0,
-    status: form.querySelector('[name="active"]')?.checked !== false ? 'published' : 'draft',
+    status: published ? 'published' : 'draft',
   };
 }
 

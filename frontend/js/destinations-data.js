@@ -368,6 +368,7 @@ function syncHaiboDestinations() {
 
 window.getHaiboDestinations = getHaiboDestinations;
 window.syncHaiboDestinations = syncHaiboDestinations;
+window.getFirestoreDestinationById = getFirestoreDestinationById;
 
 function getDestinationById(id) {
   if (!id) return null;
@@ -382,7 +383,35 @@ function getDestinationById(id) {
         : d.id === key
     ) || null;
 
-  return match(getHaiboDestinations());
+  const list = getHaiboDestinations();
+  const fromPublic = match(list);
+  if (fromPublic) return fromPublic;
+
+  if (typeof resolveDestinationSlug === 'function') {
+    const resolved = resolveDestinationSlug(id);
+    if (resolved) {
+      return match(list) || list.find((d) => d.id === resolved) || null;
+    }
+  }
+
+  return null;
+}
+
+/** Find destination in raw Firestore list (includes drafts). */
+function getFirestoreDestinationById(id) {
+  if (!id) return null;
+  const key =
+    typeof haiboNormalizeDestId === 'function'
+      ? haiboNormalizeDestId(id)
+      : String(id).trim().toLowerCase();
+  const list = window.HAIBO_FIRESTORE_DESTINATIONS || [];
+  return (
+    list.find((d) =>
+      typeof haiboNormalizeDestId === 'function'
+        ? haiboNormalizeDestId(d.id) === key
+        : d.id === key
+    ) || null
+  );
 }
 
 /** Match user input or slug to a destination id */

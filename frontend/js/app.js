@@ -470,16 +470,34 @@ function getQueryParam(name) {
 }
 
 function renderDestinationDetail() {
+  const root = document.getElementById('detail-root');
+  if (!root) return;
+
+  if (!window.HAIBO_CONTENT_LOADED) {
+    root.innerHTML =
+      '<section class="py-32 px-8 text-center text-gray-400" aria-busy="true">Loading destination…</section>';
+    return;
+  }
+
   const id = typeof getDestinationIdFromLocation === 'function'
     ? getDestinationIdFromLocation()
     : getQueryParam('id');
   const dest = getDestinationById(id);
 
   if (!dest) {
-    document.getElementById('detail-root').innerHTML = `
+    const draft =
+      typeof getFirestoreDestinationById === 'function'
+        ? getFirestoreDestinationById(id)
+        : null;
+    const draftHint =
+      draft && (draft.active === false || draft.status === 'draft')
+        ? '<p class="text-gray-400 mb-4">This destination is saved as <strong>Draft</strong> in the admin panel. Turn on <strong>Published</strong> and save to show it on the website.</p>'
+        : '<p class="text-gray-400 mb-8">The page you\'re looking for doesn\'t exist or the link uses an old address. Check the spelling or pick a destination from the list.</p>';
+
+    root.innerHTML = `
       <section class="py-32 px-8 text-center">
-        <h1 class="text-4xl font-bold mb-4">Destination not found</h1>
-        <p class="text-gray-400 mb-8">The page you're looking for doesn't exist.</p>
+        <h1 class="text-4xl font-bold mb-4">Destination not available</h1>
+        ${draftHint}
         <a href="destinations.html" class="btn-main px-8 py-4 rounded-full">View All Destinations</a>
       </section>
     `;

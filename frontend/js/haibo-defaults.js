@@ -274,7 +274,11 @@ function haiboMergeDestinationsList(liveItems) {
   liveById.forEach((live) => {
     const key = haiboNormalizeDestId(live.id);
     if (!key) return;
-    merged.push(haiboMergeDestination(live, haiboStaticDestination(key)));
+    const row = haiboMergeDestination(live, haiboStaticDestination(key));
+    row._fromFirestore = true;
+    row.active = live.active !== false;
+    row.id = key;
+    merged.push(row);
   });
 
   return merged.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));

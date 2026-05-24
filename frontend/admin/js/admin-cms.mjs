@@ -9,6 +9,7 @@ import {
   dbListOptional,
   dbDeleteDoc,
   sanitizeFirestoreData,
+  slugify,
 } from './admin-db.mjs';
 
 window.HAIBO_ADMIN_CMS = emptyCmsDocument();
@@ -104,9 +105,17 @@ export async function syncCmsToWebsite(options = {}) {
 /** Save one destination document to Firestore. */
 export async function saveDestinationToFirestore(row) {
   const p = paths();
-  const id = String(row.id || '').trim();
-  if (!id) throw new Error('Destination ID is required');
-  const clean = sanitizeFirestoreData({ ...row, id, slug: id, updatedAt: Date.now() });
+  const id = slugify(String(row.id || row.name || '').trim());
+  if (!id) throw new Error('Destination ID (slug) is required');
+  const clean = sanitizeFirestoreData({
+    ...row,
+    id,
+    slug: id,
+    active: row.active !== false,
+    status: row.active !== false ? 'published' : 'draft',
+    published: row.active !== false,
+    updatedAt: Date.now(),
+  });
   await dbSetDoc(p.destinations, clean, id);
   console.log('[HAIBO] Firestore updated successfully', `destinations/${id}`);
   return clean;
@@ -121,10 +130,18 @@ export async function deleteDestinationFromFirestore(id) {
 
 export function upsertDestinationInCms(row) {
   const cms = getAdminCms();
-  const id = String(row.id).trim();
+  const id = slugify(String(row.id || row.name || '').trim());
   const list = [...(cms.destinations || [])];
-  const idx = list.findIndex((d) => d.id === id);
-  const entry = { ...row, id, slug: id, updatedAt: Date.now() };
+  const idx = list.findIndex((d) => slugify(d.id) === id);
+  const entry = {
+    ...row,
+    id,
+    slug: id,
+    active: row.active !== false,
+    status: row.active !== false ? 'published' : 'draft',
+    published: row.active !== false,
+    updatedAt: Date.now(),
+  };
   if (idx >= 0) list[idx] = { ...list[idx], ...entry };
   else list.push(entry);
   cms.destinations = list;

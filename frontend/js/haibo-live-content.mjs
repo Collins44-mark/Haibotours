@@ -6,12 +6,13 @@ export function haiboNormalizeFirestoreDestination(doc) {
   if (!doc?.id) return null;
   const cardImage = doc.cardImage || doc.image || doc.imageUrl || '';
   const heroImage = doc.heroImage || doc.hero_image || cardImage || '';
-  const isDraft = doc.status === 'draft' || doc.published === false;
-  const published = !isDraft && doc.active !== false;
+  const id = String(doc.id).trim().toLowerCase().replace(/\s+/g, '-');
+  const showOnSite = doc.active !== false && doc.status !== 'draft';
 
   return {
     ...doc,
-    id: String(doc.id).trim(),
+    id,
+    slug: id,
     image: cardImage,
     imageUrl: cardImage,
     cardImage,
@@ -21,8 +22,9 @@ export function haiboNormalizeFirestoreDestination(doc) {
     highlights: Array.isArray(doc.highlights) ? doc.highlights : [],
     experience: doc.experience && typeof doc.experience === 'object' ? doc.experience : {},
     _fromFirestore: true,
-    active: published,
-    published,
+    active: showOnSite,
+    published: showOnSite,
+    status: showOnSite ? 'published' : 'draft',
     updatedAt: doc.updatedAt || null,
   };
 }

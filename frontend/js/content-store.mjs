@@ -89,11 +89,12 @@ function paintFromFirestoreCms(doc) {
   }));
 
   try {
-    window.HAIBO_CONTENT.destinations = haiboDestinationsFromFirestoreDocs(
-      window.HAIBO_FIRESTORE_DESTINATIONS
-    );
+    window.HAIBO_CONTENT.destinations =
+      typeof haiboMergeDestinationsList === 'function'
+        ? haiboMergeDestinationsList(window.HAIBO_FIRESTORE_DESTINATIONS)
+        : (window.HAIBO_FIRESTORE_DESTINATIONS || []).filter((d) => d?.id && d.active !== false);
   } catch (err) {
-    console.error('[HAIBO] destination normalize failed', err);
+    console.error('[HAIBO] destination merge failed', err);
     window.HAIBO_CONTENT.destinations = [];
   }
 
