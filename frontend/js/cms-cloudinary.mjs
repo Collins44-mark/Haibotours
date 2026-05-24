@@ -1,13 +1,13 @@
 /**
- * Site CMS — JSON on Cloudinary. Public site loads via /api/site-cms (no 404 spam).
+ * Site CMS — one JSON file on Cloudinary. Admin save → new URL in cookie → website reads it.
  */
 
 function cfg() {
   return globalThis.CLOUDINARY_CONFIG || {};
 }
 
-const LIVE_ID = 'haibo/cms/site-live';
-const SEED_ID = 'haibo/cms/site-manifest';
+const MANIFEST_ID = 'haibo/cms/site-manifest';
+const COOKIE_NAME = 'haibo_cms_delivery';
 
 export function emptyCmsDocument() {
   return {
@@ -30,10 +30,39 @@ function manifestUrl(publicId) {
   return `https://res.cloudinary.com/${cloudName}/raw/upload/${publicId}.json`;
 }
 
-async function fetchByPublicId(publicId) {
-  const url = manifestUrl(publicId);
+export function getLatestCmsDeliveryUrl() {
+  try {
+    const match = document.cookie.match(new RegExp(`${COOKIE_NAME}=([^;]+)`));
+    if (match) return decodeURIComponent(match[1]);
+  } catch {
+    /* ignore */
+  }
+  try {
+    return localStorage.getItem(COOKIE_NAME);
+  } catch {
+    return null;
+  }
+}
+
+export function setLatestCmsDeliveryUrl(url) {
+  if (!url) return;
+  try {
+    localStorage.setItem(COOKIE_NAME, url);
+  } catch {
+    /* ignore */
+  }
+  try {
+    document.cookie = `${COOKIE_NAME}=${encodeURIComponent(url)};path=/;max-age=2592000;SameSite=Lax`;
+  } catch {
+    /* ignore */
+  }
+}
+
+async function fetchJsonUrl(url) {
   if (!url) return null;
-  const res = await fetch(`${url}?_=${Date.now()}`, { cache: 'no-store' });
+  const res = await fetch(`${url}${url.includes('?') ? '&' : '?'}_=${Date.now()}`, {
+    cache: 'no-store',
+  });
   if (!res.ok) return null;
   try {
     return await res.json();
@@ -42,31 +71,29 @@ async function fetchByPublicId(publicId) {
   }
 }
 
-function pickNewest(docs) {
-  let best = null;
-  for (const doc of docs) {
-    if (!doc || typeof doc !== 'object') continue;
-    if (!best || (doc.updatedAt || 0) > (best.updatedAt || 0)) {
-      best = doc;
-    }
-  }
-  return best;
+async function fetchByPublicId(publicId) {
+  return fetchJsonUrl(manifestUrl(publicId));
 }
 
-/** Load newest CMS document (API first, then stable Cloudinary URLs only). */
+/** Load CMS for the public website (newest delivery URL, then fallback manifest). */
 export async function fetchSiteCms() {
-  try {
-    const apiRes = await fetch('/api/site-cms', { cache: 'no-store' });
-    if (apiRes.ok) {
-      const doc = await apiRes.json();
-      if (doc && !doc.error) return doc;
-    }
-  } catch {
-    /* static hosting without API — fall through */
+  const direct = getLatestCmsDeliveryUrl();
+  if (direct) {
+    const doc = await fetchJsonUrl(direct);
+    if (doc?.destinations) return doc;
   }
 
-  const docs = await Promise.all([fetchByPublicId(LIVE_ID), fetchByPublicId(SEED_ID)]);
-  return pickNewest(docs);
+  try {
+    const apiRes = await fetch('/api/site-cms', { cache: 'no-store', credentials: 'include' });
+    if (apiRes.ok) {
+      const doc = await apiRes.json();
+      if (doc && !doc.error && doc.destinations) return doc;
+    }
+  } catch {
+    /* no API on static host */
+  }
+
+  return fetchByPublicId(MANIFEST_ID);
 }
 
 async function unsignedUpload(payload, publicId) {
@@ -75,10 +102,9 @@ async function unsignedUpload(payload, publicId) {
     throw new Error('Cloudinary is not configured.');
   }
 
-  const fullId = publicId.startsWith(baseFolder) ? publicId : `${baseFolder}/${publicId}`;
-  const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+  const fullId = publicId.includes('/') ? publicId : `${baseFolder}/${publicId}`;
   const form = new FormData();
-  form.append('file', blob, 'site-cms.json');
+  form.append('file', new Blob([JSON.stringify(payload)], { type: 'application/json' }), 'site-cms.json');
   form.append('upload_preset', uploadPreset);
   form.append('public_id', fullId);
 
@@ -90,12 +116,10 @@ async function unsignedUpload(payload, publicId) {
   if (!res.ok) {
     throw new Error(body.error?.message || 'Could not update the website.');
   }
-  return { body, publicId: body.public_id || fullId };
+  return body;
 }
 
-/**
- * Save CMS — tries API (overwrite), then unsigned uploads to site-live + timestamped backup.
- */
+/** Save CMS and remember the Cloudinary URL so the website can load it. */
 export async function uploadSiteCms(doc) {
   const payload = { ...doc, version: 1, updatedAt: Date.now() };
 
@@ -103,28 +127,24 @@ export async function uploadSiteCms(doc) {
     const apiRes = await fetch('/api/site-cms', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify(payload),
     });
     if (apiRes.ok) {
-      return await apiRes.json();
+      const saved = await apiRes.json();
+      if (saved._deliveryUrl) setLatestCmsDeliveryUrl(saved._deliveryUrl);
+      return saved;
     }
   } catch {
-    /* continue with direct Cloudinary */
+    /* fall through */
   }
 
-  const base = cfg().baseFolder || 'haibo';
-  const backupId = `${base}/cms/m-${Date.now()}`;
-  await unsignedUpload(payload, backupId);
-
-  try {
-    await unsignedUpload(payload, LIVE_ID);
-  } catch (err) {
-    console.warn('[HAIBO] site-live upload failed (enable Overwrite on Cloudinary upload preset):', err.message);
+  const body = await unsignedUpload(payload, `cms/m-${Date.now()}`);
+  const deliveryUrl = body.secure_url;
+  if (!deliveryUrl) {
+    throw new Error('Upload succeeded but no URL was returned.');
   }
 
-  if (typeof localStorage !== 'undefined') {
-    localStorage.setItem('haibo_cms_latest_id', backupId);
-  }
-
-  return payload;
+  setLatestCmsDeliveryUrl(deliveryUrl);
+  return { ...payload, _deliveryUrl: deliveryUrl };
 }

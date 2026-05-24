@@ -14,7 +14,7 @@ The **admin panel** uses **Firebase Authentication only** (email + password). Wh
 
 In [Cloudinary Console](https://console.cloudinary.com) → Settings → Upload → your preset `ml_default`:
 
-- Turn **Overwrite** ON (so `haibo/cms/site-live` updates on each save).
+- Turn **Overwrite** ON if you use a fixed public id (optional; default flow uses a new URL per save).
 
 Without overwrite, only the first save per file sticks; the site may show old data.
 
@@ -28,7 +28,7 @@ Add environment variables on Vercel for project **haibo-tours** site:
 | `CLOUDINARY_API_SECRET` | From Cloudinary dashboard |
 | `CLOUDINARY_CLOUD_NAME` | `dae3rpnmg` (optional, default in code) |
 
-Then `/api/site-cms` can overwrite `site-live` on every save and find the newest upload for visitors.
+Then `/api/site-cms` can list the newest `haibo/cms/m-*` backup for all visitors (not only the browser that saved).
 
 ## First-time content
 
