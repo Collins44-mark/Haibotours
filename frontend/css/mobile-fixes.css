@@ -34,13 +34,24 @@ body {
   box-sizing: border-box;
 }
 
-img:not(.dest-card-img),
-video,
+img:not(.dest-card-img):not(.gallery-media-card__img):not(.gallery-media-card__video),
+video:not(.gallery-media-card__video),
 svg,
 canvas,
 iframe {
   max-width: 100%;
   height: auto;
+}
+
+/* Gallery / destination gallery tiles — always fill aspect-ratio frame */
+.gallery-media-card__img,
+.gallery-media-card__video {
+  max-width: none !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center !important;
+  display: block !important;
 }
 
 .haibo-media:not(.dest-card-img) {

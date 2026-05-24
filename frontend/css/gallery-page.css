@@ -38,14 +38,77 @@
 }
 
 @media (min-width: 768px) and (max-width: 1024px) {
-  .gallery-grid-photos {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .gallery-grid-photos,
+  .home-gallery-preview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1rem;
+    align-items: start;
   }
 
   .gallery-grid-videos {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1rem;
+    align-items: start;
+  }
+
+  .gallery-media-card {
+    display: block;
+    height: auto;
+    min-height: 0;
+    align-self: stretch;
+  }
+
+  .gallery-media-card__media {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    height: auto;
+    min-height: 0;
+    overflow: hidden;
+    isolation: isolate;
+  }
+
+  .gallery-media-card__img,
+  .gallery-media-card__video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    min-height: 100%;
+    max-width: none;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+  }
+
+  .gallery-media-card__overlay,
+  .gallery-media-card__body {
+    position: absolute;
+    left: 0;
+    right: 0;
+  }
+
+  .gallery-media-card__overlay {
+    top: 0;
+    bottom: 0;
+    height: 100%;
+  }
+
+  .gallery-media-card__body {
+    bottom: 0;
+  }
+
+  .gallery-media-card__title {
+    font-size: 0.875rem;
+  }
+
+  .gallery-media-card__tag {
+    font-size: 0.625rem;
+  }
+
+  .dest-gallery-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
   }
 }
 
@@ -72,7 +135,7 @@ a.home-gallery-card {
   color: inherit;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1025px) {
   .home-gallery-preview {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -83,10 +146,11 @@ a.home-gallery-card {
   position: relative;
   display: block;
   min-width: 0;
+  height: auto;
   border-radius: 1rem;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background: #121212;
+  background: #0d0d0d;
   cursor: pointer;
   transition:
     transform 0.4s ease,
@@ -100,12 +164,14 @@ a.home-gallery-card {
   outline-offset: 2px;
 }
 
+/* Image wrapper — fixed ratio, img fills 100% */
 .gallery-media-card__media {
   position: relative;
   width: 100%;
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 4 / 5;
   overflow: hidden;
-  background: #0d0d0d;
+  background: #0a0a0a;
+  line-height: 0;
 }
 
 .gallery-media-card__img,

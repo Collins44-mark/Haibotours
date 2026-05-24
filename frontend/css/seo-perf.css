@@ -82,11 +82,16 @@ img {
 /* Gallery cards: fill aspect-ratio frame (avoid black gaps from height:auto) */
 .gallery-media-card__img,
 .gallery-media-card__video {
-  max-width: none;
+  position: absolute;
+  inset: 0;
+  max-width: none !important;
+  width: 100% !important;
   height: 100% !important;
+  min-height: 100% !important;
+  object-fit: cover !important;
 }
 
-img[loading='lazy'] {
+img[loading='lazy']:not(.gallery-media-card__img) {
   content-visibility: auto;
 }
 
