@@ -15,6 +15,7 @@ import {
   saveDestinationRecord,
   collectDestinationPayload,
 } from './admin-destinations.mjs';
+import { upsertDestinationInCms, syncCmsToWebsite } from './admin-cms.mjs';
 import { createUploadZone } from './admin-cloudinary.mjs';
 import { adminToast, slugify } from './admin-db.mjs';
 import { bindUnsavedWarning } from './admin-ui.mjs';
@@ -231,9 +232,32 @@ function bindImages() {
     createUploadZone(input, {
       dropzoneEl: block?.querySelector('[data-dropzone]') || block?.querySelector('.haibo-dropzone'),
       folder: 'destinations',
-      onUrl: (url) => {
+      onUrl: async (url) => {
         setImagePreview(field, url);
         markDirty();
+        const form = document.getElementById('form-edit');
+        if (!form) return;
+        try {
+          const payload = collectDestinationPayload(form, builders);
+          if (!payload.id?.trim() || !payload.name?.trim()) {
+            showToast('Image uploaded — enter name and slug, then Save Changes', 'info');
+            return;
+          }
+          if (field === 'image') {
+            payload.image = url;
+            payload.imageUrl = url;
+            payload.cardImage = url;
+          } else {
+            payload.heroImage = url;
+          }
+          upsertDestinationInCms(payload);
+          await syncCmsToWebsite({ quiet: true });
+          dirty = false;
+          showToast('Image saved to live site', 'success');
+          setAutosave('Published successfully', true);
+        } catch (err) {
+          showToast(err?.message || 'Image uploaded — click Save Changes to publish', 'info');
+        }
       },
     });
   };

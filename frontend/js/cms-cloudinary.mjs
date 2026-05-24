@@ -75,25 +75,40 @@ async function fetchByPublicId(publicId) {
   return fetchJsonUrl(manifestUrl(publicId));
 }
 
+function isCmsDocument(doc) {
+  if (!doc || typeof doc !== 'object' || doc.error) return false;
+  return (
+    doc.version != null ||
+    doc.updatedAt != null ||
+    doc.hero != null ||
+    doc.about != null ||
+    doc.contact != null ||
+    doc.settings != null ||
+    Array.isArray(doc.destinations) ||
+    Array.isArray(doc.gallery)
+  );
+}
+
 /** Load CMS for the public website (newest delivery URL, then fallback manifest). */
 export async function fetchSiteCms() {
   const direct = getLatestCmsDeliveryUrl();
   if (direct) {
     const doc = await fetchJsonUrl(direct);
-    if (doc?.destinations) return doc;
+    if (isCmsDocument(doc)) return doc;
   }
 
   try {
     const apiRes = await fetch('/api/site-cms', { cache: 'no-store', credentials: 'include' });
     if (apiRes.ok) {
       const doc = await apiRes.json();
-      if (doc && !doc.error && doc.destinations) return doc;
+      if (isCmsDocument(doc)) return doc;
     }
   } catch {
     /* no API on static host */
   }
 
-  return fetchByPublicId(MANIFEST_ID);
+  const manifest = await fetchByPublicId(MANIFEST_ID);
+  return isCmsDocument(manifest) ? manifest : null;
 }
 
 async function unsignedUpload(payload, publicId) {

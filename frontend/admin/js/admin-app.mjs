@@ -329,20 +329,24 @@ async function loadHeroForm() {
 async function saveHeroForm(e) {
   e.preventDefault();
   const f = e.target;
-  getAdminCms().hero = {
-    eyebrow: f.eyebrow.value,
-    title: f.title.value,
-    titleAccent: f.titleAccent.value,
-    subtitle: f.subtitle.value,
-    backgroundImageUrl: f.backgroundImageUrl.value,
-    ctaPrimaryText: f.ctaPrimaryText.value,
-    ctaPrimaryLink: f.ctaPrimaryLink.value,
-    ctaSecondaryText: f.ctaSecondaryText.value,
-    ctaSecondaryLink: f.ctaSecondaryLink.value,
-  };
-  await syncCmsToWebsite({ quiet: true });
-  adminToast('Hero saved — live site updated', 'success');
-  await loadHeroForm();
+  try {
+    getAdminCms().hero = {
+      eyebrow: f.eyebrow.value,
+      title: f.title.value,
+      titleAccent: f.titleAccent.value,
+      subtitle: f.subtitle.value,
+      backgroundImageUrl: f.backgroundImageUrl.value,
+      ctaPrimaryText: f.ctaPrimaryText.value,
+      ctaPrimaryLink: f.ctaPrimaryLink.value,
+      ctaSecondaryText: f.ctaSecondaryText.value,
+      ctaSecondaryLink: f.ctaSecondaryLink.value,
+    };
+    await syncCmsToWebsite({ quiet: true });
+    adminToast('Hero saved — live site updated', 'success');
+    await loadHeroForm();
+  } catch (err) {
+    adminToast(err?.message || 'Could not save hero', 'error');
+  }
 }
 
 async function loadAboutForm() {
@@ -362,19 +366,23 @@ async function loadAboutForm() {
 async function saveAboutForm(e) {
   e.preventDefault();
   const f = e.target;
-  const featureCards = [0, 1, 2, 3].map((i) => ({
-    title: f[`featureTitle${i}`]?.value || '',
-    subtitle: f[`featureSub${i}`]?.value || '',
-  }));
-  getAdminCms().about = {
-    eyebrow: f.eyebrow.value,
-    title: f.title.value,
-    body: f.body.value,
-    imageUrl: f.imageUrl.value,
-    featureCards,
-  };
-  await syncCmsToWebsite({ quiet: true });
-  adminToast('About saved — live site updated', 'success');
+  try {
+    const featureCards = [0, 1, 2, 3].map((i) => ({
+      title: f[`featureTitle${i}`]?.value || '',
+      subtitle: f[`featureSub${i}`]?.value || '',
+    }));
+    getAdminCms().about = {
+      eyebrow: f.eyebrow.value,
+      title: f.title.value,
+      body: f.body.value,
+      imageUrl: f.imageUrl.value,
+      featureCards,
+    };
+    await syncCmsToWebsite({ quiet: true });
+    adminToast('About saved — live site updated', 'success');
+  } catch (err) {
+    adminToast(err?.message || 'Could not save about', 'error');
+  }
 }
 
 async function loadContactForm() {
@@ -390,17 +398,21 @@ async function loadContactForm() {
 async function saveContactForm(e) {
   e.preventDefault();
   const f = e.target;
-  getAdminCms().contact = {
-    phoneDisplay: f.phoneDisplay.value,
-    whatsappNumber: f.whatsappNumber.value,
-    email: f.email.value,
-    mapUrl: f.mapUrl.value,
-    address: f.address.value,
-    officeHours: f.officeHours.value,
-    defaultTourMessage: f.defaultTourMessage.value,
-  };
-  await syncCmsToWebsite({ quiet: true });
-  adminToast('Contact saved — live site updated', 'success');
+  try {
+    getAdminCms().contact = {
+      phoneDisplay: f.phoneDisplay.value,
+      whatsappNumber: f.whatsappNumber.value,
+      email: f.email.value,
+      mapUrl: f.mapUrl.value,
+      address: f.address.value,
+      officeHours: f.officeHours.value,
+      defaultTourMessage: f.defaultTourMessage.value,
+    };
+    await syncCmsToWebsite({ quiet: true });
+    adminToast('Contact saved — live site updated', 'success');
+  } catch (err) {
+    adminToast(err?.message || 'Could not save contact', 'error');
+  }
 }
 
 async function loadSocialsForm() {
@@ -415,9 +427,13 @@ async function loadSocialsForm() {
 async function saveSocialsForm(e) {
   e.preventDefault();
   const f = e.target;
-  getAdminCms().socials = Object.fromEntries(new FormData(f));
-  await syncCmsToWebsite({ quiet: true });
-  adminToast('Social links saved — live site updated', 'success');
+  try {
+    getAdminCms().socials = Object.fromEntries(new FormData(f));
+    await syncCmsToWebsite({ quiet: true });
+    adminToast('Social links saved — live site updated', 'success');
+  } catch (err) {
+    adminToast(err?.message || 'Could not save social links', 'error');
+  }
 }
 
 async function loadSettingsForm() {
@@ -442,23 +458,27 @@ async function saveSettingsForm(e) {
     adminToast('Invalid navbar JSON', 'error');
     return;
   }
-  const cms = getAdminCms();
-  cms.settings = {
-    ...(cms.settings || {}),
-    logoUrl: f.logoUrl.value,
-    brandName: f.brandName.value,
-    tagline: f.tagline.value,
-    footer: {
-      ...(cms.settings?.footer || {}),
-      brand: f.brandName.value,
-      description: f.footerDescription.value,
-      copyright: f.footerCopyright.value,
-      quickLinks: cms.settings?.footer?.quickLinks || [],
-    },
-    navLinks,
-  };
-  await syncCmsToWebsite({ quiet: true });
-  adminToast('Settings saved — live site updated', 'success');
+  try {
+    const cms = getAdminCms();
+    cms.settings = {
+      ...(cms.settings || {}),
+      logoUrl: f.logoUrl.value,
+      brandName: f.brandName.value,
+      tagline: f.tagline.value,
+      footer: {
+        ...(cms.settings?.footer || {}),
+        brand: f.brandName.value,
+        description: f.footerDescription.value,
+        copyright: f.footerCopyright.value,
+        quickLinks: cms.settings?.footer?.quickLinks || [],
+      },
+      navLinks,
+    };
+    await syncCmsToWebsite({ quiet: true });
+    adminToast('Settings saved — live site updated', 'success');
+  } catch (err) {
+    adminToast(err?.message || 'Could not save settings', 'error');
+  }
 }
 
 function refreshDestinationsListUi() {
@@ -486,6 +506,35 @@ function openDestinationsPanelFromHash() {
   }
 }
 
+function resetGalleryForm() {
+  const f = document.getElementById('form-gallery-add');
+  if (!f) return;
+  delete f.dataset.editId;
+  f.reset();
+  const btn = f.querySelector('[type="submit"]');
+  if (btn) btn.textContent = 'Add to gallery';
+  const heading = f.querySelector('h2');
+  if (heading) heading.textContent = 'Add gallery item';
+}
+
+function fillGalleryForm(item) {
+  const f = document.getElementById('form-gallery-add');
+  if (!f || !item) return;
+  f.dataset.editId = item.id;
+  f.type.value = item.type || 'image';
+  f.src.value = item.src || '';
+  f.thumb.value = item.thumb || '';
+  f.title.value = item.title || '';
+  f.tag.value = item.tag || '';
+  f.order.value = item.order ?? 0;
+  const btn = f.querySelector('[type="submit"]');
+  if (btn) btn.textContent = 'Update gallery item';
+  const heading = f.querySelector('h2');
+  if (heading) heading.textContent = 'Edit gallery item';
+  showPanel('gallery');
+  f.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
 function renderGalleryList() {
   const el = document.getElementById('gallery-list');
   if (!el) return;
@@ -499,19 +548,32 @@ function renderGalleryList() {
         <strong>${g.title || 'Untitled'}</strong>
         <span class="admin-muted">${g.type} · ${g.tag || ''}</span>
       </div>
+      <button type="button" class="admin-btn admin-btn--ghost" data-edit-gallery="${g.id}">Edit</button>
       <button type="button" class="admin-btn admin-btn--danger" data-del-gallery="${g.id}">Delete</button>
     </div>`
     )
     .join('');
 
+  el.querySelectorAll('[data-edit-gallery]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const item = state.gallery.find((g) => g.id === btn.dataset.editGallery);
+      fillGalleryForm(item);
+    });
+  });
+
   el.querySelectorAll('[data-del-gallery]').forEach((btn) => {
     btn.addEventListener('click', async () => {
       if (!confirm('Delete gallery item?')) return;
-      const cms = getAdminCms();
-      cms.gallery = (cms.gallery || []).filter((g) => g.id !== btn.dataset.delGallery);
-      await syncCmsToWebsite({ quiet: true });
-      adminToast('Deleted — live site updated', 'success');
-      await loadAllAdminData();
+      try {
+        const cms = getAdminCms();
+        cms.gallery = (cms.gallery || []).filter((g) => g.id !== btn.dataset.delGallery);
+        await syncCmsToWebsite({ quiet: true });
+        adminToast('Deleted — live site updated', 'success');
+        resetGalleryForm();
+        await loadAllAdminData();
+      } catch (err) {
+        adminToast(err?.message || 'Delete failed', 'error');
+      }
     });
   });
 }
@@ -521,8 +583,8 @@ async function addGalleryImage(e) {
   const f = e.target;
   const cms = getAdminCms();
   if (!cms.gallery) cms.gallery = [];
-  cms.gallery.push({
-    id: `g-${Date.now()}`,
+  const item = {
+    id: f.dataset.editId || `g-${Date.now()}`,
     type: f.type.value,
     src: f.src.value,
     thumb: f.thumb.value || f.src.value,
@@ -530,11 +592,23 @@ async function addGalleryImage(e) {
     tag: f.tag.value,
     order: Number(f.order.value) || 0,
     active: true,
-  });
-  await syncCmsToWebsite({ quiet: true });
-  f.reset();
-  adminToast('Gallery item added — live site updated', 'success');
-  await loadAllAdminData();
+  };
+  try {
+    const editId = f.dataset.editId;
+    if (editId) {
+      const idx = cms.gallery.findIndex((g) => g.id === editId);
+      if (idx >= 0) cms.gallery[idx] = { ...cms.gallery[idx], ...item, id: editId };
+      else cms.gallery.push(item);
+    } else {
+      cms.gallery.push(item);
+    }
+    await syncCmsToWebsite({ quiet: true });
+    resetGalleryForm();
+    adminToast(editId ? 'Gallery item updated' : 'Gallery item added', 'success');
+    await loadAllAdminData();
+  } catch (err) {
+    adminToast(err?.message || 'Could not save gallery item', 'error');
+  }
 }
 
 function renderWeatherList() {
@@ -601,28 +675,32 @@ function openWeatherEditor(id) {
 async function saveWeatherForm(e) {
   e.preventDefault();
   const f = e.target;
-  const id = (f.dataset.editId || slugify(f.shortName.value || f.name.value)).trim();
-  const cms = getAdminCms();
-  const row = {
-    id,
-    name: f.name.value,
-    shortName: f.shortName.value,
-    lat: Number(f.lat.value),
-    lon: Number(f.lon.value),
-    facts: f.facts.value.split('\n').map((s) => s.trim()).filter(Boolean),
-    imageUrl: f.imageUrl.value,
-    displayTemp: f.displayTemp.value,
-    displayLabel: f.displayLabel.value,
-    active: f.active.checked,
-  };
-  const list = [...(cms.weatherCards || [])];
-  const idx = list.findIndex((w) => w.id === id);
-  if (idx >= 0) list[idx] = row;
-  else list.push(row);
-  cms.weatherCards = list;
-  await syncCmsToWebsite({ quiet: true });
-  adminToast('Weather card saved — live site updated', 'success');
-  await loadAllAdminData();
+  try {
+    const id = (f.dataset.editId || slugify(f.shortName.value || f.name.value)).trim();
+    const cms = getAdminCms();
+    const row = {
+      id,
+      name: f.name.value,
+      shortName: f.shortName.value,
+      lat: Number(f.lat.value),
+      lon: Number(f.lon.value),
+      facts: f.facts.value.split('\n').map((s) => s.trim()).filter(Boolean),
+      imageUrl: f.imageUrl.value,
+      displayTemp: f.displayTemp.value,
+      displayLabel: f.displayLabel.value,
+      active: f.active.checked,
+    };
+    const list = [...(cms.weatherCards || [])];
+    const idx = list.findIndex((w) => w.id === id);
+    if (idx >= 0) list[idx] = row;
+    else list.push(row);
+    cms.weatherCards = list;
+    await syncCmsToWebsite({ quiet: true });
+    adminToast('Weather card saved — live site updated', 'success');
+    await loadAllAdminData();
+  } catch (err) {
+    adminToast(err?.message || 'Could not save weather card', 'error');
+  }
 }
 
 function renderSearchDestCheckboxes() {
@@ -644,13 +722,17 @@ function renderSearchDestCheckboxes() {
 }
 
 async function saveSearchSettings() {
-  const checked = [...document.querySelectorAll('#search-dest-checkboxes input:checked')].map(
-    (i) => i.value
-  );
-  const cms = getAdminCms();
-  cms.settings = { ...(cms.settings || {}), searchEnabledIds: checked };
-  await syncCmsToWebsite({ quiet: true });
-  adminToast('Search updated — live site updated', 'success');
+  try {
+    const checked = [...document.querySelectorAll('#search-dest-checkboxes input:checked')].map(
+      (i) => i.value
+    );
+    const cms = getAdminCms();
+    cms.settings = { ...(cms.settings || {}), searchEnabledIds: checked };
+    await syncCmsToWebsite({ quiet: true });
+    adminToast('Search updated — live site updated', 'success');
+  } catch (err) {
+    adminToast(err?.message || 'Could not save search settings', 'error');
+  }
 }
 
 function initAdminAppHandlers() {
@@ -704,14 +786,41 @@ function initAdminAppHandlers() {
     createUploadZone(input, { previewEl: preview, progressEl: progress, folder, onUrl });
   };
 
-  bindZone('hero-upload', 'hero-preview', 'hero', (url) => {
-    document.querySelector('#form-hero [name="backgroundImageUrl"]').value = url;
+  bindZone('hero-upload', 'hero-preview', 'hero', async (url) => {
+    const input = document.querySelector('#form-hero [name="backgroundImageUrl"]');
+    if (input) input.value = url;
+    const cms = getAdminCms();
+    cms.hero = { ...(cms.hero || {}), backgroundImageUrl: url };
+    try {
+      await syncCmsToWebsite({ quiet: true });
+      adminToast('Hero image saved to live site', 'success');
+    } catch (err) {
+      adminToast(err?.message || 'Image uploaded — click Save hero to publish', 'error');
+    }
   });
-  bindZone('about-upload', 'about-preview', 'about', (url) => {
-    document.querySelector('#form-about [name="imageUrl"]').value = url;
+  bindZone('about-upload', 'about-preview', 'about', async (url) => {
+    const input = document.querySelector('#form-about [name="imageUrl"]');
+    if (input) input.value = url;
+    const cms = getAdminCms();
+    cms.about = { ...(cms.about || {}), imageUrl: url };
+    try {
+      await syncCmsToWebsite({ quiet: true });
+      adminToast('About image saved to live site', 'success');
+    } catch (err) {
+      adminToast(err?.message || 'Image uploaded — click Save about to publish', 'error');
+    }
   });
-  bindZone('logo-upload', 'logo-preview', 'settings', (url) => {
-    document.querySelector('#form-settings [name="logoUrl"]').value = url;
+  bindZone('logo-upload', 'logo-preview', 'settings', async (url) => {
+    const input = document.querySelector('#form-settings [name="logoUrl"]');
+    if (input) input.value = url;
+    const cms = getAdminCms();
+    cms.settings = { ...(cms.settings || {}), logoUrl: url };
+    try {
+      await syncCmsToWebsite({ quiet: true });
+      adminToast('Logo saved to live site', 'success');
+    } catch (err) {
+      adminToast(err?.message || 'Image uploaded — click Save settings to publish', 'error');
+    }
   });
   bindZone('gallery-upload', 'gallery-upload-preview', 'gallery', (url) => {
     const src = document.querySelector('#form-gallery-add [name="src"]');

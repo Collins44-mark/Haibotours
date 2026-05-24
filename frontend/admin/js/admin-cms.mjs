@@ -13,7 +13,15 @@ export function getAdminCms() {
 export async function loadAdminCms() {
   const remote = await fetchSiteCms();
   if (remote) {
-    window.HAIBO_ADMIN_CMS = { ...emptyCmsDocument(), ...remote };
+    const current = getAdminCms();
+    window.HAIBO_ADMIN_CMS = {
+      ...emptyCmsDocument(),
+      ...current,
+      ...remote,
+      destinations: remote.destinations ?? current.destinations ?? [],
+      gallery: remote.gallery ?? current.gallery ?? [],
+      weatherCards: remote.weatherCards ?? current.weatherCards ?? [],
+    };
   }
   return window.HAIBO_ADMIN_CMS;
 }
@@ -22,18 +30,26 @@ export async function loadAdminCms() {
 export async function syncCmsToWebsite(options = {}) {
   const { quiet = false } = options;
   const cms = getAdminCms();
-  if (!cms.destinations?.length) {
+
+  try {
+    const saved = await uploadSiteCms(cms);
+    const { _deliveryUrl, ...rest } = saved;
+    window.HAIBO_ADMIN_CMS = {
+      ...emptyCmsDocument(),
+      ...cms,
+      ...rest,
+    };
     if (!quiet) {
-      adminToast('Add at least one destination first.', 'error');
+      adminToast('Saved — live website updated', 'success');
     }
-    throw new Error('No destinations');
+    return window.HAIBO_ADMIN_CMS;
+  } catch (err) {
+    const msg = err?.message || 'Could not save to the website';
+    if (!quiet) {
+      adminToast(msg, 'error');
+    }
+    throw err;
   }
-  const saved = await uploadSiteCms(cms);
-  window.HAIBO_ADMIN_CMS = saved;
-  if (!quiet) {
-    adminToast('Saved — live website updated', 'success');
-  }
-  return saved;
 }
 
 export function upsertDestinationInCms(row) {
