@@ -16,6 +16,10 @@
   min-height: auto;
 }
 
+.dest-cta-cinematic {
+  min-height: auto;
+}
+
 .cta-cinematic--float {
   animation: ctaFloat 6s ease-in-out infinite;
 }
