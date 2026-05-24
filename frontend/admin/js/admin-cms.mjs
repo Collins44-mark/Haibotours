@@ -149,12 +149,50 @@ export function upsertDestinationInCms(row) {
 }
 
 export function removeDestinationFromCms(id) {
+  const key = slugify(String(id || '').trim());
   const cms = getAdminCms();
-  cms.destinations = (cms.destinations || []).filter((d) => d.id !== id);
+  cms.destinations = (cms.destinations || []).filter((d) => slugify(d.id) !== key);
+}
+
+export function getDeletedDestinationIds() {
+  const ids = getAdminCms().settings?.deletedDestinationIds;
+  if (!Array.isArray(ids)) return [];
+  return ids.map((x) => slugify(String(x).trim())).filter(Boolean);
+}
+
+export async function addDeletedDestinationId(id) {
+  const key = slugify(String(id || '').trim());
+  if (!key) return;
+  const p = paths();
+  const cms = getAdminCms();
+  const settings = { ...(cms.settings || {}), updatedAt: Date.now() };
+  const set = new Set([...(settings.deletedDestinationIds || []).map((x) => slugify(String(x))), key]);
+  settings.deletedDestinationIds = [...set];
+  cms.settings = settings;
+  await dbSetDoc(p.settings, sanitizeFirestoreData(settings), 'main');
+}
+
+export async function removeDeletedDestinationId(id) {
+  const key = slugify(String(id || '').trim());
+  if (!key) return;
+  const p = paths();
+  const cms = getAdminCms();
+  const settings = { ...(cms.settings || {}) };
+  const list = (settings.deletedDestinationIds || [])
+    .map((x) => slugify(String(x)))
+    .filter((x) => x && x !== key);
+  settings.deletedDestinationIds = list;
+  settings.updatedAt = Date.now();
+  cms.settings = settings;
+  await dbSetDoc(p.settings, sanitizeFirestoreData(settings), 'main');
 }
 
 export function getDestinationFromCms(id) {
-  return (getAdminCms().destinations || []).find((d) => d.id === id) || null;
+  if (!id) return null;
+  const key = slugify(String(id).trim());
+  return (
+    (getAdminCms().destinations || []).find((d) => slugify(d.id) === key) || null
+  );
 }
 
 export function listDestinationsForAdmin() {

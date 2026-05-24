@@ -126,7 +126,7 @@ function renderList() {
       closeAllMenus();
       const ok = await confirmDialog({
         title: 'Delete destination?',
-        message: `Remove "${btn.dataset.id}" from the live website.`,
+        message: `Permanently delete "${btn.dataset.id}"? It will be removed from the CMS and will not return from the catalog.`,
         confirmLabel: 'Delete',
         danger: true,
       });

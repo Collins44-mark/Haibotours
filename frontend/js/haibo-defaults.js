@@ -9,8 +9,7 @@ const HAIBO_DEFAULTS = {
     titleAccent: 'Tanzania',
     subtitle:
       'Authentic safaris, luxury adventures, cultural journeys and unforgettable wildlife experiences across East Africa.',
-    backgroundImageUrl:
-      'https://images.unsplash.com/photo-1516426122078-c23e76319801?q=80&w=2070&auto=format&fit=crop',
+    backgroundImageUrl: '',
     ctaPrimaryText: 'Explore Safaris',
     ctaPrimaryLink: 'destinations.html',
     ctaSecondaryText: 'View Gallery',
@@ -26,8 +25,7 @@ const HAIBO_DEFAULTS = {
     eyebrow: 'Why Choose Us',
     title: 'Unforgettable Journeys Crafted For You',
     body: 'Experience premium safari adventures with expert local guides, luxury accommodations, and unforgettable wildlife encounters.',
-    imageUrl:
-      'https://images.unsplash.com/photo-1508672019048-805c876b67e2?q=80&w=1974&auto=format&fit=crop',
+    imageUrl: '',
     imageAlt: 'Luxury Tanzania safari experience',
     featureCards: [
       { title: 'SUSTAINABLE TRAVEL', subtitle: '' },
@@ -100,11 +98,11 @@ function haiboValidMediaUrl(url) {
   );
 }
 
-/** Only real admin uploads override built-in Unsplash defaults */
+/** Only Cloudinary admin uploads (images or videos) */
 function haiboIsAdminUploadedUrl(url) {
   if (!haiboValidMediaUrl(url)) return false;
   const s = String(url).toLowerCase();
-  return s.includes('res.cloudinary.com') || s.includes('/image/upload/');
+  return s.includes('res.cloudinary.com');
 }
 
 function haiboNormalizeDestId(id) {
@@ -154,7 +152,14 @@ function haiboResolveHeroImage(dest) {
   return haiboCacheBustUrl(pick, dest.updatedAt || Date.now());
 }
 
-/** Normalize destination gallery: strings or { url, alt, order } objects. */
+function haiboInferGalleryItemType(item, url) {
+  if (item?.type === 'video' || item?.type === 'image') return item.type;
+  const u = String(url || '').toLowerCase();
+  if (u.includes('/video/upload/') || /\.(mp4|webm|mov|m4v)(\?|#|$)/i.test(u)) return 'video';
+  return 'image';
+}
+
+/** Normalize destination gallery: strings or { url, alt, order, type } objects. */
 function haiboNormalizeDestinationGallery(gallery) {
   if (!Array.isArray(gallery)) return [];
   const items = gallery
@@ -162,7 +167,7 @@ function haiboNormalizeDestinationGallery(gallery) {
       if (typeof item === 'string') {
         const url = item.trim();
         if (!url) return null;
-        return { url, alt: '', order: i };
+        return { url, alt: '', order: i, type: haiboInferGalleryItemType(null, url) };
       }
       const url = String(item?.url || item?.src || '').trim();
       if (!url) return null;
@@ -170,6 +175,7 @@ function haiboNormalizeDestinationGallery(gallery) {
         url,
         alt: String(item?.alt || item?.title || '').trim(),
         order: Number.isFinite(Number(item?.order)) ? Number(item.order) : i,
+        type: haiboInferGalleryItemType(item, url),
       };
     })
     .filter(Boolean);
@@ -222,16 +228,16 @@ function haiboMergeDestination(live, staticDest) {
     merged.packages = base.packages || [];
   }
 
-  const liveGallery = live?.gallery ?? live?.galleryImages ?? merged.gallery;
-  if (live && (Array.isArray(live.gallery) || Array.isArray(live.galleryImages))) {
-    merged.gallery = Array.isArray(live.gallery) ? live.gallery : live.galleryImages;
-  } else if (!Array.isArray(liveGallery) || !liveGallery.length) {
-    merged.gallery = base.gallery || [];
-  } else {
-    merged.gallery = liveGallery;
-  }
   delete merged.galleryImages;
-  merged.gallery = haiboNormalizeDestinationGallery(merged.gallery);
+  if (fromCms && Object.prototype.hasOwnProperty.call(live || {}, 'gallery')) {
+    merged.gallery = haiboNormalizeDestinationGallery(live.gallery || []);
+  } else if (fromCms && Array.isArray(live?.galleryImages)) {
+    merged.gallery = haiboNormalizeDestinationGallery(live.galleryImages);
+  } else if (Array.isArray(live?.gallery) && live.gallery.length > 0) {
+    merged.gallery = haiboNormalizeDestinationGallery(live.gallery);
+  } else {
+    merged.gallery = [];
+  }
 
   if (live && Array.isArray(live.highlights)) {
     merged.highlights = live.highlights;
@@ -315,10 +321,7 @@ function haiboValidGalleryItem(item) {
 }
 
 function haiboDefaultGallery() {
-  return {
-    images: typeof GALLERY_IMAGES !== 'undefined' ? [...GALLERY_IMAGES] : [],
-    videos: typeof GALLERY_VIDEOS !== 'undefined' ? [...GALLERY_VIDEOS] : [],
-  };
+  return { images: [], videos: [] };
 }
 
 /** Merge Firestore gallery collection docs with local GALLERY_* defaults */
@@ -334,22 +337,15 @@ function haiboMergeGalleryCollection(items) {
     .filter((g) => haiboIsAdminUploadedUrl(g.src))
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
-  return {
-    images: images.length ? images : defaults.images,
-    videos: videos.length ? videos : defaults.videos,
-  };
+  return { images, videos };
 }
 
 function haiboNormalizeGalleryObject(gallery) {
-  const defaults = haiboDefaultGallery();
   const images = (gallery?.images || []).filter((img) =>
     haiboIsAdminUploadedUrl(img.src || img.url)
   );
   const videos = (gallery?.videos || []).filter((g) => haiboIsAdminUploadedUrl(g.src));
-  return {
-    images: images.length ? images : defaults.images,
-    videos: videos.length ? videos : defaults.videos,
-  };
+  return { images, videos };
 }
 
 function haiboGetStaticWeatherParks() {
@@ -406,13 +402,13 @@ function mergeHaiboContentWithDefaults() {
   const d = typeof HAIBO_DEFAULTS !== 'undefined' ? HAIBO_DEFAULTS : {};
 
   c.hero = { ...d.hero, ...(c.hero || {}) };
-  if (!haiboValidMediaUrl(c.hero.backgroundImageUrl)) {
-    c.hero.backgroundImageUrl = d.hero.backgroundImageUrl;
+  if (!haiboIsAdminUploadedUrl(c.hero.backgroundImageUrl)) {
+    c.hero.backgroundImageUrl = '';
   }
 
   c.about = { ...d.about, ...(c.about || {}) };
-  if (!haiboValidMediaUrl(c.about.imageUrl)) {
-    c.about.imageUrl = d.about.imageUrl;
+  if (!haiboIsAdminUploadedUrl(c.about.imageUrl)) {
+    c.about.imageUrl = '';
   }
 
   if (!haiboDocHasContent(c.contact, ['email', 'phoneDisplay'])) {

@@ -2,7 +2,8 @@
  * Destination edit page — section nav, visual builders, save, autosave draft.
  */
 import { getAuth, signOutAdmin, LOGIN_URL } from './firebase.js';
-import { loadAdminCms } from './admin-cms.mjs';
+import { loadAdminCms, getDestinationFromCms } from './admin-cms.mjs';
+import { subscribeAdminFirestore } from './admin-realtime.mjs';
 import { protectAdminPage } from './admin-gate.mjs';
 import { renderSidebar, initSidebar, userDisplayFromAuth } from './admin-layout.mjs';
 import {
@@ -14,7 +15,9 @@ import {
   loadDestinationById,
   saveDestinationRecord,
   collectDestinationPayload,
+  deleteDestinationById,
 } from './admin-destinations.mjs';
+import { confirmDialog } from './admin-ui.mjs';
 import { initDestinationGallery, normalizeGalleryItems } from './admin-destination-gallery.mjs';
 import { createUploadZone } from './admin-cloudinary.mjs';
 import { adminToast, slugify } from './admin-db.mjs';
@@ -31,6 +34,7 @@ let dirty = false;
 let saving = false;
 let pageInitialized = false;
 let builders = { ...emptyBuilders, gallery: { getValues: () => [] } };
+let adminRealtimeUnsub = null;
 const editId = new URLSearchParams(location.search).get('id')?.trim() || '';
 
 function showToast(msg, type) {
@@ -116,6 +120,10 @@ async function save() {
     dirty = false;
     showToast('Saved — live on all devices', 'success');
     setAutosave('Published successfully', true);
+
+    if (builders.gallery?.setItems && Array.isArray(saved?.gallery)) {
+      builders.gallery.setItems(saved.gallery);
+    }
 
     setTimeout(() => {
       window.location.href = LIST_URL;
@@ -293,7 +301,9 @@ function formHasSlug() {
 }
 
 function bindBuilders(data) {
-  builders = { ...emptyBuilders, gallery: { getValues: () => [] } };
+  const keepGallery = builders.gallery;
+  builders = { ...emptyBuilders };
+  if (keepGallery?.getValues) builders.gallery = keepGallery;
   const hRoot = document.getElementById('highlights-root');
   const packagesPanel = document.querySelector('[data-panel="packages"]');
   const eRoot = document.querySelector('[data-panel="experiences"]');
@@ -371,16 +381,16 @@ function fillForm(data) {
   if (order) order.value = data.order ?? 0;
   const active = form.querySelector('[name="active"]');
   if (active) active.checked = data.active !== false;
-  bindGallery(data);
-
   setImagePreview('image', data.image || '');
   setImagePreview('heroImage', data.heroImage || data.image || '');
+
+  bindBuilders(data);
+  bindGallery(data);
 
   const bc = document.getElementById('bc-name');
   if (bc) bc.textContent = data.name || 'New';
   document.title = `${data.name || 'New'} — HAIBO CMS`;
 
-  bindBuilders(data);
   initCharCounters();
   dirty = false;
   setAutosave('All changes saved', true);
@@ -456,6 +466,17 @@ async function bootPage(user) {
     const data = await loadData();
     if (data) fillForm(data);
     watchDirty();
+
+    if (editId) {
+      adminRealtimeUnsub?.();
+      adminRealtimeUnsub = subscribeAdminFirestore(async () => {
+        await loadAdminCms();
+        const cmsDest = getDestinationFromCms(editId);
+        if (!cmsDest || !builders.gallery?.setItems) return;
+        builders.gallery.setItems(cmsDest.gallery);
+      });
+    }
+
     pageInitialized = true;
   } catch (err) {
     bootError = err;
@@ -471,8 +492,34 @@ async function bootPage(user) {
   }
 }
 
+function bindDeleteDestination() {
+  const btn = document.getElementById('btn-delete-dest');
+  if (!btn || !editId) return;
+  btn.hidden = false;
+  btn.addEventListener('click', async () => {
+    const name = document.querySelector('[name="name"]')?.value?.trim() || editId;
+    const ok = await confirmDialog({
+      title: 'Delete destination permanently?',
+      message: `"${name}" will be removed from the CMS and hidden from the live website. This cannot be undone.`,
+      confirmLabel: 'Delete forever',
+      danger: true,
+    });
+    if (!ok) return;
+    btn.disabled = true;
+    try {
+      await deleteDestinationById(editId);
+      showToast('Destination deleted', 'success');
+      window.location.href = LIST_URL;
+    } catch (err) {
+      showToast(err?.message || 'Delete failed', 'error');
+      btn.disabled = false;
+    }
+  });
+}
+
 bindSaveControls();
 
 protectAdminPage(async (user) => {
   await bootPage(user);
+  bindDeleteDestination();
 });

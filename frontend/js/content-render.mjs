@@ -35,13 +35,11 @@ function renderHero() {
   const h = window.HAIBO_CONTENT?.hero;
   if (!h) return;
 
-  const defaultHero = window.HAIBO_DEFAULTS?.hero?.backgroundImageUrl || '';
   const heroBg =
-    typeof haiboIsAdminUploadedUrl === 'function' &&
-    haiboIsAdminUploadedUrl(h.backgroundImageUrl)
+    typeof haiboIsAdminUploadedUrl === 'function' && haiboIsAdminUploadedUrl(h.backgroundImageUrl)
       ? h.backgroundImageUrl
-      : defaultHero;
-  if (heroBg && (!haiboValidMediaUrl || haiboValidMediaUrl(heroBg))) {
+      : '';
+  if (heroBg) {
     setBgImage('#home.hero-banner', heroBg);
     const home = document.getElementById('home');
     if (home) home.style.setProperty('--hero-bg-image', `url('${heroBg}')`);
@@ -70,7 +68,7 @@ function renderAbout() {
   const aboutImg =
     typeof haiboIsAdminUploadedUrl === 'function' && haiboIsAdminUploadedUrl(a.imageUrl)
       ? a.imageUrl
-      : window.HAIBO_DEFAULTS?.about?.imageUrl;
+      : '';
   if (aboutImg) {
     document.querySelectorAll('[data-haibo-about-image]').forEach((img) => {
       img.src = optimizeImg(aboutImg, 1000);
@@ -93,20 +91,18 @@ function renderAbout() {
 }
 
 function renderHomeGallery() {
-  const defaults =
-    typeof GALLERY_IMAGES !== 'undefined' ? GALLERY_IMAGES.slice(0, 3) : [];
   const raw = window.HAIBO_CONTENT?.gallery?.images || [];
-  const fromFirestore = raw.filter((img) => {
+  const images = raw.filter((img) => {
     const src = img.src || img.url;
-    return (
-      typeof haiboIsAdminUploadedUrl === 'function'
-        ? haiboIsAdminUploadedUrl(src)
-        : haiboValidMediaUrl(src)
-    );
+    return typeof haiboIsAdminUploadedUrl === 'function' && haiboIsAdminUploadedUrl(src);
   });
-  const images = fromFirestore.length ? fromFirestore : defaults;
   const grid = document.querySelector('#gallery .home-gallery-preview');
-  if (!grid || !images.length) return;
+  if (!grid) return;
+  if (!images.length) {
+    grid.innerHTML =
+      '<p class="haibo-empty-state" style="text-align:center;color:#9ca3af;padding:2rem">Gallery photos will appear here once uploaded in the admin panel.</p>';
+    return;
+  }
 
   const esc = (s) =>
     String(s ?? '')

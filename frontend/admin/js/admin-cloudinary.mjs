@@ -12,14 +12,20 @@ export function pushRecentUpload(entry) {
   window.dispatchEvent(new CustomEvent('haiboAdminUpload', { detail: entry }));
 }
 
-/** Cloudinary unsigned uploads — URLs saved to Firestore only */
+function cloudinaryResourceType(file) {
+  if (file?.type?.startsWith('video/')) return 'video';
+  return 'image';
+}
+
+/** Cloudinary unsigned uploads (images + videos) — URLs saved to Firestore only */
 export async function cloudinaryUpload(file, folder, onProgress) {
   if (!file) throw new Error('No file selected');
   const sub = folder || 'misc';
+  const resourceType = cloudinaryResourceType(file);
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    const url = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/image/upload`;
+    const url = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/${resourceType}/upload`;
     const form = new FormData();
     form.append('file', file);
     form.append('upload_preset', CLOUDINARY_CONFIG.uploadPreset);
@@ -44,6 +50,7 @@ export async function cloudinaryUpload(file, folder, onProgress) {
           secure_url: data.secure_url,
           public_id: data.public_id,
           folder: data.folder,
+          resource_type: resourceType,
         });
       } else {
         reject(new Error(data.error?.message || 'Cloudinary upload failed'));

@@ -7,8 +7,12 @@ import {
   removeDestinationFromCms,
   getDestinationFromCms,
   listDestinationsForAdmin,
+  addDeletedDestinationId,
+  removeDeletedDestinationId,
+  getDeletedDestinationIds,
 } from './admin-cms.mjs';
 import { slugify, dbSetDoc, dbDeleteDoc, sanitizeFirestoreData } from './admin-db.mjs';
+import { normalizeGalleryItems } from './admin-destination-gallery.mjs';
 import { confirmDialog, formatRelativeTime, showToast } from './admin-ui.mjs';
 
 export const DEST_EDIT_BASE = '/admin/destinations/edit.html';
@@ -25,19 +29,23 @@ export function getStaticDestinations() {
   );
 }
 
-/** Same merge as the live site: full static catalog + Firestore overrides. */
+/** Admin list: static catalog + Firestore overrides; excludes permanently deleted IDs. */
 export function mergeDestinationsForAdmin() {
+  const deleted = new Set(getDeletedDestinationIds());
   const cmsRows = listDestinationsForAdmin();
   const staticList = getStaticDestinations();
 
+  let list;
   if (typeof haiboMergeDestinationsList === 'function' && staticList.length > 0) {
-    return haiboMergeDestinationsList(cmsRows).map((d) => ({
+    list = haiboMergeDestinationsList(cmsRows).map((d) => ({
       ...d,
       _source: d._fromFirestore ? 'cms' : 'catalog',
     }));
+  } else {
+    list = cmsRows.map((d) => ({ ...d, _source: 'cms' }));
   }
 
-  return cmsRows.map((d) => ({ ...d, _source: 'cms' }));
+  return list.filter((d) => !deleted.has(destinationIdKey(d.id)));
 }
 
 function destinationIdKey(id) {
@@ -82,6 +90,15 @@ export function collectDestinationPayload(form, builders) {
   };
 }
 
+export function galleryForFirestore(gallery) {
+  return normalizeGalleryItems(gallery).map(({ url, alt, order, type }) => ({
+    url,
+    alt: alt || '',
+    order,
+    type: type === 'video' ? 'video' : 'image',
+  }));
+}
+
 export async function saveDestinationRecord(payload) {
   if (!payload.id) throw new Error('Destination ID (slug) is required');
   if (!payload.name) throw new Error('Destination name is required');
@@ -89,27 +106,30 @@ export async function saveDestinationRecord(payload) {
   const { _source, ...rest } = payload;
   const id = slugify(String(rest.id).trim());
   const published = rest.active !== false;
+  const gallery = galleryForFirestore(rest.gallery);
   const row = upsertDestinationInCms({
     ...rest,
     id,
     slug: id,
+    gallery,
     active: published,
     published,
     status: published ? 'published' : 'draft',
   });
 
   const coll = globalThis.FIRESTORE_PATHS?.destinations || 'destinations';
-  await dbSetDoc(
-    coll,
-    sanitizeFirestoreData({
-      ...row,
-      id,
-      slug: id,
-      updatedAt: Date.now(),
-    }),
-    id
-  );
-  console.log('[HAIBO] Firestore updated successfully', `destinations/${id}`);
+  const docData = sanitizeFirestoreData({
+    ...row,
+    id,
+    slug: id,
+    gallery,
+    updatedAt: Date.now(),
+  });
+  await dbSetDoc(coll, docData, id);
+  await removeDeletedDestinationId(id);
+  console.log('[HAIBO] Firestore updated successfully', `destinations/${id}`, {
+    galleryCount: gallery.length,
+  });
   return row;
 }
 
@@ -119,18 +139,28 @@ export async function deleteDestinationById(id) {
   removeDestinationFromCms(slug);
   const coll = globalThis.FIRESTORE_PATHS?.destinations || 'destinations';
   await dbDeleteDoc(coll, slug);
+  await addDeletedDestinationId(slug);
   console.log('[HAIBO] Firestore deleted', `destinations/${slug}`);
 }
 
 export async function loadDestinationById(id) {
   if (!id) return null;
   const key = destinationIdKey(id);
+  const fromCms = getDestinationFromCms(key);
   const row = mergeDestinationsForAdmin().find((d) => destinationIdKey(d.id) === key);
-  if (!row) return null;
+  if (!row && !fromCms) return null;
+
+  const base = row ? { ...row } : { ...fromCms, id: key };
+  const gallery =
+    fromCms && Object.prototype.hasOwnProperty.call(fromCms, 'gallery')
+      ? normalizeGalleryItems(fromCms.gallery)
+      : normalizeGalleryItems(base.gallery);
+
   return {
-    ...row,
+    ...base,
     id: key,
-    _source: row._fromFirestore ? 'firestore' : 'catalog',
+    gallery,
+    _source: fromCms ? 'firestore' : 'catalog',
   };
 }
 
@@ -212,7 +242,7 @@ export function renderDestinationsList(el, destinations, { onRefresh }) {
       const id = btn.dataset.delDest;
       const ok = await confirmDialog({
         title: 'Delete destination?',
-        message: `Remove "${id}" from the live website.`,
+        message: `Permanently delete "${id}"? It will be removed from the CMS and hidden on the live website.`,
         confirmLabel: 'Delete',
         danger: true,
       });

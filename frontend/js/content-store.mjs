@@ -3,6 +3,7 @@
  */
 import { subscribePublicCms } from './cms-firestore.mjs';
 import { unsubscribeAllRealtime } from './firestore-realtime.mjs';
+import { haiboDestinationsFromFirestoreDocs } from './haibo-live-content.mjs';
 
 window.HAIBO_CONTENT = {
   hero: null,
@@ -88,10 +89,27 @@ function paintFromFirestoreCms(doc) {
   }));
 
   try {
-    window.HAIBO_CONTENT.destinations =
-      typeof haiboMergeDestinationsList === 'function'
-        ? haiboMergeDestinationsList(window.HAIBO_FIRESTORE_DESTINATIONS)
-        : (window.HAIBO_FIRESTORE_DESTINATIONS || []).filter((d) => d?.id && d.active !== false);
+    const deleted = new Set(
+      (doc.settings?.deletedDestinationIds || [])
+        .map((x) =>
+          String(x || '')
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, '-')
+        )
+        .filter(Boolean)
+    );
+    const live = haiboDestinationsFromFirestoreDocs(window.HAIBO_FIRESTORE_DESTINATIONS);
+    window.HAIBO_CONTENT.destinations = live.filter((d) => {
+      const key =
+        typeof haiboNormalizeDestId === 'function'
+          ? haiboNormalizeDestId(d.id)
+          : String(d.id || '')
+              .trim()
+              .toLowerCase()
+              .replace(/\s+/g, '-');
+      return key && !deleted.has(key);
+    });
   } catch (err) {
     console.error('[HAIBO] destination merge failed', err);
     window.HAIBO_CONTENT.destinations = [];

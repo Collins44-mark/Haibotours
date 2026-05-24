@@ -350,8 +350,13 @@ const DESTINATIONS = [
   },
 ];
 
-/** Admin seed catalog only — public site does NOT render this array */
-window.HAIBO_DESTINATIONS_STATIC = DESTINATIONS.map((d) => ({ ...d }));
+/** Admin seed catalog only — no stock photos; public site uses Firestore CMS only */
+window.HAIBO_DESTINATIONS_STATIC = DESTINATIONS.map((d) => ({
+  ...d,
+  image: '',
+  heroImage: '',
+  gallery: [],
+}));
 window.DESTINATIONS = [];
 
 function getHaiboDestinations() {

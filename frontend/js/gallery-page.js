@@ -77,25 +77,32 @@ function renderGalleryPage() {
   if (photoCount) photoCount.textContent = `${images.length} photos`;
   if (videoCount) videoCount.textContent = `${videos.length} videos`;
 
-  photosEl.innerHTML = images
-    .map(
-      (item, i) => `
+  const emptyMsg =
+    '<p class="haibo-empty-state" style="text-align:center;color:#9ca3af;padding:2rem;grid-column:1/-1">Upload photos or videos in the admin Gallery panel to show them here.</p>';
+
+  photosEl.innerHTML = images.length
+    ? images
+        .map(
+          (item, i) => `
     <article class="gallery-media-card" data-type="image" data-index="${i}" tabindex="0" role="button" aria-label="View ${escapeHtml(item.title)}">
       ${galleryCardMedia(item, 'image', i)}
     </article>
   `
-    )
-    .join('');
+        )
+        .join('')
+    : emptyMsg;
 
-  videosEl.innerHTML = videos
-    .map(
-      (item, i) => `
+  videosEl.innerHTML = videos.length
+    ? videos
+        .map(
+          (item, i) => `
     <article class="gallery-media-card gallery-video-card" data-type="video" data-index="${i}" tabindex="0" role="button" aria-label="Play ${escapeHtml(item.title)}">
       ${galleryCardMedia(item, 'video', i)}
     </article>
   `
-    )
-    .join('');
+        )
+        .join('')
+    : emptyMsg;
 
   initGalleryLightbox();
   initVideoCardHover();

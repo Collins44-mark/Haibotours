@@ -75,7 +75,38 @@
   cursor: grabbing;
 }
 
+.dest-gallery-admin__video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.dest-gallery-admin__badge {
+  position: absolute;
+  top: 0.35rem;
+  left: 0.35rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(0, 0, 0, 0.65);
+  color: #ffb347;
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.25rem;
+  z-index: 2;
+}
+
+.dest-gallery-admin__card--video .dest-gallery-admin__thumb {
+  background: #0a0a0a;
+}
+
+.dest-gallery-admin__upload-tile--video {
+  border-color: rgba(96, 165, 250, 0.45);
+}
+
 .dest-gallery-admin__thumb {
+  position: relative;
   aspect-ratio: 3 / 4;
   overflow: hidden;
   background: #0d0d0d;

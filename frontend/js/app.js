@@ -469,48 +469,57 @@ function shortenFeatureLabel(text, max = 22) {
 }
 
 /** Premium package card — matches 2-col mobile reference (caption on image). */
-function getDestinationGalleryImageUrl(item, dest, index, staticD, fromCms) {
+function getDestinationGalleryImageUrl(item, dest, index) {
   if (typeof haiboResolveGalleryImage === 'function') {
     const resolved = haiboResolveGalleryImage(item, dest, index);
     if (resolved) return resolved;
   }
-  const raw = typeof item === 'string' ? item : item?.url || '';
-  if (fromCms && typeof haiboValidMediaUrl === 'function' && haiboValidMediaUrl(raw)) {
+  const raw = typeof item === 'string' ? item : String(item?.url || item?.src || '').trim();
+  if (typeof haiboValidMediaUrl === 'function' && haiboValidMediaUrl(raw)) {
     return raw;
   }
-  if (typeof haiboIsAdminUploadedUrl === 'function' && haiboIsAdminUploadedUrl(raw)) {
-    return raw;
-  }
-  const staticItem = staticD?.gallery?.[index];
-  const staticUrl =
-    typeof staticItem === 'string' ? staticItem : staticItem?.url || staticItem?.src || '';
-  return staticUrl || raw;
+  return '';
 }
 
-function renderDestinationGalleryCard(item, dest, index, staticD, fromCms) {
-  const imgSrcRaw = getDestinationGalleryImageUrl(item, dest, index, staticD, fromCms);
-  if (!imgSrcRaw) return '';
-  const imgSrc =
-    typeof window.haiboOptimizeImage === 'function'
-      ? window.haiboOptimizeImage(imgSrcRaw, { width: 720 })
-      : imgSrcRaw;
+function renderDestinationGalleryCard(item, dest, index) {
+  const isVideo =
+    (typeof item === 'object' && item?.type === 'video') ||
+    String(item?.url || item?.src || '')
+      .toLowerCase()
+      .includes('/video/upload/');
+  const mediaUrl = isVideo
+    ? String(item?.url || item?.src || '').trim()
+    : getDestinationGalleryImageUrl(item, dest, index);
+  if (!mediaUrl || (typeof haiboValidMediaUrl === 'function' && !haiboValidMediaUrl(mediaUrl))) {
+    return '';
+  }
   const alt =
     (typeof item === 'object' && item?.alt) ||
-    `${dest.name} safari photo ${index + 1} — Tanzania`;
+    `${dest.name} safari ${isVideo ? 'video' : 'photo'} ${index + 1} — Tanzania`;
   const tag = dest.region || 'Safari';
   const title = dest.name || 'Safari';
-  const imgTag =
-    typeof window.haiboImgTag === 'function'
-      ? window.haiboImgTag(imgSrc, alt, {
-          width: 720,
-          class: 'gallery-media-card__img',
-        })
-      : `<img src="${escapeAttrUrl(imgSrc)}" alt="${escapeHtml(alt)}" class="gallery-media-card__img" loading="lazy" decoding="async" width="480" height="640" />`;
+
+  let mediaInner;
+  if (isVideo) {
+    mediaInner = `<video class="gallery-media-card__video haibo-media" src="${escapeAttrUrl(mediaUrl)}" muted playsinline loop preload="metadata"></video><span class="gallery-play-btn" aria-hidden="true">▶</span>`;
+  } else {
+    const imgSrc =
+      typeof window.haiboOptimizeImage === 'function'
+        ? window.haiboOptimizeImage(mediaUrl, { width: 720 })
+        : mediaUrl;
+    mediaInner =
+      typeof window.haiboImgTag === 'function'
+        ? window.haiboImgTag(imgSrc, alt, {
+            width: 720,
+            class: 'gallery-media-card__img',
+          })
+        : `<img src="${escapeAttrUrl(imgSrc)}" alt="${escapeHtml(alt)}" class="gallery-media-card__img" loading="lazy" decoding="async" width="480" height="640" />`;
+  }
 
   return `
-    <article class="gallery-media-card dest-gallery-card">
+    <article class="gallery-media-card dest-gallery-card${isVideo ? ' gallery-video-card' : ''}">
       <div class="gallery-media-card__media">
-        ${imgTag}
+        ${mediaInner}
         <div class="gallery-media-card__overlay" aria-hidden="true"></div>
         <div class="gallery-media-card__body">
           <p class="gallery-media-card__tag">${escapeHtml(tag)}</p>
@@ -521,11 +530,7 @@ function renderDestinationGalleryCard(item, dest, index, staticD, fromCms) {
 }
 
 function renderPackageCard(pkg, dest) {
-  const imgRaw =
-    dest.cardImage ||
-    dest.image ||
-    dest.heroImage ||
-    'https://images.unsplash.com/photo-1516426122078-c23e76319801?q=80&w=800&auto=format&fit=crop';
+  const imgRaw = dest.cardImage || dest.image || dest.heroImage || '';
   const imgSrc =
     typeof window.haiboOptimizeImage === 'function'
       ? window.haiboOptimizeImage(imgRaw, { width: 640 })
@@ -714,11 +719,7 @@ function renderDestinationDetail() {
     : Array.isArray(dest.packages) && dest.packages.length
       ? dest.packages
       : staticD?.packages || [];
-  const gallery = fromCms
-    ? dest.gallery || []
-    : Array.isArray(dest.gallery) && dest.gallery.length
-      ? dest.gallery
-      : staticD?.gallery || [];
+  const gallery = dest.gallery || [];
   const highlights = fromCms
     ? dest.highlights || []
     : Array.isArray(dest.highlights) && dest.highlights.length
@@ -751,7 +752,7 @@ function renderDestinationDetail() {
         }));
 
   const galleryHtml = galleryItems
-    .map((item, i) => renderDestinationGalleryCard(item, dest, i, staticD, fromCms))
+    .map((item, i) => renderDestinationGalleryCard(item, dest, i))
     .filter(Boolean)
     .join('');
 
@@ -806,6 +807,18 @@ function renderDestinationDetail() {
   if (typeof window.haiboEnhanceImages === 'function') {
     window.haiboEnhanceImages(document.getElementById('detail-root'));
   }
+
+  document.querySelectorAll('#detail-root .gallery-video-card video').forEach((video) => {
+    const card = video.closest('.gallery-video-card');
+    if (!card) return;
+    card.addEventListener('mouseenter', () => {
+      video.play().catch(() => {});
+    });
+    card.addEventListener('mouseleave', () => {
+      video.pause();
+      video.currentTime = 0;
+    });
+  });
 }
 
 function runHaiboApp() {
