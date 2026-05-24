@@ -1,7 +1,7 @@
 /**
  * HAIBO CMS — Firestore is the only source of truth (realtime onSnapshot).
  */
-import { doc, collection, onSnapshot } from './firebase-cdn.mjs';
+import { doc, collection, getDoc, getDocs, onSnapshot } from './firebase-cdn.mjs';
 import { getHaiboDb } from './firebase-app.mjs';
 
 const MAIN_ID = 'main';
@@ -63,6 +63,42 @@ export function aggregateCmsSnapshot(parts) {
     ...cms.weatherCards.map((w) => w.updatedAt || 0)
   );
   return cms;
+}
+
+/** One-time read from Firestore (used by legacy imports — prefer subscribePublicCms). */
+export async function loadCmsSnapshotOnce() {
+  const db = getHaiboDb();
+  if (!db) return null;
+  const p = paths();
+
+  async function readDoc(coll) {
+    if (!coll) return null;
+    const snap = await getDoc(doc(db, coll, MAIN_ID));
+    return snap.exists() ? snap.data() : null;
+  }
+
+  async function readList(coll) {
+    if (!coll) return [];
+    const snap = await getDocs(collection(db, coll));
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  }
+
+  try {
+    const parts = {
+      hero: await readDoc(p.hero),
+      about: await readDoc(p.about),
+      contact: await readDoc(p.contact),
+      socials: await readDoc(p.socials),
+      settings: await readDoc(p.settings),
+      destinations: await readList(p.destinations),
+      gallery: await readList(p.gallery),
+      weatherCards: await readList(p.weatherCards),
+    };
+    return aggregateCmsSnapshot(parts);
+  } catch (err) {
+    console.error('[HAIBO] Firestore read failed:', err);
+    return null;
+  }
 }
 
 /**

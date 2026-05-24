@@ -63,7 +63,11 @@
   ],
   "headers": [
     {
-      "source": "/(.*)\\.(css|js|mjs|png|jpg|jpeg|webp|svg|ico|woff2)",
+      "source": "/(.*)\\.mjs",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
+    },
+    {
+      "source": "/(.*)\\.(css|js|png|jpg|jpeg|webp|svg|ico|woff2)",
       "headers": [
         {
           "key": "Cache-Control",

@@ -2,7 +2,6 @@
  * Live website content — Firestore realtime only (onSnapshot). No localStorage CMS cache.
  */
 import { subscribePublicCms } from './cms-firestore.mjs';
-import { haiboDestinationsFromFirestoreDocs } from './haibo-live-content.mjs';
 import { unsubscribeAllRealtime } from './firestore-realtime.mjs';
 
 window.HAIBO_CONTENT = {
