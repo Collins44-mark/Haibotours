@@ -407,7 +407,31 @@ function escapeHtml(s) {
     .replace(/"/g, '&quot;');
 }
 
-/** Premium package card — image top, compact body (2-col mobile grid). */
+const PACKAGE_FEATURE_SVGS = [
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 3l8 4v6c0 4.5-3.5 7.5-8 8-4.5-.5-8-3.5-8-8V7l8-4z"/><path d="M9 12l2 2 4-4"/></svg>',
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M17 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 10l8-6 8 6v10a1 1 0 01-1 1H5a1 1 0 01-1-1V10z"/><path d="M9 21v-6h6v6"/></svg>',
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+];
+
+function packageFeatureIconHtml(index) {
+  return PACKAGE_FEATURE_SVGS[index % PACKAGE_FEATURE_SVGS.length];
+}
+
+function shortenFeatureLabel(text, max = 22) {
+  const t = String(text || '').trim();
+  if (t.length <= max) return t;
+  const words = t.split(/\s+/);
+  let out = '';
+  for (const w of words) {
+    const next = out ? `${out} ${w}` : w;
+    if (next.length > max) break;
+    out = next;
+  }
+  return out || t.slice(0, max);
+}
+
+/** Premium package card — matches 2-col mobile reference (caption on image). */
 function renderPackageCard(pkg, dest) {
   const imgRaw =
     dest.cardImage ||
@@ -435,29 +459,36 @@ function renderPackageCard(pkg, dest) {
       <div class="package-card__media">
         ${imgTag}
         <div class="package-card__media-overlay" aria-hidden="true"></div>
-        ${pkg.popular ? '<span class="package-card__badge">Most Popular</span>' : ''}
+        ${pkg.popular ? '<span class="package-card__badge"><span class="package-card__badge-star" aria-hidden="true">★</span> Most Popular</span>' : ''}
+        <div class="package-card__caption">
+          <h3 class="package-card__title">${escapeHtml(pkg.name)}</h3>
+          <p class="package-card__duration">${escapeHtml(pkg.duration)}</p>
+        </div>
       </div>
       <div class="package-card__body">
-        <h3 class="package-card__title">${escapeHtml(pkg.name)}</h3>
-        <p class="package-card__duration">${escapeHtml(pkg.duration)}</p>
-        <p class="package-card__price">${escapeHtml(pkg.price)}</p>
-        ${pkg.priceNote ? `<p class="package-card__note">${escapeHtml(pkg.priceNote)}</p>` : ''}
+        <div class="package-card__pricing">
+          <p class="package-card__price">${escapeHtml(pkg.price)}</p>
+          ${pkg.priceNote ? `<p class="package-card__note">${escapeHtml(pkg.priceNote)}</p>` : ''}
+        </div>
         ${
           features.length
             ? `<ul class="package-card__features" aria-label="Package highlights">
           ${features
             .map(
-              (f) => `
+              (f, i) => `
             <li class="package-card__feature" title="${escapeHtml(f)}">
-              <span class="package-card__feature-icon" aria-hidden="true">✓</span>
-              <span class="package-card__feature-text">${escapeHtml(f)}</span>
+              <span class="package-card__feature-icon">${packageFeatureIconHtml(i)}</span>
+              <span class="package-card__feature-text">${escapeHtml(shortenFeatureLabel(f))}</span>
             </li>`
             )
             .join('')}
         </ul>`
             : ''
         }
-        <a href="${waHref}" target="_blank" rel="noopener noreferrer" class="package-card__cta btn-main">Book</a>
+        <a href="${waHref}" target="_blank" rel="noopener noreferrer" class="package-card__cta btn-main">
+          <span>Book This Package</span>
+          <span class="package-card__cta-arrow" aria-hidden="true">→</span>
+        </a>
       </div>
     </article>`;
 }
