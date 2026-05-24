@@ -1,5 +1,5 @@
 /**
- * Destination list + save helpers — Cloudinary CMS only.
+ * Destination list + save — Firestore only.
  */
 import {
   getAdminCms,
@@ -7,10 +7,8 @@ import {
   removeDestinationFromCms,
   getDestinationFromCms,
   listDestinationsForAdmin,
-  saveDestinationToFirestore,
-  deleteDestinationFromFirestore,
 } from './admin-cms.mjs';
-import { adminToast, slugify } from './admin-db.mjs';
+import { slugify, dbSetDoc, dbDeleteDoc, sanitizeFirestoreData } from './admin-db.mjs';
 import { confirmDialog, formatRelativeTime, showToast } from './admin-ui.mjs';
 
 export const DEST_EDIT_BASE = '/admin/destinations/edit.html';
@@ -75,15 +73,39 @@ export async function saveDestinationRecord(payload) {
   if (!payload.name) throw new Error('Destination name is required');
 
   const { _source, ...rest } = payload;
+  const id = slugify(String(rest.id).trim());
+  const published = rest.active !== false;
   const row = upsertDestinationInCms({
     ...rest,
-    id: String(rest.id).trim(),
-    active: rest.active !== false,
-    published: rest.active !== false,
+    id,
+    slug: id,
+    active: published,
+    published,
+    status: published ? 'published' : 'draft',
   });
 
-  await saveDestinationToFirestore(row);
+  const coll = globalThis.FIRESTORE_PATHS?.destinations || 'destinations';
+  await dbSetDoc(
+    coll,
+    sanitizeFirestoreData({
+      ...row,
+      id,
+      slug: id,
+      updatedAt: Date.now(),
+    }),
+    id
+  );
+  console.log('[HAIBO] Firestore updated successfully', `destinations/${id}`);
   return row;
+}
+
+export async function deleteDestinationById(id) {
+  const slug = slugify(String(id).trim());
+  if (!slug) return;
+  removeDestinationFromCms(slug);
+  const coll = globalThis.FIRESTORE_PATHS?.destinations || 'destinations';
+  await dbDeleteDoc(coll, slug);
+  console.log('[HAIBO] Firestore deleted', `destinations/${slug}`);
 }
 
 export async function loadDestinationById(id) {
@@ -177,8 +199,7 @@ export function renderDestinationsList(el, destinations, { onRefresh }) {
       if (!ok) return;
       btn.disabled = true;
       try {
-        removeDestinationFromCms(id);
-        await deleteDestinationFromFirestore(id);
+        await deleteDestinationById(id);
         showToast('Destination deleted', 'success');
         onRefresh?.();
       } catch (err) {

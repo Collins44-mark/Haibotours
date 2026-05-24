@@ -6,14 +6,10 @@ import { renderSidebar, initSidebar, userDisplayFromAuth, closeAllMenus } from '
 import {
   mergeDestinationsForAdmin,
   destinationEditUrl,
+  saveDestinationRecord,
+  deleteDestinationById,
 } from './admin-destinations.mjs';
-import {
-  loadAdminCms,
-  removeDestinationFromCms,
-  upsertDestinationInCms,
-  saveDestinationToFirestore,
-  deleteDestinationFromFirestore,
-} from './admin-cms.mjs';
+import { loadAdminCms } from './admin-cms.mjs';
 import { confirmDialog, formatRelativeTime } from './admin-ui.mjs';
 import { adminToast } from './admin-db.mjs';
 import { signOutAdmin, LOGIN_URL } from './firebase.js';
@@ -135,9 +131,7 @@ function renderList() {
         danger: true,
       });
       if (!ok) return;
-      const id = btn.dataset.id;
-      removeDestinationFromCms(id);
-      await deleteDestinationFromFirestore(id);
+      await deleteDestinationById(btn.dataset.id);
       allDestinations = mergeDestinationsForAdmin();
       renderList();
       showToast('Destination deleted', 'success');
@@ -152,8 +146,7 @@ function renderList() {
       const newId = `${src.id}-copy-${Date.now().toString(36).slice(-4)}`;
       const copy = { ...src, id: newId, name: `${src.name} (Copy)`, active: false };
       delete copy._source;
-      upsertDestinationInCms(copy);
-      await saveDestinationToFirestore(copy);
+      await saveDestinationRecord(copy);
       showToast('Destination duplicated', 'success');
       window.location.href = destinationEditUrl(newId);
     });
