@@ -76,24 +76,48 @@ export function emptyPageHeroesDoc() {
   return { pages: defaultPageHeroPages(), updatedAt: 0 };
 }
 
-/** Merge legacy hero/main doc into pageHeroes.pages.home */
+/** Merge pageHeroes/main and/or hero/main (flat home fields + optional pages map). */
 export function normalizePageHeroesDoc(raw, legacyHero) {
   const base = emptyPageHeroesDoc();
-  const pages = { ...base.pages, ...(raw?.pages || {}) };
+  const fromHero =
+    legacyHero?.pages && typeof legacyHero.pages === 'object'
+      ? { pages: { ...legacyHero.pages }, updatedAt: legacyHero.updatedAt }
+      : null;
+  const source = raw || fromHero;
+  const pages = { ...base.pages, ...(source?.pages || {}) };
+
   if (legacyHero && typeof legacyHero === 'object') {
-    pages.home = { ...base.pages.home, ...pages.home, ...legacyHero };
+    const { pages: embedded, updatedAt: _u, ...homeFlat } = legacyHero;
+    if (embedded && typeof embedded === 'object') {
+      PAGE_HERO_PAGE_IDS.forEach((id) => {
+        pages[id] = { ...base.pages[id], ...pages[id], ...(embedded[id] || {}) };
+      });
+    }
+    pages.home = { ...base.pages.home, ...pages.home, ...homeFlat };
   }
+
   PAGE_HERO_PAGE_IDS.forEach((id) => {
     pages[id] = { ...base.pages[id], ...(pages[id] || {}) };
   });
+
   return {
     pages,
     updatedAt: raw?.updatedAt || legacyHero?.updatedAt || 0,
   };
 }
 
+/** Single Firestore write to hero/main (works without pageHeroes collection in rules). */
+export function heroFirestorePayloadFromPageHeroes(doc) {
+  const home = doc?.pages?.home || {};
+  return {
+    ...home,
+    pages: doc.pages,
+    updatedAt: doc.updatedAt || Date.now(),
+  };
+}
+
 export function getPageHeroForSite(pageId, content) {
-  const pages = content?.pageHeroes?.pages || {};
+  const pages = content?.pageHeroes?.pages || content?.hero?.pages || {};
   if (pageId === 'home') {
     return { ...(content?.hero || {}), ...pages.home };
   }

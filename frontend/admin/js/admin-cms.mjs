@@ -2,7 +2,10 @@
  * Admin CMS — Firestore source of truth (no Cloudinary JSON, no localStorage CMS).
  */
 import { emptyCmsDocument } from '../../js/cms-firestore.mjs';
-import { normalizePageHeroesDoc } from '../../js/page-heroes.mjs';
+import {
+  heroFirestorePayloadFromPageHeroes,
+  normalizePageHeroesDoc,
+} from '../../js/page-heroes.mjs';
 import {
   adminToast,
   dbSetDoc,
@@ -73,8 +76,11 @@ export async function syncCmsToWebsite(options = {}) {
   const ts = Date.now();
 
   try {
-    if (cms.hero) await dbSetDoc(p.hero, cms.hero, 'main');
-    if (cms.pageHeroes) await dbSetDoc(p.pageHeroes, cms.pageHeroes, 'main');
+    if (cms.pageHeroes) {
+      await dbSetDoc(p.hero, heroFirestorePayloadFromPageHeroes(cms.pageHeroes), 'main');
+    } else if (cms.hero) {
+      await dbSetDoc(p.hero, cms.hero, 'main');
+    }
     if (cms.about) await dbSetDoc(p.about, cms.about, 'main');
     if (cms.contact) await dbSetDoc(p.contact, cms.contact, 'main');
     if (cms.socials) await dbSetDoc(p.socials, cms.socials, 'main');

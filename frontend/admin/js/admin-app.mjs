@@ -25,7 +25,7 @@ import {
 import { subscribeAdminFirestore } from './admin-realtime.mjs';
 import { initTopbarMenu, initMobileSidebar } from './admin-ui.mjs';
 import { initPageHeroesPanel, loadPageHeroesPanel } from './admin-page-heroes.mjs';
-import { defaultPageHeroPages } from '../../js/page-heroes.mjs';
+import { defaultPageHeroPages, heroFirestorePayloadFromPageHeroes } from '../../js/page-heroes.mjs';
 
 /** HAIBO Admin — section managers */
 let state = {
@@ -183,7 +183,7 @@ export async function seedAllDefaults() {
 
     const pageHeroDefaults = defaultPageHeroPages();
     cms.pageHeroes = { pages: pageHeroDefaults, updatedAt: Date.now() };
-    cms.hero = { ...pageHeroDefaults.home, updatedAt: Date.now() };
+    cms.hero = heroFirestorePayloadFromPageHeroes(cms.pageHeroes);
 
     cms.about = {
       eyebrow: 'Why Choose Us',

@@ -58,6 +58,8 @@ service cloud.firestore {
   }
 }
 
+NOTE: Page heroes are stored in hero/main (field "pages") so saves work even before pageHeroes is added to rules. Optional collection pageHeroes is read if present.
+
 YOUR ADMIN DOCUMENT (after publishing rules):
   Collection: admins
   Document ID: 2Fon2CNGTfSHF84miZ4GsKGSc6w1

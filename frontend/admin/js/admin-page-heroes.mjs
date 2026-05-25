@@ -9,6 +9,7 @@ import {
   PAGE_HERO_PAGE_IDS,
   PAGE_HERO_META,
   defaultPageHeroPages,
+  heroFirestorePayloadFromPageHeroes,
   normalizePageHeroesDoc,
 } from '../../js/page-heroes.mjs';
 
@@ -98,16 +99,13 @@ async function savePageHero(e) {
   const doc = getPageHeroesCms();
   doc.pages[activePageId] = pageFromForm(form, activePageId);
   doc.updatedAt = Date.now();
-  if (activePageId === 'home') {
-    cms.hero = { ...doc.pages.home, updatedAt: doc.updatedAt };
-  }
   cms.pageHeroes = doc;
+  cms.hero = heroFirestorePayloadFromPageHeroes(doc);
   try {
-    const p = globalThis.FIRESTORE_PATHS || {};
-    await saveSectionToFirestore('pageHeroes', sanitizeFirestoreData(doc));
-    if (activePageId === 'home' && p.hero) {
-      await saveSectionToFirestore('hero', sanitizeFirestoreData({ ...doc.pages.home, updatedAt: doc.updatedAt }));
-    }
+    await saveSectionToFirestore(
+      'hero',
+      sanitizeFirestoreData(heroFirestorePayloadFromPageHeroes(doc))
+    );
     adminToast(`${PAGE_HERO_META[activePageId]?.label} hero saved — live on site`, 'success');
   } catch (err) {
     adminToast(err?.message || 'Could not save page hero', 'error');
