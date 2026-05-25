@@ -432,9 +432,7 @@ function mergeHaiboContentWithDefaults() {
     delete c.hero.homeCta.backgroundClass;
   }
 
-  if (!haiboDocHasContent(c.contact, ['email', 'phoneDisplay'])) {
-    c.contact = { ...d.contact, ...(c.contact || {}), ...(typeof HAIBO_CONFIG !== 'undefined' ? HAIBO_CONFIG : {}) };
-  }
+  c.contact = { ...d.contact, ...(c.contact || {}) };
 
   if (!haiboDocHasContent(c.socials, ['instagram', 'facebook'])) {
     c.socials = { ...d.socials, ...(c.socials || {}) };

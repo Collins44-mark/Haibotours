@@ -36,13 +36,17 @@ function applyConfigFromContent() {
   const c = window.HAIBO_CONTENT.contact || {};
   const s = window.HAIBO_CONTENT.socials || {};
   const st = window.HAIBO_CONTENT.settings || {};
+  const normalizeWa =
+    typeof window.normalizeWhatsAppNumber === 'function'
+      ? window.normalizeWhatsAppNumber
+      : (value) => String(value || '').replace(/\D+/g, '');
 
   if (st?.logoUrl && typeof haiboValidMediaUrl === 'function' && haiboValidMediaUrl(st.logoUrl)) {
     HAIBO_CONFIG.logoPath = st.logoUrl;
   }
   if (c.phoneDisplay) HAIBO_CONFIG.phoneDisplay = c.phoneDisplay;
   if (c.email) HAIBO_CONFIG.email = c.email;
-  if (c.whatsappNumber) HAIBO_CONFIG.whatsappNumber = c.whatsappNumber;
+  if (c.whatsappNumber) HAIBO_CONFIG.whatsappNumber = normalizeWa(c.whatsappNumber);
   if (c.address) HAIBO_CONFIG.address = c.address;
   if (c.officeHours) HAIBO_CONFIG.officeHours = c.officeHours;
   if (c.mapUrl) HAIBO_CONFIG.mapUrl = c.mapUrl;

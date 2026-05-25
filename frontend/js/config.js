@@ -21,7 +21,15 @@ const HAIBO_CONFIG = {
   },
 };
 
+function normalizeWhatsAppNumber(value) {
+  return String(value || '').replace(/\D+/g, '');
+}
+
 function getWhatsAppUrl(customMessage) {
   const text = encodeURIComponent(customMessage || HAIBO_CONFIG.defaultTourMessage);
-  return `https://wa.me/${HAIBO_CONFIG.whatsappNumber}?text=${text}`;
+  const number = normalizeWhatsAppNumber(HAIBO_CONFIG.whatsappNumber);
+  return `https://wa.me/${number}?text=${text}`;
 }
+
+HAIBO_CONFIG.whatsappNumber = normalizeWhatsAppNumber(HAIBO_CONFIG.whatsappNumber);
+window.normalizeWhatsAppNumber = normalizeWhatsAppNumber;

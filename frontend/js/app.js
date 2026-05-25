@@ -379,7 +379,10 @@ function initMobileMenu() {
 
 function initWhatsAppFloat(customMessage) {
   const existing = document.getElementById('whatsapp-float');
-  if (existing) return;
+  if (existing) {
+    existing.href = getWhatsAppUrl(customMessage);
+    return existing;
+  }
 
   const link = document.createElement('a');
   link.id = 'whatsapp-float';
@@ -390,6 +393,12 @@ function initWhatsAppFloat(customMessage) {
   link.setAttribute('aria-label', 'Chat with HAIBO Tours on WhatsApp');
   link.innerHTML = WHATSAPP_ICON_SVG;
   document.body.appendChild(link);
+  return link;
+}
+
+function syncWhatsAppLinks() {
+  const ctaWa = document.getElementById('cta-whatsapp');
+  if (ctaWa) ctaWa.href = getWhatsAppUrl();
 }
 
 function resolveDestinationImage(dest) {
@@ -811,6 +820,7 @@ function runHaiboApp() {
   if (typeof window.applyHaiboContent === 'function') {
     window.applyHaiboContent();
   }
+  syncWhatsAppLinks();
   initMobileMenu();
   initNewsletterForm();
   initSearchBar();
@@ -858,6 +868,7 @@ function refreshHaiboLiveContent() {
     window.applyHaiboContent();
   }
   applyLogo();
+  syncWhatsAppLinks();
 
   if (document.body.dataset.page === 'home') {
     renderDestinationCards('home-destinations', 4);
