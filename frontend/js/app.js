@@ -378,15 +378,18 @@ function initMobileMenu() {
 }
 
 function initWhatsAppFloat(customMessage) {
+  const message = customMessage ?? document.getElementById('whatsapp-float')?.dataset.waMessage ?? '';
   const existing = document.getElementById('whatsapp-float');
   if (existing) {
-    existing.href = getWhatsAppUrl(customMessage);
+    existing.dataset.waMessage = message;
+    existing.href = getWhatsAppUrl(message);
     return existing;
   }
 
   const link = document.createElement('a');
   link.id = 'whatsapp-float';
-  link.href = getWhatsAppUrl(customMessage);
+  link.dataset.waMessage = message;
+  link.href = getWhatsAppUrl(message);
   link.target = '_blank';
   link.rel = 'noopener noreferrer';
   link.className = 'whatsapp-float floating';
@@ -399,6 +402,10 @@ function initWhatsAppFloat(customMessage) {
 function syncWhatsAppLinks() {
   const ctaWa = document.getElementById('cta-whatsapp');
   if (ctaWa) ctaWa.href = getWhatsAppUrl();
+  const floatingWa = document.getElementById('whatsapp-float');
+  if (floatingWa) {
+    floatingWa.href = getWhatsAppUrl(floatingWa.dataset.waMessage || '');
+  }
 }
 
 function resolveDestinationImage(dest) {
