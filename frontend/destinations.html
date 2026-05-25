@@ -19,10 +19,11 @@
   <link rel="stylesheet" href="css/mobile-fixes.css">
   <link rel="stylesheet" href="css/cards-mobile.css">
   <link rel="stylesheet" href="css/destinations-mobile.css">
+  <link rel="stylesheet" href="css/destinations-hero.css">
   <link rel="stylesheet" href="css/footer-mobile.css">
   <link rel="stylesheet" href="css/seo-perf.css">
 </head>
-<body data-page="destinations">
+<body data-page="destinations" class="destinations-page">
   <a class="skip-link" href="#main-content">Skip to main content</a>
 
   <nav class="fixed w-full z-50 nav-blur px-6 md:px-8 py-5" role="navigation" aria-label="Main navigation">
@@ -61,17 +62,39 @@
   </nav>
 
   <main id="main-content">
-  <section class="page-hero page-hero--simple hero hero-banner flex items-end px-8 md:px-20">
-    <div class="max-w-3xl fade-up w-full">
-      <p class="orange uppercase tracking-[5px] text-sm mb-4" data-haibo-page-hero-eyebrow>Explore Tanzania</p>
-      <h1 class="page-heading font-extrabold mb-6">
-        <span data-haibo-page-hero-title>All Safari</span> <span class="orange" data-haibo-page-hero-title-accent>Destinations</span>
-      </h1>
-      <p class="hero-subtitle text-gray-200 max-w-2xl" data-haibo-page-hero-subtitle>Select a destination to view packages, expert guides, photo galleries, and pricing — then book directly via WhatsApp.</p>
+  <section
+    class="hero-destination hero-banner page-hero"
+    aria-label="Safari destinations"
+  >
+    <div class="hero-destination__overlay" aria-hidden="true"></div>
+    <div class="hero-destination__content hero-content">
+      <div class="hero-destination__inner fade-up">
+        <p class="hero-destination__eyebrow" data-haibo-page-hero-eyebrow>Explore Tanzania</p>
+        <h1 class="hero-destination__title page-heading">
+          <span class="hero-destination__title-main" data-haibo-page-hero-title>All Safari</span>
+          <span class="hero-destination__title-accent orange" data-haibo-page-hero-title-accent>Destinations</span>
+        </h1>
+        <p class="hero-destination__desc" data-haibo-page-hero-subtitle>
+          Discover breathtaking parks, beaches, and treks across Tanzania — compare packages, guides, and pricing, then book your safari with HAIBO.
+        </p>
+        <div class="hero-destination__buttons hero-buttons">
+          <a
+            href="#all-destinations"
+            class="hero-destination__btn hero-destination__btn--primary btn-primary"
+            data-haibo-page-hero-cta-primary
+          >Explore Destinations</a>
+          <a
+            href="contact.html"
+            class="hero-destination__btn hero-destination__btn--secondary btn-secondary"
+            data-haibo-page-hero-cta-secondary
+          >Plan Your Safari</a>
+        </div>
+      </div>
     </div>
+    <div class="hero-destination__fade" aria-hidden="true"></div>
   </section>
 
-  <section class="destinations-section py-24 px-8 md:px-20 bg-[#111] -mt-8 relative z-10">
+  <section class="destinations-section py-24 px-8 md:px-20 bg-[#111] relative z-10">
     <div class="destinations-section__intro mb-14">
       <p class="orange uppercase tracking-[5px] mb-3">8 Locations</p>
       <h2 class="section-title">Choose Your Adventure</h2>

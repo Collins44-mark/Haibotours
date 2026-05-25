@@ -14,8 +14,8 @@ export const PAGE_HERO_META = {
   destinations: {
     label: 'Destinations',
     livePath: '/destinations.html',
-    rootSelector: '.page-hero.hero-banner',
-    hasCta: false,
+    rootSelector: '.hero-destination.hero-banner',
+    hasCta: true,
   },
   gallery: {
     label: 'Gallery',
@@ -50,8 +50,12 @@ export function defaultPageHeroPages() {
       title: 'All Safari',
       titleAccent: 'Destinations',
       subtitle:
-        'Select a destination to view packages, expert guides, photo galleries, and pricing — then book directly via WhatsApp.',
+        'Discover breathtaking parks, beaches, and treks across Tanzania — compare packages, guides, and pricing, then book your safari with HAIBO.',
       backgroundImageUrl: '',
+      ctaPrimaryText: 'Explore Destinations',
+      ctaPrimaryLink: '#all-destinations',
+      ctaSecondaryText: 'Plan Your Safari',
+      ctaSecondaryLink: 'contact.html',
     },
     gallery: {
       eyebrow: 'Guest Moments',

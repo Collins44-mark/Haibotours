@@ -40,6 +40,10 @@ function applyPageHeroFields(root, h) {
       : '';
   if (bg) {
     root.style.setProperty('--hero-bg-image', `url('${bg}')`);
+    root.classList.add('hero-banner--has-image');
+  } else {
+    root.style.removeProperty('--hero-bg-image');
+    root.classList.remove('hero-banner--has-image');
   }
   const setIn = (sel, val, asHtml = false) => {
     if (val == null || val === '') return;

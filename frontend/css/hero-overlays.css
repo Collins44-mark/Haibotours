@@ -70,7 +70,7 @@
   box-sizing: border-box;
 }
 
-.page-hero.hero-banner {
+.page-hero.hero-banner:not(.hero-destination) {
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -78,7 +78,7 @@
   min-height: clamp(22rem, 55vh, 36rem);
 }
 
-.page-hero--simple.hero-banner {
+.page-hero--simple.hero-banner:not(.hero-destination) {
   justify-content: flex-end;
 }
 
