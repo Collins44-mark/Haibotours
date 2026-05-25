@@ -27,11 +27,19 @@ function galleryCardMedia(item, type, index) {
   return `
       <div class="gallery-media-card__media">
         <video class="gallery-media-card__video haibo-media" src="${item.src}" poster="${item.thumb}" muted playsinline preload="metadata"></video>
-        <span class="gallery-play-btn" aria-hidden="true">▶</span>
-        <div class="gallery-media-card__overlay" aria-hidden="true"></div>
+        <span class="gallery-video-card__duration" aria-hidden="true" data-video-duration>02:45</span>
+        <span class="gallery-play-btn" aria-hidden="true">
+          <span class="gallery-play-btn__icon">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M8 6.82v10.36c0 .79.87 1.27 1.54.84l8.14-5.18a1 1 0 000-1.68L9.54 5.98A1 1 0 008 6.82z"/>
+            </svg>
+          </span>
+        </span>
+        <div class="gallery-media-card__overlay gallery-media-card__overlay--video" aria-hidden="true"></div>
         <div class="gallery-media-card__body">
           ${item.tag ? `<p class="gallery-media-card__tag">${escapeHtml(item.tag)}</p>` : ''}
           <h3 class="gallery-media-card__title">${escapeHtml(item.title)}</h3>
+          <span class="gallery-video-card__cta" aria-hidden="true">Watch Video <span>→</span></span>
         </div>
       </div>`;
 }
@@ -111,6 +119,24 @@ function renderGalleryPage() {
 function initVideoCardHover() {
   document.querySelectorAll('.gallery-video-card video').forEach((video) => {
     const card = video.closest('.gallery-video-card');
+    const duration = card?.querySelector('[data-video-duration]');
+    const formatDuration = (seconds) => {
+      const total = Math.max(0, Math.floor(seconds || 0));
+      const mins = Math.floor(total / 60);
+      const secs = total % 60;
+      return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    };
+
+    const updateDuration = () => {
+      if (duration && Number.isFinite(video.duration)) {
+        duration.textContent = formatDuration(video.duration);
+      }
+    };
+
+    video.addEventListener('loadedmetadata', updateDuration);
+    if (video.readyState >= 1) updateDuration();
+
+    if (!card) return;
     card.addEventListener('mouseenter', () => {
       video.play().catch(() => {});
     });

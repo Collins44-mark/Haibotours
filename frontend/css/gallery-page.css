@@ -33,7 +33,7 @@
 
 .gallery-grid-videos {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: clamp(0.75rem, 3vw, 1rem);
 }
 
@@ -147,7 +147,7 @@ a.home-gallery-card {
   display: block;
   min-width: 0;
   height: auto;
-  border-radius: 1rem;
+  border-radius: 1.5rem;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: #0d0d0d;
@@ -172,6 +172,11 @@ a.home-gallery-card {
   overflow: hidden;
   background: #0a0a0a;
   line-height: 0;
+}
+
+.gallery-video-card .gallery-media-card__media {
+  aspect-ratio: 16 / 10;
+  border-radius: 1.5rem;
 }
 
 .gallery-media-card__img,
@@ -200,6 +205,12 @@ a.home-gallery-card {
   pointer-events: none;
 }
 
+.gallery-media-card__overlay--video {
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.16) 42%, rgba(0, 0, 0, 0.76) 100%),
+    linear-gradient(0deg, rgba(6, 6, 6, 0.82) 0%, rgba(6, 6, 6, 0) 38%);
+}
+
 .gallery-media-card__body {
   position: absolute;
   left: 0;
@@ -208,6 +219,19 @@ a.home-gallery-card {
   z-index: 2;
   padding: 0.65rem 0.7rem 0.7rem;
   pointer-events: none;
+}
+
+.gallery-video-card .gallery-media-card__body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.55rem 0.75rem;
+  padding: 1rem 1rem 1rem;
+}
+
+.gallery-video-card .gallery-media-card__tag,
+.gallery-video-card .gallery-media-card__title {
+  width: 100%;
 }
 
 .gallery-media-card__tag {
@@ -233,6 +257,29 @@ a.home-gallery-card {
   overflow: hidden;
 }
 
+.gallery-video-card__duration {
+  position: absolute;
+  top: 0.9rem;
+  left: 0.9rem;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(10, 10, 10, 0.46);
+  color: rgba(255, 255, 255, 0.96);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.28),
+    0 0 18px rgba(217, 139, 43, 0.08);
+}
+
 @media (min-width: 768px) {
   .gallery-media-card:hover {
     transform: translateY(-4px);
@@ -254,22 +301,93 @@ a.home-gallery-card {
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 3;
-  width: 2.75rem;
-  height: 2.75rem;
+  width: clamp(4.25rem, 18vw, 5.35rem);
+  height: clamp(4.25rem, 18vw, 5.35rem);
   border-radius: 9999px;
-  background: linear-gradient(135deg, #d98b2b, #ffb347);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(9, 9, 9, 0.34);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #000;
-  font-size: 0.9rem;
-  box-shadow: 0 8px 24px rgba(217, 139, 43, 0.45);
-  transition: transform 0.35s ease;
+  color: #fff;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.42),
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 0 28px rgba(217, 139, 43, 0.32);
+  transition:
+    transform 0.35s ease,
+    box-shadow 0.35s ease,
+    background 0.35s ease,
+    border-color 0.35s ease;
   pointer-events: none;
 }
 
-.gallery-media-card:hover .gallery-play-btn {
-  transform: translate(-50%, -50%) scale(1.08);
+.gallery-play-btn__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46%;
+  height: 46%;
+  border-radius: 999px;
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.03));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.gallery-play-btn__icon svg {
+  width: 55%;
+  height: 55%;
+  margin-left: 0.12rem;
+  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.35));
+}
+
+.gallery-video-card__cta {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2rem;
+  padding: 0.38rem 0.78rem;
+  border-radius: 999px;
+  border: 1px solid rgba(240, 184, 90, 0.28);
+  background: rgba(16, 16, 16, 0.16);
+  color: rgba(255, 248, 235, 0.94);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.gallery-video-card__cta span {
+  color: #f0b85a;
+}
+
+.gallery-video-card:hover,
+.gallery-video-card:focus-visible {
+  border-color: rgba(240, 184, 90, 0.42);
+  box-shadow:
+    0 16px 36px rgba(0, 0, 0, 0.52),
+    0 0 26px rgba(217, 139, 43, 0.16),
+    inset 0 0 0 1px rgba(240, 184, 90, 0.08);
+}
+
+.gallery-video-card:hover .gallery-play-btn,
+.gallery-video-card:focus-visible .gallery-play-btn {
+  transform: translate(-50%, -50%) scale(1.06);
+  background: rgba(12, 12, 12, 0.44);
+  border-color: rgba(240, 184, 90, 0.38);
+  box-shadow:
+    0 22px 46px rgba(0, 0, 0, 0.46),
+    0 0 32px rgba(217, 139, 43, 0.42);
+}
+
+.gallery-video-card:hover .gallery-media-card__video,
+.gallery-video-card:focus-visible .gallery-media-card__video {
+  transform: scale(1.04);
 }
 
 /* Lightbox */
@@ -337,17 +455,49 @@ a.home-gallery-card {
     font-size: 0.75rem;
   }
 
+  .gallery-grid-videos {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+  }
+
+  .gallery-video-card {
+    width: 100%;
+  }
+
+  .gallery-video-card .gallery-media-card__media {
+    aspect-ratio: 16 / 10;
+  }
+
+  .gallery-video-card .gallery-media-card__body {
+    padding: 0.95rem;
+  }
+
+  .gallery-video-card .gallery-media-card__title {
+    font-size: 0.86rem;
+    line-height: 1.28;
+  }
+
+  .gallery-video-card__duration {
+    top: 0.8rem;
+    left: 0.8rem;
+    font-size: 0.68rem;
+  }
+
   .gallery-play-btn {
-    width: 2.5rem !important;
-    height: 2.5rem !important;
-    font-size: 0.85rem !important;
+    width: 4.5rem !important;
+    height: 4.5rem !important;
+  }
+
+  .gallery-video-card__cta {
+    font-size: 0.7rem;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .gallery-media-card,
   .gallery-media-card__img,
-  .gallery-media-card__video {
+  .gallery-media-card__video,
+  .gallery-play-btn {
     transition: none;
   }
 }
