@@ -21,6 +21,7 @@ service cloud.firestore {
     function isContentCollection(name) {
       return name in [
         'hero',
+        'pageHeroes',
         'about',
         'contact',
         'socials',

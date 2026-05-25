@@ -25,6 +25,7 @@ export function subscribeAdminFirestore(onChange) {
   };
 
   bindDoc(paths.hero);
+  bindDoc(paths.pageHeroes);
   bindDoc(paths.about);
   bindDoc(paths.contact);
   bindDoc(paths.socials);

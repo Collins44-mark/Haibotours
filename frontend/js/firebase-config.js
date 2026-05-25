@@ -18,6 +18,7 @@ const CLOUDINARY_CONFIG = {
 
 const FIRESTORE_PATHS = {
   hero: 'hero',
+  pageHeroes: 'pageHeroes',
   about: 'about',
   contact: 'contact',
   socials: 'socials',

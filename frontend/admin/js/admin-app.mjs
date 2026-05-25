@@ -24,6 +24,8 @@ import {
 } from './admin-cms.mjs';
 import { subscribeAdminFirestore } from './admin-realtime.mjs';
 import { initTopbarMenu, initMobileSidebar } from './admin-ui.mjs';
+import { initPageHeroesPanel, loadPageHeroesPanel } from './admin-page-heroes.mjs';
+import { defaultPageHeroPages } from '../../js/page-heroes.mjs';
 
 /** HAIBO Admin — section managers */
 let state = {
@@ -35,7 +37,7 @@ let state = {
 
 const PANEL_TITLES = {
   dashboard: 'Dashboard',
-  hero: 'Hero section',
+  'page-heroes': 'Page heroes',
   destinations: 'Destinations',
   search: 'Safari search',
   about: 'About',
@@ -62,6 +64,7 @@ function showPanel(id) {
   document.querySelector(`[data-panel="${id}"]`)?.classList.add('is-active');
   const title = document.getElementById('admin-page-title');
   if (title) title.textContent = PANEL_TITLES[id] || 'CMS';
+  if (id === 'page-heroes') loadPageHeroesPanel();
 }
 
 function countPackages(dests) {
@@ -135,7 +138,7 @@ async function renderDashboard() {
         <div class="admin-stat-card__icon">🖼</div>
         <div class="admin-stat-card__value">${hasHero ? 'Live' : 'Default'}</div>
         <div class="admin-stat-card__label">Hero media</div>
-        <div class="admin-stat-card__meta">${hasHero ? 'Custom background set' : 'Using built-in hero image'}</div>
+        <div class="admin-stat-card__meta">${hasHero ? 'Page hero images configured' : 'Set heroes in Page heroes'}</div>
       </article>
       <article class="admin-stat-card">
         <div class="admin-stat-card__icon">☁</div>
@@ -178,18 +181,9 @@ export async function seedAllDefaults() {
     const cms = getAdminCms();
     const destList = getStaticDestinations();
 
-    cms.hero = {
-      eyebrow: 'Explore Tanzania',
-      title: 'Discover the soul of',
-      titleAccent: 'Tanzania',
-      subtitle:
-        'Authentic safaris, luxury adventures, cultural journeys and unforgettable wildlife experiences across East Africa.',
-      backgroundImageUrl: '',
-      ctaPrimaryText: 'Explore Safaris',
-      ctaPrimaryLink: 'destinations.html',
-      ctaSecondaryText: 'View Gallery',
-      ctaSecondaryLink: 'gallery.html',
-    };
+    const pageHeroDefaults = defaultPageHeroPages();
+    cms.pageHeroes = { pages: pageHeroDefaults, updatedAt: Date.now() };
+    cms.hero = { ...pageHeroDefaults.home, updatedAt: Date.now() };
 
     cms.about = {
       eyebrow: 'Why Choose Us',
@@ -315,51 +309,6 @@ async function loadAllAdminData() {
   renderWeatherList();
   renderSearchDestCheckboxes();
   renderDashboard();
-}
-
-async function loadHeroForm() {
-  const raw = getAdminCms().hero;
-  state.heroDoc = raw;
-  const d = mergeDoc(defaults().hero || {}, raw);
-  const f = document.getElementById('form-hero');
-  if (!f) return;
-  f.eyebrow.value = d.eyebrow || '';
-  f.title.value = d.title || '';
-  f.titleAccent.value = d.titleAccent || '';
-  f.subtitle.value = d.subtitle || '';
-  f.backgroundImageUrl.value = d.backgroundImageUrl || '';
-  f.ctaPrimaryText.value = d.ctaPrimaryText || '';
-  f.ctaPrimaryLink.value = d.ctaPrimaryLink || '';
-  f.ctaSecondaryText.value = d.ctaSecondaryText || '';
-  f.ctaSecondaryLink.value = d.ctaSecondaryLink || '';
-  const prev = document.getElementById('hero-preview');
-  if (prev && d.backgroundImageUrl) {
-    prev.src = d.backgroundImageUrl;
-    prev.classList.remove('hidden');
-  }
-}
-
-async function saveHeroForm(e) {
-  e.preventDefault();
-  const f = e.target;
-  try {
-    getAdminCms().hero = {
-      eyebrow: f.eyebrow.value,
-      title: f.title.value,
-      titleAccent: f.titleAccent.value,
-      subtitle: f.subtitle.value,
-      backgroundImageUrl: f.backgroundImageUrl.value,
-      ctaPrimaryText: f.ctaPrimaryText.value,
-      ctaPrimaryLink: f.ctaPrimaryLink.value,
-      ctaSecondaryText: f.ctaSecondaryText.value,
-      ctaSecondaryLink: f.ctaSecondaryLink.value,
-    };
-    await saveSectionToFirestore('hero', getAdminCms().hero);
-    adminToast('Hero saved — all devices updated', 'success');
-    await loadHeroForm();
-  } catch (err) {
-    adminToast(err?.message || 'Could not save hero', 'error');
-  }
 }
 
 async function loadAboutForm() {
@@ -833,7 +782,6 @@ function initAdminAppHandlers() {
   });
   document.getElementById('btn-seed')?.addEventListener('click', () => seedAllDefaults());
 
-  document.getElementById('form-hero')?.addEventListener('submit', saveHeroForm);
   document.getElementById('form-about')?.addEventListener('submit', saveAboutForm);
   document.getElementById('form-contact')?.addEventListener('submit', saveContactForm);
   document.getElementById('form-socials')?.addEventListener('submit', saveSocialsForm);
@@ -853,18 +801,6 @@ function initAdminAppHandlers() {
     createUploadZone(input, { previewEl: preview, progressEl: progress, folder, onUrl });
   };
 
-  bindZone('hero-upload', 'hero-preview', 'hero', async (url) => {
-    const input = document.querySelector('#form-hero [name="backgroundImageUrl"]');
-    if (input) input.value = url;
-    const cms = getAdminCms();
-    cms.hero = { ...(cms.hero || {}), backgroundImageUrl: url, updatedAt: Date.now() };
-    try {
-      await saveSectionToFirestore('hero', cms.hero);
-      adminToast('Hero image saved — all devices updated', 'success');
-    } catch (err) {
-      adminToast(err?.message || 'Image uploaded — click Save hero to publish', 'error');
-    }
-  });
   bindZone('about-upload', 'about-preview', 'about', async (url) => {
     const input = document.querySelector('#form-about [name="imageUrl"]');
     if (input) input.value = url;
@@ -963,7 +899,7 @@ function initAdminAppHandlers() {
     renderWeatherList();
     renderSearchDestCheckboxes();
     renderDashboard();
-    await loadHeroForm();
+    loadPageHeroesPanel();
     await loadAboutForm();
     await loadContactForm();
     await loadSocialsForm();
@@ -971,6 +907,8 @@ function initAdminAppHandlers() {
   };
 
   void refreshAdminFromFirestore();
+
+  initPageHeroesPanel();
 
   subscribeAdminFirestore(() => {
     void refreshAdminFromFirestore();

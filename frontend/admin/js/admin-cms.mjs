@@ -2,6 +2,7 @@
  * Admin CMS — Firestore source of truth (no Cloudinary JSON, no localStorage CMS).
  */
 import { emptyCmsDocument } from '../../js/cms-firestore.mjs';
+import { normalizePageHeroesDoc } from '../../js/page-heroes.mjs';
 import {
   adminToast,
   dbSetDoc,
@@ -24,9 +25,10 @@ export function getAdminCms() {
 
 export async function loadAdminCms() {
   const p = paths();
-  const [hero, about, contact, socials, settings, destinations, gallery, weatherCards] =
+  const [hero, pageHeroes, about, contact, socials, settings, destinations, gallery, weatherCards] =
     await Promise.all([
       dbGetDocOptional(p.hero, 'main'),
+      dbGetDocOptional(p.pageHeroes, 'main'),
       dbGetDocOptional(p.about, 'main'),
       dbGetDocOptional(p.contact, 'main'),
       dbGetDocOptional(p.socials, 'main'),
@@ -36,9 +38,15 @@ export async function loadAdminCms() {
       dbListOptional(p.weatherCards),
     ]);
 
+  const normalizedPageHeroes =
+    typeof normalizePageHeroesDoc === 'function'
+      ? normalizePageHeroesDoc(pageHeroes, hero)
+      : pageHeroes;
+
   window.HAIBO_ADMIN_CMS = {
     ...emptyCmsDocument(),
-    hero,
+    hero: normalizedPageHeroes?.pages?.home || hero,
+    pageHeroes: normalizedPageHeroes,
     about,
     contact,
     socials,
@@ -66,6 +74,7 @@ export async function syncCmsToWebsite(options = {}) {
 
   try {
     if (cms.hero) await dbSetDoc(p.hero, cms.hero, 'main');
+    if (cms.pageHeroes) await dbSetDoc(p.pageHeroes, cms.pageHeroes, 'main');
     if (cms.about) await dbSetDoc(p.about, cms.about, 'main');
     if (cms.contact) await dbSetDoc(p.contact, cms.contact, 'main');
     if (cms.socials) await dbSetDoc(p.socials, cms.socials, 'main');

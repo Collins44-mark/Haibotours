@@ -1,6 +1,7 @@
 /**
  * Applies HAIBO_CONTENT to the public site DOM (initial + realtime updates).
  */
+import { detectSitePageId, getPageHeroForSite, PAGE_HERO_META } from './page-heroes.mjs';
 
 function setText(sel, text) {
   if (text == null || text === '') return;
@@ -31,31 +32,57 @@ function setBgImage(sel, url) {
   });
 }
 
-function renderHero() {
-  const h = window.HAIBO_CONTENT?.hero;
+function applyPageHeroFields(root, h) {
+  if (!root || !h) return;
+  const bg =
+    typeof haiboIsAdminUploadedUrl === 'function' && haiboIsAdminUploadedUrl(h.backgroundImageUrl)
+      ? optimizeImg(h.backgroundImageUrl, 1920)
+      : '';
+  if (bg) {
+    root.style.setProperty('--hero-bg-image', `url('${bg}')`);
+  }
+  const setIn = (sel, val, asHtml = false) => {
+    if (val == null || val === '') return;
+    root.querySelectorAll(sel).forEach((el) => {
+      if (asHtml) el.innerHTML = val;
+      else el.textContent = val;
+    });
+  };
+  setIn('[data-haibo-page-hero-eyebrow], [data-haibo-hero-eyebrow]', h.eyebrow);
+  setIn('[data-haibo-page-hero-title], [data-haibo-hero-title]', h.title);
+  setIn('[data-haibo-page-hero-title-accent], [data-haibo-hero-title-accent]', h.titleAccent);
+  setIn('[data-haibo-page-hero-subtitle], [data-haibo-hero-subtitle]', h.subtitle, true);
+  const btn1 = root.querySelector('[data-haibo-page-hero-cta-primary], [data-haibo-hero-cta-primary]');
+  if (btn1) {
+    if (h.ctaPrimaryText) btn1.textContent = h.ctaPrimaryText;
+    if (h.ctaPrimaryLink) btn1.href = h.ctaPrimaryLink;
+  }
+  const btn2 = root.querySelector('[data-haibo-page-hero-cta-secondary], [data-haibo-hero-cta-secondary]');
+  if (btn2) {
+    if (h.ctaSecondaryText) btn2.textContent = h.ctaSecondaryText;
+    if (h.ctaSecondaryLink) btn2.href = h.ctaSecondaryLink;
+  }
+}
+
+function renderPageHero() {
+  const pageId = detectSitePageId();
+  if (!pageId) return;
+
+  const h = getPageHeroForSite(pageId, window.HAIBO_CONTENT);
   if (!h) return;
 
-  const heroBg =
-    typeof haiboIsAdminUploadedUrl === 'function' && haiboIsAdminUploadedUrl(h.backgroundImageUrl)
-      ? h.backgroundImageUrl
-      : '';
-  if (heroBg) {
-    setBgImage('#home.hero-banner', heroBg);
-    const home = document.getElementById('home');
-    if (home) home.style.setProperty('--hero-bg-image', `url('${heroBg}')`);
-  }
-  setText('[data-haibo-hero-eyebrow]', h.eyebrow);
-  setText('[data-haibo-hero-title]', h.title);
-  setText('[data-haibo-hero-title-accent]', h.titleAccent);
-  setHtml('[data-haibo-hero-subtitle]', h.subtitle);
+  const meta = PAGE_HERO_META[pageId];
+  const root = meta?.rootSelector
+    ? document.querySelector(meta.rootSelector)
+    : document.querySelector('.hero-banner');
+  applyPageHeroFields(root, h);
+}
 
-  const btn1 = document.querySelector('[data-haibo-hero-cta-primary]');
-  if (btn1 && h.ctaPrimaryText) btn1.textContent = h.ctaPrimaryText;
-  if (btn1 && h.ctaPrimaryLink) btn1.href = h.ctaPrimaryLink;
-
-  const btn2 = document.querySelector('[data-haibo-hero-cta-secondary]');
-  if (btn2 && h.ctaSecondaryText) btn2.textContent = h.ctaSecondaryText;
-  if (btn2 && h.ctaSecondaryLink) btn2.href = h.ctaSecondaryLink;
+function renderHero() {
+  const h = getPageHeroForSite('home', window.HAIBO_CONTENT);
+  if (!h) return;
+  const home = document.querySelector('#home.hero-banner') || document.getElementById('home');
+  applyPageHeroFields(home, h);
 }
 
 function renderAbout() {
@@ -220,6 +247,7 @@ function renderNav() {
 }
 
 export function applyHaiboContent() {
+  renderPageHero();
   renderHero();
   renderAbout();
   renderHomeGallery();

@@ -4,9 +4,11 @@
 import { subscribePublicCms } from './cms-firestore.mjs';
 import { unsubscribeAllRealtime } from './firestore-realtime.mjs';
 import { haiboDestinationsFromFirestoreDocs } from './haibo-live-content.mjs';
+import { normalizePageHeroesDoc } from './page-heroes.mjs';
 
 window.HAIBO_CONTENT = {
   hero: null,
+  pageHeroes: null,
   about: null,
   contact: null,
   socials: null,
@@ -115,7 +117,9 @@ function paintFromFirestoreCms(doc) {
     window.HAIBO_CONTENT.destinations = [];
   }
 
-  if (doc.hero) window.HAIBO_CONTENT.hero = doc.hero;
+  const pageHeroes = normalizePageHeroesDoc(doc.pageHeroes, doc.hero);
+  window.HAIBO_CONTENT.pageHeroes = pageHeroes;
+  window.HAIBO_CONTENT.hero = pageHeroes.pages?.home || doc.hero || null;
   if (doc.about) window.HAIBO_CONTENT.about = doc.about;
   if (doc.contact) window.HAIBO_CONTENT.contact = doc.contact;
   if (doc.socials) window.HAIBO_CONTENT.socials = doc.socials;

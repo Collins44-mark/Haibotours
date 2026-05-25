@@ -12,6 +12,7 @@ export function emptyCmsDocument() {
     updatedAt: 0,
     destinations: [],
     hero: null,
+    pageHeroes: null,
     about: null,
     contact: null,
     socials: null,
@@ -45,6 +46,9 @@ function withCacheBustOnDoc(data, updatedAt) {
 export function aggregateCmsSnapshot(parts) {
   const cms = emptyCmsDocument();
   cms.hero = parts.hero ? withCacheBustOnDoc(parts.hero) : null;
+  cms.pageHeroes = parts.pageHeroes
+    ? withCacheBustOnDoc(parts.pageHeroes)
+    : null;
   cms.about = parts.about ? withCacheBustOnDoc(parts.about) : null;
   cms.contact = parts.contact ? withCacheBustOnDoc(parts.contact) : null;
   cms.socials = parts.socials ? withCacheBustOnDoc(parts.socials) : null;
@@ -55,6 +59,7 @@ export function aggregateCmsSnapshot(parts) {
   cms.updatedAt = Math.max(
     0,
     cms.hero?.updatedAt || 0,
+    cms.pageHeroes?.updatedAt || 0,
     cms.about?.updatedAt || 0,
     cms.contact?.updatedAt || 0,
     cms.settings?.updatedAt || 0,
@@ -86,6 +91,7 @@ export async function loadCmsSnapshotOnce() {
   try {
     const parts = {
       hero: await readDoc(p.hero),
+      pageHeroes: await readDoc(p.pageHeroes),
       about: await readDoc(p.about),
       contact: await readDoc(p.contact),
       socials: await readDoc(p.socials),
@@ -115,6 +121,7 @@ export function subscribePublicCms(onUpdate, handlers = {}) {
   const p = paths();
   const state = {
     hero: null,
+    pageHeroes: null,
     about: null,
     contact: null,
     socials: null,
@@ -170,6 +177,7 @@ export function subscribePublicCms(onUpdate, handlers = {}) {
   };
 
   bindDoc(p.hero, 'hero');
+  bindDoc(p.pageHeroes, 'pageHeroes');
   bindDoc(p.about, 'about');
   bindDoc(p.contact, 'contact');
   bindDoc(p.socials, 'socials');

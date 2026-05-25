@@ -43,9 +43,9 @@
           <svg class="admin-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
           Dashboard
         </button>
-        <button type="button" class="admin-nav__btn" data-panel="hero">
+        <button type="button" class="admin-nav__btn" data-panel="page-heroes">
           <svg class="admin-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 16l4-8 4 6 4-10 4 12"/><rect x="2" y="2" width="20" height="20" rx="2"/></svg>
-          Hero
+          Page heroes
         </button>
         <a href="/admin/destinations/index.html" class="admin-nav__btn">
           <svg class="admin-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8 6 4 8 4 13a8 8 0 1016 0c0-5-4-7-8-11z"/></svg>
@@ -118,36 +118,55 @@
             <h2>Quick actions</h2>
             <p class="admin-muted">Save any section and the live website updates automatically. Images upload to Cloudinary.</p>
             <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:1rem">
-              <button type="button" class="admin-btn admin-btn--primary admin-btn--sm" data-goto="hero">Edit hero</button>
+              <button type="button" class="admin-btn admin-btn--primary admin-btn--sm" data-goto="page-heroes">Edit page heroes</button>
               <a href="/admin/destinations/index.html" class="admin-btn admin-btn--ghost admin-btn--sm">Manage destinations</a>
               <button type="button" class="admin-btn admin-btn--ghost admin-btn--sm" data-goto="gallery">Manage gallery</button>
             </div>
           </div>
         </section>
 
-        <section id="panel-hero" class="admin-panel">
-          <form id="form-hero" class="admin-glass">
-            <h2>Hero section</h2>
-            <div class="admin-upload-zone">
-              <label>Background image</label>
-              <input type="file" id="hero-upload" accept="image/*" />
-              <div class="admin-upload-progress" hidden><div class="admin-upload-progress__bar"></div><span class="admin-upload-progress__label"></span></div>
-              <img id="hero-preview" class="admin-preview hidden" alt="Hero preview" />
+        <section id="panel-page-heroes" class="admin-panel">
+          <div class="admin-glass">
+            <div class="admin-section__head" style="margin-bottom:1rem">
+              <div>
+                <h2 id="page-hero-editor-title">Page heroes</h2>
+                <p class="admin-muted">Background image and captions for each page hero banner. Saves to Firestore instantly.</p>
+              </div>
+              <a id="page-hero-live-link" href="/" target="_blank" rel="noopener" class="admin-btn admin-btn--ghost admin-btn--sm">View page</a>
             </div>
+            <nav class="page-hero-tabs" aria-label="Select page">
+              <button type="button" class="page-hero-tabs__btn is-active" data-page-hero-tab="home">Home</button>
+              <button type="button" class="page-hero-tabs__btn" data-page-hero-tab="destinations">Destinations</button>
+              <button type="button" class="page-hero-tabs__btn" data-page-hero-tab="gallery">Gallery</button>
+              <button type="button" class="page-hero-tabs__btn" data-page-hero-tab="contact">Contact</button>
+            </nav>
+          </div>
+          <form id="form-page-hero" class="admin-glass" style="margin-top:1rem">
+            <div class="admin-upload-zone">
+              <label>Hero background image</label>
+              <p class="admin-muted" style="font-size:0.85rem;margin:0 0 0.5rem">Upload to Cloudinary — no URL required.</p>
+              <button type="button" class="admin-btn admin-btn--ghost admin-btn--sm" id="page-hero-upload-btn">Choose image</button>
+              <input type="file" id="page-hero-upload" accept="image/*" hidden />
+              <div class="admin-upload-progress" hidden><div class="admin-upload-progress__bar" data-page-hero-upload-bar></div></div>
+              <img data-page-hero-preview class="admin-preview hidden" alt="Hero preview" style="margin-top:0.75rem;max-height:200px;object-fit:cover;width:100%;border-radius:8px" />
+            </div>
+            <div class="admin-field"><label>Background URL (optional)</label><input name="backgroundImageUrl" /></div>
             <div class="admin-grid-2">
-              <div class="admin-field"><label>Eyebrow</label><input name="eyebrow" /></div>
-              <div class="admin-field"><label>Background URL</label><input name="backgroundImageUrl" /></div>
+              <div class="admin-field"><label>Eyebrow (gold label)</label><input name="eyebrow" /></div>
               <div class="admin-field"><label>Title</label><input name="title" /></div>
               <div class="admin-field"><label>Title accent (gold)</label><input name="titleAccent" /></div>
             </div>
-            <div class="admin-field"><label>Subtitle</label><textarea name="subtitle" rows="3"></textarea></div>
-            <div class="admin-grid-2">
-              <div class="admin-field"><label>Primary CTA text</label><input name="ctaPrimaryText" /></div>
-              <div class="admin-field"><label>Primary CTA link</label><input name="ctaPrimaryLink" /></div>
-              <div class="admin-field"><label>Secondary CTA text</label><input name="ctaSecondaryText" /></div>
-              <div class="admin-field"><label>Secondary CTA link</label><input name="ctaSecondaryLink" /></div>
+            <div class="admin-field"><label>Subtitle / caption</label><textarea name="subtitle" rows="3"></textarea></div>
+            <div data-page-hero-cta-fields>
+              <p class="admin-muted" style="font-size:0.85rem;margin:0.75rem 0">Home page buttons only</p>
+              <div class="admin-grid-2">
+                <div class="admin-field"><label>Primary CTA text</label><input name="ctaPrimaryText" /></div>
+                <div class="admin-field"><label>Primary CTA link</label><input name="ctaPrimaryLink" /></div>
+                <div class="admin-field"><label>Secondary CTA text</label><input name="ctaSecondaryText" /></div>
+                <div class="admin-field"><label>Secondary CTA link</label><input name="ctaSecondaryLink" /></div>
+              </div>
             </div>
-            <button type="submit" class="admin-btn admin-btn--primary">Save hero</button>
+            <button type="submit" class="admin-btn admin-btn--primary">Save page hero</button>
           </form>
         </section>
 
