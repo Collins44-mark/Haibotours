@@ -18,7 +18,7 @@ const HAIBO_DEFAULTS = {
       eyebrow: 'Start Your Journey',
       title: 'Start Your Tanzania Adventure',
       body: "Ready to explore? Contact us today and we'll craft the perfect safari itinerary for you.",
-      backgroundClass: 'cta-bg-kili',
+      backgroundImageUrl: '',
     },
   },
   about: {
@@ -105,6 +105,11 @@ function haiboIsAdminUploadedUrl(url) {
   return s.includes('res.cloudinary.com');
 }
 
+/** Drop stock/splash URLs (Unsplash, etc.) — CMS Cloudinary only */
+function haiboSanitizeCmsMediaUrl(url) {
+  return haiboIsAdminUploadedUrl(url) ? String(url).trim() : '';
+}
+
 function haiboNormalizeDestId(id) {
   return String(id || '')
     .trim()
@@ -120,7 +125,8 @@ function haiboStaticDestination(id) {
 
 function haiboPickDestinationImage(d) {
   if (!d) return '';
-  return d.image || d.imageUrl || d.cardImage || d.thumbnail || '';
+  const raw = d.image || d.imageUrl || d.cardImage || d.thumbnail || '';
+  return haiboSanitizeCmsMediaUrl(raw);
 }
 
 function haiboIsCmsLive(live) {
@@ -137,17 +143,19 @@ function haiboCacheBustUrl(url, version) {
 /** Card/listing image for a destination (Firestore URLs only). */
 function haiboResolveCardImage(dest) {
   if (!dest) return '';
-  const img = haiboPickDestinationImage(dest) || dest?.heroImage || '';
-  if (!haiboValidMediaUrl(img)) return '';
+  const img = haiboSanitizeCmsMediaUrl(
+    haiboPickDestinationImage(dest) || dest?.heroImage || dest?.hero_image || ''
+  );
+  if (!img) return '';
   return haiboCacheBustUrl(img, dest.updatedAt || Date.now());
 }
 
 /** Hero banner image for destination detail page (Firestore URLs only). */
 function haiboResolveHeroImage(dest) {
   if (!dest) return '';
-  const hero = dest?.heroImage || dest?.hero_image || '';
+  const hero = haiboSanitizeCmsMediaUrl(dest?.heroImage || dest?.hero_image || '');
   const card = haiboPickDestinationImage(dest);
-  const pick = haiboValidMediaUrl(hero) ? hero : haiboValidMediaUrl(card) ? card : '';
+  const pick = hero || card;
   if (!pick) return '';
   return haiboCacheBustUrl(pick, dest.updatedAt || Date.now());
 }
@@ -165,11 +173,11 @@ function haiboNormalizeDestinationGallery(gallery) {
   const items = gallery
     .map((item, i) => {
       if (typeof item === 'string') {
-        const url = item.trim();
+        const url = haiboSanitizeCmsMediaUrl(item.trim());
         if (!url) return null;
         return { url, alt: '', order: i, type: haiboInferGalleryItemType(null, url) };
       }
-      const url = String(item?.url || item?.src || '').trim();
+      const url = haiboSanitizeCmsMediaUrl(String(item?.url || item?.src || '').trim());
       if (!url) return null;
       return {
         url,
@@ -187,8 +195,9 @@ function haiboNormalizeDestinationGallery(gallery) {
 function haiboResolveGalleryImage(item, dest, index) {
   const src =
     typeof item === 'string' ? item : String(item?.url || item?.src || '').trim();
-  if (!haiboValidMediaUrl(src)) return '';
-  return haiboCacheBustUrl(src, (dest?.updatedAt || 0) + index);
+  const clean = haiboSanitizeCmsMediaUrl(src);
+  if (!clean) return '';
+  return haiboCacheBustUrl(clean, (dest?.updatedAt || 0) + index);
 }
 
 function haiboMergeDestination(live, staticDest) {
@@ -202,24 +211,26 @@ function haiboMergeDestination(live, staticDest) {
 
   if (fromCms) {
     if (Object.prototype.hasOwnProperty.call(live, 'image') || Object.prototype.hasOwnProperty.call(live, 'imageUrl')) {
-      merged.image = liveImage || '';
-      merged.imageUrl = liveImage || '';
+      merged.image = haiboSanitizeCmsMediaUrl(liveImage) || '';
+      merged.imageUrl = merged.image;
     }
     if (
       Object.prototype.hasOwnProperty.call(live, 'heroImage') ||
       Object.prototype.hasOwnProperty.call(live, 'hero_image')
     ) {
-      merged.heroImage = liveHero || liveImage || '';
+      merged.heroImage = haiboSanitizeCmsMediaUrl(liveHero || liveImage) || '';
     } else if (liveImage) {
-      merged.heroImage = liveImage;
+      merged.heroImage = haiboSanitizeCmsMediaUrl(liveImage) || '';
     }
     merged._fromFirestore = true;
     if (live.updatedAt != null) merged.updatedAt = live.updatedAt;
   } else {
-    merged.image = haiboValidMediaUrl(liveImage) ? liveImage : baseImage;
-    merged.heroImage = haiboValidMediaUrl(liveHero)
-      ? liveHero
-      : base.heroImage || baseImage || merged.image;
+    merged.image = haiboSanitizeCmsMediaUrl(liveImage) || haiboSanitizeCmsMediaUrl(baseImage) || '';
+    merged.heroImage =
+      haiboSanitizeCmsMediaUrl(liveHero) ||
+      haiboSanitizeCmsMediaUrl(base.heroImage) ||
+      haiboSanitizeCmsMediaUrl(baseImage) ||
+      merged.image;
   }
 
   if (live && Array.isArray(live.packages)) {
@@ -402,13 +413,23 @@ function mergeHaiboContentWithDefaults() {
   const d = typeof HAIBO_DEFAULTS !== 'undefined' ? HAIBO_DEFAULTS : {};
 
   c.hero = { ...d.hero, ...(c.hero || {}) };
-  if (!haiboIsAdminUploadedUrl(c.hero.backgroundImageUrl)) {
-    c.hero.backgroundImageUrl = '';
+  c.hero.backgroundImageUrl = haiboSanitizeCmsMediaUrl(c.hero.backgroundImageUrl);
+
+  if (c.pageHeroes?.pages && typeof c.pageHeroes.pages === 'object') {
+    for (const id of Object.keys(c.pageHeroes.pages)) {
+      const page = c.pageHeroes.pages[id];
+      if (page && typeof page === 'object') {
+        page.backgroundImageUrl = haiboSanitizeCmsMediaUrl(page.backgroundImageUrl);
+      }
+    }
   }
 
   c.about = { ...d.about, ...(c.about || {}) };
-  if (!haiboIsAdminUploadedUrl(c.about.imageUrl)) {
-    c.about.imageUrl = '';
+  c.about.imageUrl = haiboSanitizeCmsMediaUrl(c.about.imageUrl);
+
+  if (c.hero?.homeCta && typeof c.hero.homeCta === 'object') {
+    c.hero.homeCta.backgroundImageUrl = haiboSanitizeCmsMediaUrl(c.hero.homeCta.backgroundImageUrl);
+    delete c.hero.homeCta.backgroundClass;
   }
 
   if (!haiboDocHasContent(c.contact, ['email', 'phoneDisplay'])) {
@@ -442,6 +463,7 @@ window.HAIBO_DEFAULTS = HAIBO_DEFAULTS;
 window.mergeHaiboContentWithDefaults = mergeHaiboContentWithDefaults;
 window.haiboValidMediaUrl = haiboValidMediaUrl;
 window.haiboIsAdminUploadedUrl = haiboIsAdminUploadedUrl;
+window.haiboSanitizeCmsMediaUrl = haiboSanitizeCmsMediaUrl;
 window.haiboMergeDestinationsList = haiboMergeDestinationsList;
 window.haiboMergeGalleryCollection = haiboMergeGalleryCollection;
 window.haiboNormalizeGalleryObject = haiboNormalizeGalleryObject;

@@ -33,11 +33,13 @@
     return `${t.slice(0, max - 1).trim()}…`;
   }
 
-  /** Cloudinary + Unsplash WebP/auto optimization */
+  /** Cloudinary admin uploads only (no stock / Unsplash URLs). */
   function optimizeImageUrl(url, options) {
-    if (!url || typeof url !== 'string') return url;
+    if (!url || typeof url !== 'string') return '';
     const w = options?.width || 1200;
     const q = options?.quality || 'auto';
+
+    if (url.includes('images.unsplash.com')) return '';
 
     if (url.includes('res.cloudinary.com') && url.includes('/upload/')) {
       if (url.includes('/upload/f_auto') || url.includes('/upload/c_')) return url;
@@ -48,21 +50,7 @@
       return url.replace('/image/upload/', `/image/upload/f_auto,q_${q},w_${w}/`);
     }
 
-    if (url.includes('images.unsplash.com')) {
-      try {
-        const u = new URL(url);
-        u.searchParams.set('auto', 'format');
-        u.searchParams.set('fit', 'crop');
-        u.searchParams.set('w', String(w));
-        u.searchParams.set('q', '80');
-        u.searchParams.set('fm', 'webp');
-        return u.toString();
-      } catch {
-        return url;
-      }
-    }
-
-    return url;
+    return '';
   }
 
   function upsertMeta(selector, attrs) {

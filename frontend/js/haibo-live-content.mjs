@@ -2,10 +2,18 @@
  * Normalize Firestore CMS documents for public site rendering (no static catalog merge).
  */
 
+function sanitizeUrl(url) {
+  if (typeof globalThis.haiboSanitizeCmsMediaUrl === 'function') {
+    return globalThis.haiboSanitizeCmsMediaUrl(url);
+  }
+  const s = String(url || '').trim();
+  return s.includes('res.cloudinary.com') ? s : '';
+}
+
 export function haiboNormalizeFirestoreDestination(doc) {
   if (!doc?.id) return null;
-  const cardImage = doc.cardImage || doc.image || doc.imageUrl || '';
-  const heroImage = doc.heroImage || doc.hero_image || cardImage || '';
+  const cardImage = sanitizeUrl(doc.cardImage || doc.image || doc.imageUrl || '');
+  const heroImage = sanitizeUrl(doc.heroImage || doc.hero_image || '') || cardImage;
   const id = String(doc.id).trim().toLowerCase().replace(/\s+/g, '-');
   const showOnSite = doc.active !== false && doc.status !== 'draft';
 

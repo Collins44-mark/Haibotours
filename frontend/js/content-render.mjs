@@ -173,17 +173,18 @@ function renderHomeCta() {
   setText('[data-haibo-home-cta-eyebrow]', c.eyebrow);
   setText('[data-haibo-home-cta-title]', c.title);
   setText('[data-haibo-home-cta-body]', c.body);
-  if (c.backgroundImageUrl) {
-    const bg = optimizeImg(c.backgroundImageUrl, 1600);
-    document.querySelectorAll('[data-haibo-home-cta-bg]').forEach((el) => {
-      el.style.backgroundImage = `url('${bg}')`;
-      el.className = 'cta-cinematic__bg';
-    });
-  } else if (c.backgroundClass) {
-    document.querySelectorAll('[data-haibo-home-cta-bg]').forEach((el) => {
-      el.className = `cta-cinematic__bg ${c.backgroundClass}`;
-    });
-  }
+  const ctaBg =
+    typeof haiboIsAdminUploadedUrl === 'function' && haiboIsAdminUploadedUrl(c.backgroundImageUrl)
+      ? optimizeImg(c.backgroundImageUrl, 1600)
+      : '';
+  document.querySelectorAll('[data-haibo-home-cta-bg]').forEach((el) => {
+    el.className = 'cta-cinematic__bg';
+    if (ctaBg) {
+      el.style.backgroundImage = `url('${ctaBg}')`;
+    } else {
+      el.style.backgroundImage = '';
+    }
+  });
 }
 
 function renderDestinationsSection() {

@@ -53,10 +53,7 @@ function getGalleryData() {
       })),
     };
   }
-  return {
-    images: typeof GALLERY_IMAGES !== 'undefined' ? GALLERY_IMAGES : [],
-    videos: typeof GALLERY_VIDEOS !== 'undefined' ? GALLERY_VIDEOS : [],
-  };
+  return { images: [], videos: [] };
 }
 
 function renderGalleryPage() {

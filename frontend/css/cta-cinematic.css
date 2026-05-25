@@ -95,9 +95,9 @@
   z-index: 4;
 }
 
-/* CTA backgrounds — no stock photos; CMS hero/CTA images only */
-[class*='cta-bg-'] {
-  background-image: none;
+/* CTA backgrounds — solid only until admin uploads a Cloudinary image via CMS */
+.cta-cinematic__bg {
+  background-image: none !important;
   background-color: #111111;
 }
 

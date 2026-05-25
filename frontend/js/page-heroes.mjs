@@ -98,6 +98,14 @@ export function normalizePageHeroesDoc(raw, legacyHero) {
 
   PAGE_HERO_PAGE_IDS.forEach((id) => {
     pages[id] = { ...base.pages[id], ...(pages[id] || {}) };
+    if (typeof globalThis.haiboSanitizeCmsMediaUrl === 'function') {
+      pages[id].backgroundImageUrl = globalThis.haiboSanitizeCmsMediaUrl(pages[id].backgroundImageUrl);
+    } else if (
+      pages[id].backgroundImageUrl &&
+      !String(pages[id].backgroundImageUrl).includes('res.cloudinary.com')
+    ) {
+      pages[id].backgroundImageUrl = '';
+    }
   });
 
   return {

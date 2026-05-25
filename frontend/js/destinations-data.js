@@ -501,15 +501,14 @@ function haiboResolveCardImage(dest) {
 function haiboBuildDestinationCard(dest) {
   const href = destinationDetailUrl(dest.id);
   const imageUrl = haiboResolveCardImage(dest);
-  const safeUrl = imageUrl || dest?.cardImage || dest?.image || dest?.imageUrl || '';
-  const bg = safeUrl.replace(/'/g, '%27').replace(/"/g, '%22');
+  const bg = imageUrl.replace(/'/g, '%27').replace(/"/g, '%22');
   const imgSrc =
-    typeof window.haiboOptimizeImage === 'function'
-      ? window.haiboOptimizeImage(safeUrl, { width: 800 })
-      : safeUrl;
+    imageUrl && typeof window.haiboOptimizeImage === 'function'
+      ? window.haiboOptimizeImage(imageUrl, { width: 800 })
+      : imageUrl;
   const alt = `${dest.name} safari — ${dest.subtitle}`;
   const fbAttr = '';
-  const img = safeUrl
+  const img = imageUrl
     ? `<img src="${haiboEscapeHtml(imgSrc)}" alt="${haiboEscapeHtml(alt)}" loading="lazy" decoding="async" class="haibo-media dest-card-img w-full object-cover" width="800" height="533"${fbAttr}>`
     : '';
   const price =

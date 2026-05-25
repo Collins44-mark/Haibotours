@@ -255,29 +255,6 @@ export async function seedAllDefaults() {
     });
 
     cms.gallery = [];
-    (typeof GALLERY_IMAGES !== 'undefined' ? GALLERY_IMAGES : []).forEach((img, i) => {
-      cms.gallery.push({
-        id: `img-${i}`,
-        type: 'image',
-        order: i,
-        src: img.src,
-        title: img.title,
-        tag: img.tag,
-        active: true,
-      });
-    });
-    (typeof GALLERY_VIDEOS !== 'undefined' ? GALLERY_VIDEOS : []).forEach((vid, i) => {
-      cms.gallery.push({
-        id: `vid-${i}`,
-        type: 'video',
-        order: i + 100,
-        src: vid.src,
-        thumb: vid.thumb,
-        title: vid.title,
-        tag: vid.tag,
-        active: true,
-      });
-    });
 
     const parks =
       typeof WEATHER_PARKS_STATIC !== 'undefined'
