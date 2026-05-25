@@ -95,81 +95,10 @@
   z-index: 4;
 }
 
-/* Safari background images */
-.cta-bg-kili {
-  background-image: url('https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?q=80&w=1974&auto=format&fit=crop');
-}
-
-.cta-bg-serengeti {
-  background-image: url('https://images.unsplash.com/photo-1521295121783-8a321d551ad2?q=80&w=1974&auto=format&fit=crop');
-}
-
-.cta-bg-serengeti-plains {
-  background-image: url('https://images.unsplash.com/photo-1516426122078-c23e76319801?q=80&w=2070&auto=format&fit=crop');
-}
-
-.cta-bg-safari {
-  background-image: url('https://images.unsplash.com/photo-1508672019048-805c876b67e2?q=80&w=1974&auto=format&fit=crop');
-}
-
-.cta-bg-acacia {
-  background-image: url('https://images.unsplash.com/photo-1516939884455-1445c8652f83?q=80&w=1974&auto=format&fit=crop');
-}
-
-.cta-bg-misty {
-  background-image: url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=1974&auto=format&fit=crop');
-}
-
-.cta-bg-wildlife {
-  background-image: url('https://images.unsplash.com/photo-1523805009345-7448845a9e53?q=80&w=1974&auto=format&fit=crop');
-}
-
-.cta-bg-sunset {
-  background-image: url('https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?q=80&w=1974&auto=format&fit=crop');
-}
-
-.cta-bg-zanzibar {
-  background-image: url('https://images.unsplash.com/photo-1573843981267-be1999ff37cd?q=80&w=1974&auto=format&fit=crop');
-}
-
-.cta-bg-zanzibar-beach {
-  background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1974&auto=format&fit=crop');
-}
-
-.cta-bg-ngorongoro {
-  background-image: url('https://images.unsplash.com/photo-1580674285054-bed31e145f59?q=80&w=1974&auto=format&fit=crop');
-}
-
-.cta-bg-tarangire {
-  background-image: url('https://images.unsplash.com/photo-1564760055775-d506ef2a0de4?q=80&w=1974&auto=format&fit=crop');
-}
-
-.cta-bg-tarangire-elephants {
-  background-image: url('https://images.unsplash.com/photo-1564760055775-d506ef2a0de4?q=80&w=1974&auto=format&fit=crop');
-}
-
-.cta-bg-mikumi-lion {
-  background-image: url('https://images.unsplash.com/photo-1546182990-d14afede6ed9?q=80&w=1974&auto=format&fit=crop');
-}
-
-.cta-bg-ruaha-lions {
-  background-image: url('https://images.unsplash.com/photo-1614027160141-7e3a6654e999?q=80&w=1974&auto=format&fit=crop');
-}
-
-.cta-bg-lake-manyara {
-  background-image: url('https://images.unsplash.com/photo-1551632811-561732d0250a?q=80&w=1974&auto=format&fit=crop');
-}
-
-.cta-bg-ruaha {
-  background-image: url('https://images.unsplash.com/photo-1549366021-9f761d450615?q=80&w=1974&auto=format&fit=crop');
-}
-
-.cta-bg-mikumi {
-  background-image: url('https://images.unsplash.com/photo-1523805009345-7448845a9e53?q=80&w=1974&auto=format&fit=crop');
-}
-
-.cta-bg-arusha {
-  background-image: url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=1974&auto=format&fit=crop');
+/* CTA backgrounds — no stock photos; CMS hero/CTA images only */
+[class*='cta-bg-'] {
+  background-image: none;
+  background-color: #111111;
 }
 
 /* Contact info cards */

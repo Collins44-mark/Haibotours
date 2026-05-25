@@ -4,17 +4,17 @@ const DESTINATIONS = [
     name: 'Serengeti',
     subtitle: 'National Park',
     region: 'Northern Tanzania',
-    image: 'https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?q=80&w=1974&auto=format&fit=crop',
-    heroImage: 'https://images.unsplash.com/photo-1516426122078-c23e76319801?q=80&w=2070&auto=format&fit=crop',
+    image: '',
+    heroImage: '',
     description:
       'Witness the Great Migration, endless golden plains, and Africa\'s most iconic wildlife on expertly guided game drives through Serengeti National Park.',
     bestTime: 'June – October (dry season) · January – February (calving season)',
     highlights: ['Great Migration', 'Big Five sightings', 'Sunrise game drives', 'Luxury tented camps'],
     gallery: [
-      'https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?q=80&w=1974&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1523805009345-7448845a9e53?q=80&w=1974&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1516939884455-1445c8652f83?q=80&w=1974&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1508672019048-805c876b67e2?q=80&w=1974&auto=format&fit=crop',
+      '',
+      '',
+      '',
+      '',
     ],
     packages: [
       {
@@ -58,16 +58,16 @@ const DESTINATIONS = [
     name: 'Ngorongoro',
     subtitle: 'Crater',
     region: 'Northern Tanzania',
-    image: 'https://images.unsplash.com/photo-1580674285054-bed31e145f59?q=80&w=1974&auto=format&fit=crop',
-    heroImage: 'https://images.unsplash.com/photo-1580674285054-bed31e145f59?q=80&w=1974&auto=format&fit=crop',
+    image: '',
+    heroImage: '',
     description:
       'Descend into the world\'s largest intact volcanic caldera — a natural amphitheater teeming with lions, rhinos, elephants, and flamingos.',
     bestTime: 'Year-round · Best wildlife June – October',
     highlights: ['Ngorongoro Crater floor', 'Black rhino sightings', 'Maasai culture visits', 'Scenic crater rim lodges'],
     gallery: [
-      'https://images.unsplash.com/photo-1580674285054-bed31e145f59?q=80&w=1974&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1521295121783-8a321d551ad2?q=80&w=1974&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1516426122078-c23e76319801?q=80&w=1974&auto=format&fit=crop',
+      '',
+      '',
+      '',
     ],
     packages: [
       {
@@ -103,16 +103,16 @@ const DESTINATIONS = [
     name: 'Zanzibar',
     subtitle: 'Island Paradise',
     region: 'Coastal Tanzania',
-    image: 'https://images.unsplash.com/photo-1573843981267-be1999ff37cd?q=80&w=1974&auto=format&fit=crop',
-    heroImage: 'https://images.unsplash.com/photo-1573843981267-be1999ff37cd?q=80&w=1974&auto=format&fit=crop',
+    image: '',
+    heroImage: '',
     description:
       'Turquoise waters, spice tours, Stone Town heritage, and pristine beaches — the perfect safari extension or standalone island escape.',
     bestTime: 'June – October · December – February',
     highlights: ['Stone Town tours', 'Spice farm visits', 'Snorkeling & dhow cruises', 'Beach resorts'],
     gallery: [
-      'https://images.unsplash.com/photo-1573843981267-be1999ff37cd?q=80&w=1974&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=1974&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1974&auto=format&fit=crop',
+      '',
+      '',
+      '',
     ],
     packages: [
       {
@@ -148,16 +148,16 @@ const DESTINATIONS = [
     name: 'Kilimanjaro',
     subtitle: 'Mountain Trek',
     region: 'Northern Tanzania',
-    image: 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?q=80&w=1974&auto=format&fit=crop',
-    heroImage: 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?q=80&w=1974&auto=format&fit=crop',
+    image: '',
+    heroImage: '',
     description:
       'Conquer Africa\'s highest peak — Uhuru Summit at 5,895m — with certified mountain guides and carefully paced routes.',
     bestTime: 'January – March · June – October',
     highlights: ['Machame & Marangu routes', 'Certified mountain crew', 'Summit certificate', 'Pre-trek briefing'],
     gallery: [
-      'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?q=80&w=1974&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1483728642387-6bc3bdd88c98?q=80&w=1974&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1974&auto=format&fit=crop',
+      '',
+      '',
+      '',
     ],
     packages: [
       {
@@ -193,15 +193,15 @@ const DESTINATIONS = [
     name: 'Tarangire',
     subtitle: 'National Park',
     region: 'Northern Tanzania',
-    image: 'https://images.unsplash.com/photo-1564760055775-d506ef2a0de4?q=80&w=1974&auto=format&fit=crop',
-    heroImage: 'https://images.unsplash.com/photo-1564760055775-d506ef2a0de4?q=80&w=1974&auto=format&fit=crop',
+    image: '',
+    heroImage: '',
     description:
       'Famous for giant elephant herds, baobab-dotted landscapes, and excellent birdwatching along the Tarangire River.',
     bestTime: 'June – October (peak wildlife)',
     highlights: ['Elephant herds', 'Baobab landscapes', 'Birding paradise', 'Walking safaris'],
     gallery: [
-      'https://images.unsplash.com/photo-1564760055775-d506ef2a0de4?q=80&w=1974&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1523805009345-7448845a9e53?q=80&w=1974&auto=format&fit=crop',
+      '',
+      '',
     ],
     packages: [
       {
@@ -237,15 +237,15 @@ const DESTINATIONS = [
     name: 'Lake Manyara',
     subtitle: 'National Park',
     region: 'Northern Tanzania',
-    image: 'https://images.unsplash.com/photo-1551632811-561732d0250a?q=80&w=1974&auto=format&fit=crop',
-    heroImage: 'https://images.unsplash.com/photo-1551632811-561732d0250a?q=80&w=1974&auto=format&fit=crop',
+    image: '',
+    heroImage: '',
     description:
       'Compact park with tree-climbing lions, flamingo-filled alkaline lake, and lush groundwater forest — ideal for a day trip.',
     bestTime: 'Year-round · Flamingos July – October',
     highlights: ['Tree-climbing lions', 'Flamingo lake views', 'Canopy walkway', 'Compact scenic drives'],
     gallery: [
-      'https://images.unsplash.com/photo-1551632811-561732d0250a?q=80&w=1974&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1516939884455-1445c8652f83?q=80&w=1974&auto=format&fit=crop',
+      '',
+      '',
     ],
     packages: [
       {
@@ -273,15 +273,15 @@ const DESTINATIONS = [
     name: 'Ruaha',
     subtitle: 'National Park',
     region: 'Southern Tanzania',
-    image: 'https://images.unsplash.com/photo-1549366021-9f761d450615?q=80&w=1974&auto=format&fit=crop',
-    heroImage: 'https://images.unsplash.com/photo-1549366021-9f761d450615?q=80&w=1974&auto=format&fit=crop',
+    image: '',
+    heroImage: '',
     description:
       'Tanzania\'s largest national park — remote, wild, and perfect for seasoned safari travelers seeking fewer crowds and big cat action.',
     bestTime: 'June – November',
     highlights: ['Remote wilderness', 'Large lion prides', 'Walking safaris', 'Fly-in luxury camps'],
     gallery: [
-      'https://images.unsplash.com/photo-1549366021-9f761d450615?q=80&w=1974&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1523805009345-7448845a9e53?q=80&w=1974&auto=format&fit=crop',
+      '',
+      '',
     ],
     packages: [
       {
@@ -309,15 +309,15 @@ const DESTINATIONS = [
     name: 'Arusha',
     subtitle: 'Safari Gateway',
     region: 'Northern Tanzania',
-    image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=1974&auto=format&fit=crop',
-    heroImage: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=1974&auto=format&fit=crop',
+    image: '',
+    heroImage: '',
     description:
       'The safari capital of Tanzania — gateway to northern parks, cultural experiences, coffee tours, and Mount Meru adventures.',
     bestTime: 'Year-round',
     highlights: ['Coffee plantation tours', 'Mount Meru treks', 'Cultural heritage sites', 'Safari logistics hub'],
     gallery: [
-      'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=1974&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1483728642387-6bc3bdd88c98?q=80&w=1974&auto=format&fit=crop',
+      '',
+      '',
     ],
     packages: [
       {

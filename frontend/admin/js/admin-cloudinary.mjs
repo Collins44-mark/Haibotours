@@ -184,6 +184,21 @@ export function createUploadZone(input, options = {}) {
   }
 }
 
+/** Auto poster frame from Cloudinary video upload */
+export function cloudinaryVideoPosterUrl(uploadResult) {
+  const cfg = globalThis.CLOUDINARY_CONFIG;
+  const cloud = cfg?.cloudName;
+  const pid = uploadResult?.public_id;
+  if (cloud && pid) {
+    return `https://res.cloudinary.com/${cloud}/video/upload/so_0,w_480,h_640,c_fill/${pid}.jpg`;
+  }
+  const url = String(uploadResult?.secure_url || '');
+  if (!url.includes('res.cloudinary.com') || !url.includes('/video/upload/')) return '';
+  return url
+    .replace('/video/upload/', '/video/upload/so_0,w_480,h_640,c_fill/')
+    .replace(/\.(mp4|webm|mov|m4v)(\?.*)?$/i, '.jpg');
+}
+
 /** @deprecated use createUploadZone */
 export function bindImageUpload(input, previewEl, folder, onUrl) {
   const progressEl = input?.closest('.admin-upload-zone')?.querySelector('.admin-upload-progress');

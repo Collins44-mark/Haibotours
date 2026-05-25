@@ -33,7 +33,7 @@ const manifest = {
     subtitle:
       'Authentic safaris, luxury adventures, cultural journeys and unforgettable wildlife experiences across East Africa.',
     backgroundImageUrl:
-      'https://images.unsplash.com/photo-1516426122078-c23e76319801?q=80&w=2070&auto=format&fit=crop',
+      '',
     ctaPrimaryText: 'Explore Safaris',
     ctaPrimaryLink: 'destinations.html',
   },

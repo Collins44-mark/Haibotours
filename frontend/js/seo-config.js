@@ -8,7 +8,7 @@ const HAIBO_SEO = {
   locale: 'en_TZ',
   language: 'en',
   twitterSite: '@haibotours',
-  defaultOgImage: 'https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&w=1200&q=80&fm=webp',
+  defaultOgImage: '/assets/logo/logo.png',
 
   business: {
     name: 'HAIBO Tours & Safaris',

@@ -50,7 +50,7 @@
 
 /* Home hero background */
 .hero-home {
-  --hero-bg-image: url('https://images.unsplash.com/photo-1516426122078-c23e76319801?q=80&w=2070&auto=format&fit=crop');
+  --hero-bg-image: none;
 }
 
 .hero {
@@ -100,7 +100,7 @@
 
 /* Contact & gallery heroes */
 .contact-hero.hero-banner {
-  --hero-bg-image: url('https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?q=80&w=2070&auto=format&fit=crop');
+  --hero-bg-image: none;
   display: flex;
   align-items: center;
   min-height: clamp(20rem, 52vh, 32rem);
@@ -109,7 +109,7 @@
 }
 
 .gallery-hero.hero-banner {
-  --hero-bg-image: url('https://images.unsplash.com/photo-1516426122078-c23e76319801?q=80&w=2070&auto=format&fit=crop');
+  --hero-bg-image: none;
   display: flex;
   align-items: center;
   min-height: clamp(18rem, 48vh, 30rem);

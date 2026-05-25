@@ -1,7 +1,12 @@
 import { adminToast, slugify } from './admin-db.mjs';
 import { signOutAdmin, LOGIN_URL } from './firebase.js';
 import { formatAdminError } from './admin-errors.mjs';
-import { createUploadZone, getRecentUploads } from './admin-cloudinary.mjs';
+import {
+  createUploadZone,
+  getRecentUploads,
+  cloudinaryUpload,
+  cloudinaryVideoPosterUrl,
+} from './admin-cloudinary.mjs';
 import {
   mergeDestinationsForAdmin,
   renderDestinationsList,
@@ -179,8 +184,7 @@ export async function seedAllDefaults() {
       titleAccent: 'Tanzania',
       subtitle:
         'Authentic safaris, luxury adventures, cultural journeys and unforgettable wildlife experiences across East Africa.',
-      backgroundImageUrl:
-        'https://images.unsplash.com/photo-1516426122078-c23e76319801?q=80&w=2070&auto=format&fit=crop',
+      backgroundImageUrl: '',
       ctaPrimaryText: 'Explore Safaris',
       ctaPrimaryLink: 'destinations.html',
       ctaSecondaryText: 'View Gallery',
@@ -191,8 +195,7 @@ export async function seedAllDefaults() {
       eyebrow: 'Why Choose Us',
       title: 'Unforgettable Journeys Crafted For You',
       body: 'Experience premium safari adventures with expert local guides, luxury accommodations, and unforgettable wildlife encounters.',
-      imageUrl:
-        'https://images.unsplash.com/photo-1508672019048-805c876b67e2?q=80&w=1974&auto=format&fit=crop',
+      imageUrl: '',
       featureCards: [
         { title: 'SUSTAINABLE TRAVEL', subtitle: '' },
         { title: 'Best price guarantee', subtitle: '' },
@@ -516,13 +519,40 @@ function openDestinationsPanelFromHash() {
   }
 }
 
+function setGalleryUploadStatus(text) {
+  const el = document.getElementById('gallery-upload-status');
+  if (el) el.textContent = text || '';
+}
+
+function syncGalleryUploadPanels(type) {
+  const isVideo = type === 'video';
+  document.querySelectorAll('[data-gallery-upload-panel]').forEach((panel) => {
+    const mode = panel.dataset.galleryUploadPanel;
+    panel.hidden = isVideo ? mode !== 'video' : mode !== 'image';
+  });
+}
+
 function resetGalleryForm() {
   const f = document.getElementById('form-gallery-add');
   if (!f) return;
   delete f.dataset.editId;
   f.reset();
+  f.src.value = '';
+  f.thumb.value = '';
+  setGalleryUploadStatus('');
+  syncGalleryUploadPanels('image');
+  const photoPreview = document.getElementById('gallery-upload-preview');
+  const videoPreview = document.getElementById('gallery-video-preview');
+  if (photoPreview) {
+    photoPreview.hidden = true;
+    photoPreview.removeAttribute('src');
+  }
+  if (videoPreview) {
+    videoPreview.hidden = true;
+    videoPreview.removeAttribute('src');
+  }
   const btn = f.querySelector('[type="submit"]');
-  if (btn) btn.textContent = 'Add to gallery';
+  if (btn) btn.textContent = 'Save to gallery';
   const heading = f.querySelector('h2');
   if (heading) heading.textContent = 'Add gallery item';
 }
@@ -531,12 +561,24 @@ function fillGalleryForm(item) {
   const f = document.getElementById('form-gallery-add');
   if (!f || !item) return;
   f.dataset.editId = item.id;
-  f.type.value = item.type || 'image';
+  const mediaType = item.type || 'image';
+  f.type.value = mediaType;
   f.src.value = item.src || '';
-  f.thumb.value = item.thumb || '';
+  f.thumb.value = item.thumb || item.src || '';
   f.title.value = item.title || '';
   f.tag.value = item.tag || '';
   f.order.value = item.order ?? 0;
+  syncGalleryUploadPanels(mediaType);
+  setGalleryUploadStatus(item.src ? 'Media loaded — update title/tag and save.' : '');
+  const photoPreview = document.getElementById('gallery-upload-preview');
+  const videoPreview = document.getElementById('gallery-video-preview');
+  if (mediaType === 'video' && videoPreview && item.src) {
+    videoPreview.src = item.src;
+    videoPreview.hidden = false;
+  } else if (photoPreview && (item.thumb || item.src)) {
+    photoPreview.src = item.thumb || item.src;
+    photoPreview.hidden = false;
+  }
   const btn = f.querySelector('[type="submit"]');
   if (btn) btn.textContent = 'Update gallery item';
   const heading = f.querySelector('h2');
@@ -553,7 +595,7 @@ function renderGalleryList() {
     .map(
       (g) => `
     <div class="admin-card-item">
-      <img src="${g.thumb || g.src}" alt="" class="admin-thumb" />
+      <img src="${g.type === 'video' ? g.thumb || '' : g.thumb || g.src}" alt="" class="admin-thumb" />
       <div class="admin-card-item__body">
         <strong>${g.title || 'Untitled'}</strong>
         <span class="admin-muted">${g.type} · ${g.tag || ''}</span>
@@ -594,11 +636,21 @@ async function addGalleryImage(e) {
   const f = e.target;
   const cms = getAdminCms();
   if (!cms.gallery) cms.gallery = [];
+  const src = f.src.value?.trim();
+  if (!src) {
+    adminToast(
+      f.type.value === 'video'
+        ? 'Upload a video file first (no URL required).'
+        : 'Upload a photo first (no URL required).',
+      'error'
+    );
+    return;
+  }
   const item = {
     id: f.dataset.editId || `g-${Date.now()}`,
     type: f.type.value,
-    src: f.src.value,
-    thumb: f.thumb.value || f.src.value,
+    src,
+    thumb: f.thumb.value?.trim() || (f.type.value === 'image' ? src : ''),
     title: f.title.value,
     tag: f.tag.value,
     order: Number(f.order.value) || 0,
@@ -787,6 +839,9 @@ function initAdminAppHandlers() {
   document.getElementById('form-socials')?.addEventListener('submit', saveSocialsForm);
   document.getElementById('form-settings')?.addEventListener('submit', saveSettingsForm);
   document.getElementById('form-gallery-add')?.addEventListener('submit', addGalleryImage);
+  syncGalleryUploadPanels(
+    document.getElementById('gallery-type-select')?.value || 'image'
+  );
   document.getElementById('form-weather')?.addEventListener('submit', saveWeatherForm);
   document.getElementById('btn-save-search')?.addEventListener('click', saveSearchSettings);
   document.getElementById('btn-new-weather')?.addEventListener('click', () => openWeatherEditor(''));
@@ -835,8 +890,66 @@ function initAdminAppHandlers() {
     }
   });
   bindZone('gallery-upload', 'gallery-upload-preview', 'gallery', (url) => {
-    const src = document.querySelector('#form-gallery-add [name="src"]');
-    if (src) src.value = url;
+    const form = document.getElementById('form-gallery-add');
+    if (!form) return;
+    form.src.value = url;
+    form.thumb.value = url;
+    setGalleryUploadStatus('Photo uploaded — add title/tag and click Save to gallery.');
+  });
+
+  document.getElementById('gallery-type-select')?.addEventListener('change', (e) => {
+    syncGalleryUploadPanels(e.target.value);
+    setGalleryUploadStatus('');
+  });
+
+  const videoInput = document.getElementById('gallery-video-upload');
+  const videoPreview = document.getElementById('gallery-video-preview');
+  const videoProgress = document.querySelector('[data-video-progress]');
+  videoInput?.addEventListener('change', async () => {
+    const file = videoInput.files?.[0];
+    videoInput.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('video/')) {
+      adminToast('Please choose a video file (MP4, WebM, MOV).', 'error');
+      return;
+    }
+    const form = document.getElementById('form-gallery-add');
+    if (!form) return;
+    const setProgress = (pct) => {
+      if (!videoProgress) return;
+      videoProgress.hidden = false;
+      const bar = videoProgress.querySelector('.admin-upload-progress__bar');
+      const label = videoProgress.querySelector('.admin-upload-progress__label');
+      if (bar) bar.style.width = `${pct}%`;
+      if (label) label.textContent = pct >= 100 ? 'Processing…' : `Uploading ${pct}%`;
+      if (pct >= 100) {
+        setTimeout(() => {
+          videoProgress.hidden = true;
+          if (bar) bar.style.width = '0%';
+        }, 600);
+      }
+    };
+    try {
+      adminToast('Uploading video to Cloudinary…', 'info');
+      setProgress(0);
+      const result = await cloudinaryUpload(file, 'gallery/videos', setProgress);
+      setProgress(100);
+      const poster = cloudinaryVideoPosterUrl(result);
+      form.type.value = 'video';
+      syncGalleryUploadPanels('video');
+      form.src.value = result.secure_url;
+      form.thumb.value = poster || result.secure_url;
+      if (videoPreview) {
+        videoPreview.src = result.secure_url;
+        videoPreview.hidden = false;
+      }
+      setGalleryUploadStatus('Video uploaded — add title/tag and click Save to gallery.');
+      adminToast('Video uploaded — click Save to gallery', 'success');
+    } catch (err) {
+      adminToast(err?.message || 'Video upload failed', 'error');
+      setProgress(0);
+      if (videoProgress) videoProgress.hidden = true;
+    }
   });
 
   const refreshAdminFromFirestore = async () => {
