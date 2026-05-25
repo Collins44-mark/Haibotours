@@ -497,25 +497,6 @@ function haiboResolveCardImage(dest) {
   return '';
 }
 
-function haiboDestinationIconSvg(dest) {
-  const id = String(dest?.id || dest?.name || '').toLowerCase();
-  const region = String(dest?.region || '').toLowerCase();
-  const stroke = 'stroke="currentColor" stroke-width="1.5" fill="none"';
-  if (id.includes('zanzibar') || region.includes('zanzibar') || region.includes('coast')) {
-    return `<svg viewBox="0 0 24 24" ${stroke} aria-hidden="true"><path d="M3 14c2-4 5-6 9-6s7 2 9 6"/><path d="M2 14h20"/><path d="M8 10V6M16 10V7"/></svg>`;
-  }
-  if (id.includes('kili') || id.includes('arusha') || region.includes('mountain')) {
-    return `<svg viewBox="0 0 24 24" ${stroke} aria-hidden="true"><path d="M4 20h16L12 4 4 20z"/><path d="M9 14h6"/></svg>`;
-  }
-  if (id.includes('serengeti') || id.includes('ngorongoro') || id.includes('manyara')) {
-    return `<svg viewBox="0 0 24 24" ${stroke} aria-hidden="true"><circle cx="12" cy="12" r="3.5"/><path d="M12 3v2M12 19v2M5 5l1.5 1.5M17.5 17.5L19 19M3 12h2M19 12h2M5 19l1.5-1.5M17.5 6.5L19 5"/></svg>`;
-  }
-  if (id.includes('tarangire') || id.includes('ruaha') || id.includes('mikumi') || region.includes('wild')) {
-    return `<svg viewBox="0 0 24 24" ${stroke} aria-hidden="true"><path d="M12 4c-3 2-5 5-5 8a5 5 0 1010 0c0-3-2-6-5-8z"/><path d="M9 14h6"/></svg>`;
-  }
-  return `<svg viewBox="0 0 24 24" ${stroke} aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l2.5 1.5"/></svg>`;
-}
-
 /** Safari card HTML — shared by app.js and paint routine */
 function haiboBuildDestinationCard(dest) {
   const href = destinationDetailUrl(dest.id);
@@ -524,59 +505,32 @@ function haiboBuildDestinationCard(dest) {
   const bg = safeUrl.replace(/'/g, '%27').replace(/"/g, '%22');
   const imgSrc =
     typeof window.haiboOptimizeImage === 'function'
-      ? window.haiboOptimizeImage(safeUrl, { width: 720 })
+      ? window.haiboOptimizeImage(safeUrl, { width: 800 })
       : safeUrl;
   const alt = `${dest.name} safari — ${dest.subtitle}`;
+  const fbAttr = '';
   const img = safeUrl
-    ? `<img src="${haiboEscapeHtml(imgSrc)}" alt="${haiboEscapeHtml(alt)}" loading="lazy" decoding="async" class="haibo-media dest-card-img" width="720" height="900">`
+    ? `<img src="${haiboEscapeHtml(imgSrc)}" alt="${haiboEscapeHtml(alt)}" loading="lazy" decoding="async" class="haibo-media dest-card-img w-full object-cover" width="800" height="533"${fbAttr}>`
     : '';
   const price =
     Array.isArray(dest.packages) && dest.packages[0]?.price
       ? dest.packages[0].price
       : 'Contact us';
-  const icon = haiboDestinationIconSvg(dest);
 
   return `
-    <a href="${haiboEscapeHtml(href)}" class="destination-card dest-luxury-card">
-      <div class="dest-card-media"${bg ? ` style="background-image:url('${bg}')"` : ''}>
+    <a href="${haiboEscapeHtml(href)}" class="destination-card dest-card-premium glass rounded-[30px] overflow-hidden">
+      <div class="relative dest-card-media"${bg ? ` style="background-image:url('${bg}')"` : ''}>
         ${img}
         <div class="dest-card-overlay overlay-dark" aria-hidden="true"></div>
         <div class="dest-card-shine" aria-hidden="true"></div>
-        <span class="dest-card-badge" aria-hidden="true">${icon}</span>
-        <div class="dest-card-body">
-          <p class="dest-card-region">${haiboEscapeHtml(dest.region || 'Tanzania')}</p>
-          <h3 class="dest-card-title">${haiboEscapeHtml(dest.name)}</h3>
-          <p class="dest-card-subtitle">${haiboEscapeHtml(dest.subtitle || '')}</p>
-          <div class="dest-card-footer">
-            <p class="dest-card-price">From <span>${haiboEscapeHtml(price)}</span></p>
-            <span class="dest-card-arrow" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-            </span>
-          </div>
+        <div class="dest-card-body absolute bottom-6 left-6 right-6">
+          <p class="dest-card-region text-xs orange uppercase tracking-[3px] mb-1">${haiboEscapeHtml(dest.region)}</p>
+          <h3 class="dest-card-title text-2xl font-semibold mb-1">${haiboEscapeHtml(dest.name)}</h3>
+          <p class="dest-card-subtitle text-gray-300">${haiboEscapeHtml(dest.subtitle)}</p>
+          <p class="dest-card-price text-sm mt-3">From <span>${haiboEscapeHtml(price)}</span></p>
         </div>
       </div>
     </a>`;
-}
-
-function haiboInitDestinationsLuxuryUi() {
-  const list = typeof getHaiboDestinations === 'function' ? getHaiboDestinations() : [];
-  const count = list.length;
-  document.querySelectorAll('[data-haibo-dest-count]').forEach((el) => {
-    el.textContent = count
-      ? `${count} Location${count === 1 ? '' : 's'}`
-      : 'Destinations';
-  });
-  const waMsg =
-    typeof HAIBO_CONFIG !== 'undefined' && HAIBO_CONFIG.defaultTourMessage
-      ? HAIBO_CONFIG.defaultTourMessage
-      : 'Hello HAIBO Tours! I would like help planning a safari.';
-  const waHref =
-    typeof getWhatsAppUrl === 'function'
-      ? getWhatsAppUrl(waMsg)
-      : '#';
-  document.querySelectorAll('[data-haibo-dest-wa-cta]').forEach((a) => {
-    a.href = waHref;
-  });
 }
 
 /** Paint destination cards from Firestore (HAIBO_CONTENT) only */
@@ -603,10 +557,8 @@ function haiboPaintDestinationCards(containerId, limit) {
 function haiboBootDestinationGrids() {
   haiboPaintDestinationCards('all-destinations');
   haiboPaintDestinationCards('home-destinations', 4);
-  haiboInitDestinationsLuxuryUi();
 }
 
 window.haiboPaintDestinationCards = haiboPaintDestinationCards;
 window.haiboBuildDestinationCard = haiboBuildDestinationCard;
 window.haiboBootDestinationGrids = haiboBootDestinationGrids;
-window.haiboInitDestinationsLuxuryUi = haiboInitDestinationsLuxuryUi;
