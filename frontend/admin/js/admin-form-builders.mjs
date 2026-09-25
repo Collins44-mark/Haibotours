@@ -63,6 +63,103 @@ export function initHighlightsChips(root, initial = []) {
 
   render();
   root.getValues = () => [...chips];
+  root.setValues = (next) => {
+    chips.length = 0;
+    normalizeIncoming(next).forEach((v) => chips.push(v));
+    render();
+  };
+}
+
+function normalizeIncoming(items) {
+  const out = [];
+  (items || []).forEach((item) => {
+    let text = '';
+    if (typeof item === 'string') text = item.trim();
+    else if (item && typeof item === 'object') {
+      const title = String(item.title || item.label || '').trim();
+      const detail = String(item.detail || item.text || '').trim();
+      text = title && detail ? `${title} — ${detail}` : title || detail;
+    }
+    if (text && !out.includes(text)) out.push(text);
+  });
+  return out;
+}
+
+/**
+ * Compact editable package item rows (inclusions / exclusions).
+ * Independent array copy — never shares references with the template.
+ */
+export function initPackageItemList(root, initial = []) {
+  if (!root) return;
+  const input = root.querySelector('[data-chip-input]');
+  const list = root.querySelector('[data-chip-list]');
+  const items = normalizeIncoming(initial);
+
+  if (!list) {
+    root.getValues = () => [...items];
+    root.setValues = (next) => {
+      items.length = 0;
+      normalizeIncoming(next).forEach((v) => items.push(v));
+    };
+    return;
+  }
+
+  function render() {
+    if (!items.length) {
+      list.innerHTML =
+        '<p class="haibo-item-list__empty">No items yet. Add one below, or reset to the default template.</p>';
+      return;
+    }
+    list.innerHTML = items
+      .map(
+        (t, i) => `
+      <div class="haibo-item-row" data-chip-index="${i}">
+        <span class="haibo-item-row__check" aria-hidden="true">✓</span>
+        <span class="haibo-item-row__text">${escapeHtml(t)}</span>
+        <button type="button" class="haibo-item-row__remove" aria-label="Remove item">&times;</button>
+      </div>`
+      )
+      .join('');
+    list.querySelectorAll('.haibo-item-row__remove').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const idx = Number(btn.closest('[data-chip-index]')?.dataset.chipIndex);
+        if (Number.isNaN(idx)) return;
+        items.splice(idx, 1);
+        render();
+        root.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+    });
+  }
+
+  function addItem(text) {
+    const v = String(text || '').trim();
+    if (!v || items.includes(v)) return;
+    items.push(v);
+    render();
+    root.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  root.querySelector('[data-chip-add]')?.addEventListener('click', () => {
+    addItem(input?.value);
+    if (input) input.value = '';
+    input?.focus();
+  });
+  input?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addItem(input.value);
+      input.value = '';
+    }
+  });
+
+  render();
+  root.getValues = () => [...items];
+  root.setValues = (next) => {
+    items.length = 0;
+    normalizeIncoming(next).forEach((v) => items.push(v));
+    render();
+    root.dispatchEvent(new Event('change', { bubbles: true }));
+  };
 }
 
 function packageCardHtml(pkg, index) {

@@ -7,9 +7,9 @@ import { subscribeAdminFirestore } from './admin-realtime.mjs';
 import { protectAdminPage } from './admin-gate.mjs';
 import { renderSidebar, initSidebar, userDisplayFromAuth } from './admin-layout.mjs';
 import {
-  initHighlightsChips,
   initItineraryBuilder,
   initImportantInfoBuilder,
+  initPackageItemList,
 } from './admin-form-builders.mjs';
 import {
   loadDestinationById,
@@ -20,6 +20,12 @@ import {
   parsePriceFieldsFromDestination,
   mergeDestinationsForAdmin,
 } from './admin-destinations.mjs';
+import {
+  defaultsForNewDestination,
+  ensurePackageTemplateSeeded,
+  resolvePackageTemplate,
+  copyPackageTemplate,
+} from './admin-package-template.mjs';
 import { confirmDialog } from './admin-ui.mjs';
 import { initDestinationGallery, normalizeGalleryItems } from './admin-destination-gallery.mjs';
 import { createUploadZone } from './admin-cloudinary.mjs';
@@ -322,18 +328,21 @@ function bindBuilders(data) {
   const excludedRoot = document.getElementById('excluded-root');
   const itineraryRoot = document.getElementById('itinerary-root');
   const infoRoot = document.getElementById('important-info-root');
+  const isNew = !editId;
+
+  const includedSeed =
+    Array.isArray(data.included) && data.included.length
+      ? data.included
+      : isNew
+        ? []
+        : Array.isArray(preservedPackages[0]?.features)
+          ? preservedPackages[0].features
+          : [];
+  const excludedSeed = Array.isArray(data.excluded) ? data.excluded : [];
 
   try {
     if (includedRoot) {
-      const seed =
-        Array.isArray(data.included) && data.included.length
-          ? data.included.map((x) =>
-              typeof x === 'string' ? x : [x?.title, x?.detail || x?.text].filter(Boolean).join(' — ')
-            )
-          : Array.isArray(preservedPackages[0]?.features)
-            ? preservedPackages[0].features.map(String)
-            : [];
-      initHighlightsChips(includedRoot, seed);
+      initPackageItemList(includedRoot, includedSeed);
       if (includedRoot.getValues) builders.included = includedRoot;
     }
   } catch (err) {
@@ -342,13 +351,7 @@ function bindBuilders(data) {
 
   try {
     if (excludedRoot) {
-      const seed =
-        Array.isArray(data.excluded) && data.excluded.length
-          ? data.excluded.map((x) =>
-              typeof x === 'string' ? x : [x?.title, x?.detail || x?.text].filter(Boolean).join(' — ')
-            )
-          : [];
-      initHighlightsChips(excludedRoot, seed);
+      initPackageItemList(excludedRoot, excludedSeed);
       if (excludedRoot.getValues) builders.excluded = excludedRoot;
     }
   } catch (err) {
@@ -377,6 +380,57 @@ function bindBuilders(data) {
   excludedRoot?.addEventListener('change', markDirty);
   itineraryRoot?.addEventListener('change', markDirty);
   infoRoot?.addEventListener('change', markDirty);
+
+  updateTemplateHints(Boolean(data._seededFromTemplate));
+  bindTemplateResetButtons();
+}
+
+function updateTemplateHints(seeded) {
+  const inc = document.getElementById('included-template-hint');
+  const exc = document.getElementById('excluded-template-hint');
+  if (seeded) {
+    if (inc) {
+      inc.textContent =
+        'Standard package inclusions have been added automatically. Remove or add items to customize this package.';
+    }
+    if (exc) {
+      exc.textContent =
+        'Standard package exclusions have been added automatically. Remove or add items to customize this package.';
+    }
+  } else {
+    if (inc) inc.textContent = 'Items shown on the public “What\'s Included” tab.';
+    if (exc) exc.textContent = 'Items shown on the public “What\'s Excluded” tab.';
+  }
+}
+
+function bindTemplateResetButtons() {
+  const bind = (btnId, kind) => {
+    const btn = document.getElementById(btnId);
+    if (!btn || btn.dataset.bound === '1') return;
+    btn.dataset.bound = '1';
+    btn.addEventListener('click', async () => {
+      const ok = await confirmDialog({
+        title: 'Reset to default template?',
+        message:
+          kind === 'included'
+            ? 'Reset What’s Included to the current default template? Your current custom items will be replaced.'
+            : 'Reset What’s Excluded to the current default template? Your current custom items will be replaced.',
+        confirmLabel: 'Reset',
+        danger: true,
+      });
+      if (!ok) return;
+      const tpl = copyPackageTemplate(resolvePackageTemplate());
+      if (kind === 'included') {
+        builders.included?.setValues?.(tpl.included);
+      } else {
+        builders.excluded?.setValues?.(tpl.excluded);
+      }
+      markDirty();
+      showToast('Defaults applied — save to publish', 'success');
+    });
+  };
+  bind('btn-reset-included', 'included');
+  bind('btn-reset-excluded', 'excluded');
 }
 
 function fillForm(data) {
@@ -475,6 +529,9 @@ async function loadData() {
     return data;
   }
 
+  await ensurePackageTemplateSeeded();
+  const defaults = defaultsForNewDestination();
+
   return {
     id: '',
     name: '',
@@ -499,14 +556,15 @@ async function loadData() {
     packages: [],
     experience: { label: '', title: '', intro: '', items: [] },
     highlights: [],
-    included: [],
-    excluded: [],
+    included: [...defaults.included],
+    excluded: [...defaults.excluded],
     itinerary: [],
     importantInfo: [],
     gallery: [],
     active: true,
     status: 'published',
     order: 0,
+    _seededFromTemplate: true,
   };
 }
 

@@ -343,6 +343,38 @@
             <div class="admin-field"><label>Navbar links (JSON array)</label><textarea name="navLinksJson" rows="8"></textarea></div>
             <button type="submit" class="admin-btn admin-btn--primary">Save settings</button>
           </form>
+
+          <div class="admin-glass" style="margin-top:1.5rem" id="package-template-panel">
+            <h2>Default Package Template</h2>
+            <p class="admin-muted" style="margin:0 0 1rem">
+              These inclusions and exclusions are copied into every <strong>new</strong> destination.
+              Editing a destination never changes this template, and editing the template never changes existing destinations.
+            </p>
+            <div class="admin-grid-2" style="gap:1.5rem;align-items:start">
+              <div>
+                <h3 style="margin:0 0 0.65rem;font-size:1rem">What's Included (defaults)</h3>
+                <div id="tpl-included-root" class="haibo-item-list">
+                  <div class="haibo-item-list__rows" data-chip-list></div>
+                  <div style="display:flex;gap:0.5rem;margin-top:0.75rem">
+                    <input type="text" class="haibo-input" data-chip-input placeholder="Add default inclusion" style="flex:1" />
+                    <button type="button" class="haibo-btn haibo-btn--ghost" data-chip-add>+ Add</button>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h3 style="margin:0 0 0.65rem;font-size:1rem">What's Excluded (defaults)</h3>
+                <div id="tpl-excluded-root" class="haibo-item-list">
+                  <div class="haibo-item-list__rows" data-chip-list></div>
+                  <div style="display:flex;gap:0.5rem;margin-top:0.75rem">
+                    <input type="text" class="haibo-input" data-chip-input placeholder="Add default exclusion" style="flex:1" />
+                    <button type="button" class="haibo-btn haibo-btn--ghost" data-chip-add>+ Add</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p class="admin-muted" id="tpl-source-hint" style="margin:1rem 0 0;font-size:0.8rem"></p>
+            <button type="button" class="admin-btn admin-btn--primary" id="btn-save-package-template" style="margin-top:1rem">Save default template</button>
+          </div>
         </section>
       </div>
     </div>

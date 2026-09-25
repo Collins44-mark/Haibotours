@@ -26,6 +26,12 @@ import { subscribeAdminFirestore } from './admin-realtime.mjs';
 import { initTopbarMenu, initMobileSidebar } from './admin-ui.mjs';
 import { initPageHeroesPanel, loadPageHeroesPanel } from './admin-page-heroes.mjs';
 import { defaultPageHeroPages, heroFirestorePayloadFromPageHeroes } from '../../js/page-heroes.mjs';
+import { initPackageItemList } from './admin-form-builders.mjs';
+import {
+  ensurePackageTemplateSeeded,
+  resolvePackageTemplate,
+  savePackageTemplate,
+} from './admin-package-template.mjs';
 
 /** HAIBO Admin — section managers */
 let state = {
@@ -385,6 +391,54 @@ async function loadSettingsForm() {
   if (f.footerDescription) f.footerDescription.value = d.footer?.description || '';
   if (f.footerCopyright) f.footerCopyright.value = d.footer?.copyright || '';
   if (f.navLinksJson) f.navLinksJson.value = JSON.stringify(d.navLinks || [], null, 2);
+  await loadPackageTemplatePanel();
+}
+
+let packageTemplateBuilders = {
+  included: { getValues: () => [] },
+  excluded: { getValues: () => [] },
+};
+
+async function loadPackageTemplatePanel() {
+  const includedRoot = document.getElementById('tpl-included-root');
+  const excludedRoot = document.getElementById('tpl-excluded-root');
+  if (!includedRoot || !excludedRoot) return;
+
+  try {
+    await ensurePackageTemplateSeeded();
+  } catch (err) {
+    console.warn('[HAIBO] package template seed skipped', err);
+  }
+
+  const tpl = resolvePackageTemplate();
+  initPackageItemList(includedRoot, tpl.included);
+  initPackageItemList(excludedRoot, tpl.excluded);
+  packageTemplateBuilders = {
+    included: includedRoot,
+    excluded: excludedRoot,
+  };
+
+  const hint = document.getElementById('tpl-source-hint');
+  if (hint) {
+    hint.textContent = tpl.fromSettings
+      ? 'Source: saved default template in Settings.'
+      : tpl.referenceDestination?.name
+        ? `Seeded from existing package: ${tpl.referenceDestination.name}`
+        : 'Using built-in standard safari defaults until a destination template is saved.';
+  }
+}
+
+async function savePackageTemplatePanel() {
+  try {
+    await savePackageTemplate({
+      included: packageTemplateBuilders.included?.getValues?.() || [],
+      excluded: packageTemplateBuilders.excluded?.getValues?.() || [],
+    });
+    adminToast('Default package template saved', 'success');
+    await loadPackageTemplatePanel();
+  } catch (err) {
+    adminToast(err?.message || 'Could not save default template', 'error');
+  }
 }
 
 async function saveSettingsForm(e) {
@@ -763,6 +817,9 @@ function initAdminAppHandlers() {
   document.getElementById('form-contact')?.addEventListener('submit', saveContactForm);
   document.getElementById('form-socials')?.addEventListener('submit', saveSocialsForm);
   document.getElementById('form-settings')?.addEventListener('submit', saveSettingsForm);
+  document.getElementById('btn-save-package-template')?.addEventListener('click', () => {
+    void savePackageTemplatePanel();
+  });
   document.getElementById('form-gallery-add')?.addEventListener('submit', addGalleryImage);
   syncGalleryUploadPanels(
     document.getElementById('gallery-type-select')?.value || 'image'

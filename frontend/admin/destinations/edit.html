@@ -144,26 +144,28 @@
 
             <section class="haibo-form-panel" data-panel="included" hidden>
               <h2>What's Included</h2>
-              <p class="admin-muted" style="color:#9ca3af;font-size:0.875rem;margin:0 0 1rem">Shown in the public “What's Included” tab. Tip: <code>Title — detail</code></p>
-              <div id="included-root" data-included-root>
-                <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem">
-                  <input type="text" class="haibo-input" data-chip-input placeholder="Park fees — All national park entrance fees" style="flex:1" />
-                  <button type="button" class="haibo-btn haibo-btn--ghost" data-chip-add>+ Add</button>
+              <p class="admin-muted haibo-template-hint" id="included-template-hint" style="color:#9ca3af;font-size:0.875rem;margin:0 0 0.75rem">Default items for this package. Remove or add items to customize.</p>
+              <div id="included-root" data-included-root class="haibo-item-list">
+                <div class="haibo-chips haibo-item-list__rows" data-chip-list></div>
+                <div style="display:flex;gap:0.5rem;margin-top:0.85rem">
+                  <input type="text" class="haibo-input" data-chip-input placeholder="Add inclusion (e.g. Park fees — All national park entrance fees)" style="flex:1" />
+                  <button type="button" class="haibo-btn haibo-btn--ghost" data-chip-add>+ Add item</button>
                 </div>
-                <div class="haibo-chips" data-chip-list></div>
               </div>
+              <button type="button" class="haibo-btn haibo-btn--ghost haibo-btn--sm" id="btn-reset-included" style="margin-top:0.85rem">Reset to default template</button>
             </section>
 
             <section class="haibo-form-panel" data-panel="excluded" hidden>
               <h2>What's Excluded</h2>
-              <p class="admin-muted" style="color:#9ca3af;font-size:0.875rem;margin:0 0 1rem">Shown in the public “What's Excluded” tab.</p>
-              <div id="excluded-root" data-excluded-root>
-                <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem">
-                  <input type="text" class="haibo-input" data-chip-input placeholder="International flights" style="flex:1" />
-                  <button type="button" class="haibo-btn haibo-btn--ghost" data-chip-add>+ Add</button>
+              <p class="admin-muted haibo-template-hint" id="excluded-template-hint" style="color:#9ca3af;font-size:0.875rem;margin:0 0 0.75rem">Default exclusions for this package. Customize only if needed.</p>
+              <div id="excluded-root" data-excluded-root class="haibo-item-list">
+                <div class="haibo-chips haibo-item-list__rows" data-chip-list></div>
+                <div style="display:flex;gap:0.5rem;margin-top:0.85rem">
+                  <input type="text" class="haibo-input" data-chip-input placeholder="Add exclusion (e.g. International flights)" style="flex:1" />
+                  <button type="button" class="haibo-btn haibo-btn--ghost" data-chip-add>+ Add item</button>
                 </div>
-                <div class="haibo-chips" data-chip-list></div>
               </div>
+              <button type="button" class="haibo-btn haibo-btn--ghost haibo-btn--sm" id="btn-reset-excluded" style="margin-top:0.85rem">Reset to default template</button>
             </section>
 
             <section class="haibo-form-panel" data-panel="itinerary" hidden>
@@ -289,6 +291,6 @@
   <script src="/js/firebase-config.js"></script>
   <script src="/js/destinations-data.js"></script>
   <script src="/js/haibo-defaults.js"></script>
-  <script type="module" src="/admin/js/destination-edit-page.mjs?v=12"></script>
+  <script type="module" src="/admin/js/destination-edit-page.mjs?v=13"></script>
 </body>
 </html>
