@@ -524,6 +524,68 @@ function haiboDestinationCardDescription(dest) {
   return '';
 }
 
+function haiboDestinationPreferredPackage(dest) {
+  const pkgs = Array.isArray(dest?.packages) ? dest.packages : [];
+  return pkgs.find((p) => p?.popular) || pkgs.find((p) => p?.price || p?.duration) || pkgs[0] || null;
+}
+
+function haiboDestinationStartingPrice(dest) {
+  const pkg = haiboDestinationPreferredPackage(dest);
+  if (!pkg?.price) return null;
+  const note = String(pkg.priceNote || 'per person')
+    .replace(/^·\s*/, '')
+    .trim();
+  const shortNote = /per person/i.test(note) ? 'per person' : note || 'per person';
+  return { price: String(pkg.price).trim(), note: shortNote };
+}
+
+function haiboDestinationIncludedFeatures(dest) {
+  if (Array.isArray(dest?.included) && dest.included.length) {
+    return dest.included.map((x) => String(x || '').trim()).filter(Boolean);
+  }
+  const pkg = haiboDestinationPreferredPackage(dest);
+  if (Array.isArray(pkg?.features) && pkg.features.length) {
+    return pkg.features.map((x) => String(x || '').trim()).filter(Boolean);
+  }
+  const aggregated = [];
+  (dest?.packages || []).forEach((p) => {
+    (p?.features || []).forEach((f) => {
+      const text = String(f || '').trim();
+      if (text && !aggregated.includes(text)) aggregated.push(text);
+    });
+  });
+  if (aggregated.length) return aggregated;
+  return (dest?.highlights || []).map((h) => String(h || '').trim()).filter(Boolean);
+}
+
+function haiboDestinationHeroTitle(dest) {
+  const name = String(dest?.name || '').trim();
+  const duration = haiboDestinationDurationLabel(dest);
+  if (!name) return duration || 'Safari';
+  if (!duration) return name;
+  if (new RegExp(duration.replace(/\s+/g, '\\s*'), 'i').test(name)) return name;
+  return `${duration} ${name}`;
+}
+
+function haiboDestinationHeroSubtitle(dest) {
+  if (Array.isArray(dest?.highlights) && dest.highlights.length) {
+    return dest.highlights
+      .map((h) => String(h || '').trim())
+      .filter(Boolean)
+      .slice(0, 4)
+      .join(', ')
+      .toUpperCase();
+  }
+  const subtitle = String(dest?.subtitle || '').trim();
+  return subtitle ? subtitle.toUpperCase() : '';
+}
+
+window.haiboDestinationDurationLabel = haiboDestinationDurationLabel;
+window.haiboDestinationStartingPrice = haiboDestinationStartingPrice;
+window.haiboDestinationIncludedFeatures = haiboDestinationIncludedFeatures;
+window.haiboDestinationHeroTitle = haiboDestinationHeroTitle;
+window.haiboDestinationHeroSubtitle = haiboDestinationHeroSubtitle;
+
 const DEST_CARD_PIN_SVG =
   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-5.4 7-11a7 7 0 10-14 0c0 5.6 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>';
 

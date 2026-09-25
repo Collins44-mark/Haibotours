@@ -1,0 +1,389 @@
+/**
+ * HAIBO — Destination detail page (Apple-style luxury package layout)
+ * Visual source: destination detail reference — hero → price → included → single CTA
+ */
+
+body[data-page='destination-detail'] {
+  background: #f6f1ea;
+  color: #1a1a1a;
+}
+
+body[data-page='destination-detail'] nav.nav-blur,
+body[data-page='destination-detail'] nav.nav-blur a,
+body[data-page='destination-detail'] nav.nav-blur .brand-title,
+body[data-page='destination-detail'] nav.nav-blur #menu-btn {
+  color: #fff;
+}
+
+body[data-page='destination-detail'] nav.nav-blur a.orange {
+  color: #d98b2b;
+}
+
+body[data-page='destination-detail'] .site-footer {
+  background: #0b0b0b;
+  color: #9ca3af;
+}
+
+/* ── Cinematic hero ── */
+.dest-detail-hero {
+  position: relative;
+  width: 100%;
+  min-height: clamp(28rem, 78vh, 44rem);
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  background: #0a0a0a;
+  isolation: isolate;
+}
+
+.dest-detail-hero__media {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.dest-detail-hero__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.dest-detail-hero__media--empty {
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 40%, rgba(217, 139, 43, 0.14), transparent 58%),
+    linear-gradient(160deg, #1c1c1c, #0a0a0a);
+}
+
+.dest-detail-hero__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.28) 0%,
+    rgba(0, 0, 0, 0.12) 38%,
+    rgba(0, 0, 0, 0.42) 68%,
+    rgba(0, 0, 0, 0.78) 100%
+  );
+}
+
+.dest-detail-hero__content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 72rem;
+  margin: 0 auto;
+  padding:
+    calc(6.5rem + env(safe-area-inset-top, 0px))
+    max(1.25rem, env(safe-area-inset-right, 0px))
+    clamp(2.5rem, 7vh, 4.5rem)
+    max(1.25rem, env(safe-area-inset-left, 0px));
+}
+
+.dest-detail-hero__pills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 1.35rem;
+}
+
+.dest-detail-hero__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.15rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(10, 10, 10, 0.42);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #fff;
+  font-size: 0.84rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.dest-detail-hero__pill svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  flex-shrink: 0;
+  color: #e4a53d;
+  stroke: currentColor;
+  fill: none;
+}
+
+.dest-detail-hero__title {
+  margin: 0 0 0.85rem;
+  max-width: 16ch;
+  font-size: clamp(2.15rem, 5.5vw, 4.35rem);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+  color: #fff;
+  text-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+}
+
+.dest-detail-hero__subtitle {
+  margin: 0;
+  max-width: 42rem;
+  font-size: clamp(0.72rem, 1.4vw, 0.92rem);
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.88);
+  line-height: 1.55;
+}
+
+/* ── Light content shell ── */
+.dest-detail-body {
+  background: #f6f1ea;
+  color: #1f1f1f;
+  padding:
+    clamp(2.75rem, 7vw, 4.5rem)
+    max(1.25rem, env(safe-area-inset-left, 0px))
+    clamp(4rem, 10vw, 6.5rem)
+    max(1.25rem, env(safe-area-inset-right, 0px));
+}
+
+.dest-detail-body__inner {
+  width: 100%;
+  max-width: 58rem;
+  margin: 0 auto;
+}
+
+/* ── Price ── */
+.dest-detail-price {
+  margin-bottom: clamp(2.75rem, 7vw, 4rem);
+}
+
+.dest-detail-price__label {
+  margin: 0 0 0.55rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #8a847c;
+}
+
+.dest-detail-price__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.55rem 0.85rem;
+}
+
+.dest-detail-price__value {
+  font-size: clamp(2.6rem, 6vw, 4rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: #d98b2b;
+}
+
+.dest-detail-price__note {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #8a847c;
+}
+
+.dest-detail-price__empty {
+  margin: 0;
+  color: #6b7280;
+  font-size: 1rem;
+}
+
+/* ── What's Included ── */
+.dest-detail-included {
+  margin-bottom: clamp(3rem, 8vw, 4.5rem);
+}
+
+.dest-detail-included__heading {
+  margin: 0 0 0.55rem;
+  font-size: clamp(1.65rem, 3.2vw, 2.15rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #171717;
+}
+
+.dest-detail-included__accent {
+  display: block;
+  width: 3.25rem;
+  height: 0.28rem;
+  margin-bottom: 1.75rem;
+  border-radius: 999px;
+  background: #d98b2b;
+}
+
+.dest-detail-included__panel {
+  background: #efe8de;
+  border-radius: 1.5rem;
+  padding: clamp(1.35rem, 3.5vw, 2rem);
+  border: 1px solid rgba(28, 25, 23, 0.04);
+}
+
+.dest-detail-included__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.15rem 1.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+@media (min-width: 640px) {
+  .dest-detail-included__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 960px) {
+  .dest-detail-included__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.35rem 1.75rem;
+  }
+}
+
+.dest-detail-included__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+  min-width: 0;
+}
+
+.dest-detail-included__icon {
+  flex-shrink: 0;
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 999px;
+  border: 1.5px solid rgba(217, 139, 43, 0.55);
+  background: rgba(255, 255, 255, 0.45);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #1f1f1f;
+}
+
+.dest-detail-included__icon svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.dest-detail-included__text {
+  margin: 0.15rem 0 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.45;
+  color: #2a2a2a;
+}
+
+.dest-detail-included__empty {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+
+/* ── Single Book CTA ── */
+.dest-detail-book {
+  display: flex;
+  justify-content: center;
+  padding-top: 0.25rem;
+}
+
+.dest-detail-book__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  width: min(100%, 26rem);
+  min-height: 3.55rem;
+  padding: 0.95rem 1.6rem;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(135deg, #d98b2b 0%, #f0b85a 55%, #d98b2b 100%);
+  color: #111;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  box-shadow:
+    0 10px 28px rgba(217, 139, 43, 0.35),
+    0 2px 8px rgba(0, 0, 0, 0.08);
+  transition:
+    transform 0.28s ease,
+    box-shadow 0.28s ease,
+    filter 0.28s ease;
+}
+
+.dest-detail-book__btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.04);
+  box-shadow:
+    0 14px 34px rgba(217, 139, 43, 0.42),
+    0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.dest-detail-book__btn:focus-visible {
+  outline: 2px solid #d98b2b;
+  outline-offset: 3px;
+}
+
+.dest-detail-book__icon,
+.dest-detail-book__arrow {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.dest-detail-book__icon svg,
+.dest-detail-book__arrow svg {
+  width: 1.15rem;
+  height: 1.15rem;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.dest-detail-book__arrow {
+  transition: transform 0.28s ease;
+}
+
+.dest-detail-book__btn:hover .dest-detail-book__arrow {
+  transform: translateX(4px);
+}
+
+@media (max-width: 767px) {
+  .dest-detail-hero {
+    min-height: clamp(26rem, 82svh, 36rem);
+  }
+
+  .dest-detail-hero__title {
+    max-width: 12ch;
+  }
+
+  .dest-detail-hero__content {
+    padding-bottom: 2.25rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dest-detail-book__btn,
+  .dest-detail-book__arrow {
+    transition: none;
+  }
+
+  .dest-detail-book__btn:hover {
+    transform: none;
+  }
+}

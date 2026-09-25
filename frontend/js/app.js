@@ -659,19 +659,58 @@ function getQueryParam(name) {
   return new URLSearchParams(window.location.search).get(name);
 }
 
+const DEST_DETAIL_PIN_SVG =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 21s7-5.4 7-11a7 7 0 10-14 0c0 5.6 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>';
+
+const DEST_DETAIL_CAL_SVG =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M8 3.5v3.5M16 3.5v3.5M3.5 10h17"/></svg>';
+
+const DEST_DETAIL_BOOK_CAL_SVG =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M8 3.5v3.5M16 3.5v3.5M3.5 10h17"/></svg>';
+
+const DEST_DETAIL_ARROW_SVG =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>';
+
+const DEST_INCLUDED_ICONS = [
+  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 4v6c0 4.5-3.5 7.5-8 8-4.5-.5-8-3.5-8-8V7l8-4z"/><path d="M9 12l2 2 4-4"/></svg>',
+  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l7-12 4 7 3-5 4 10H3z"/></svg>',
+  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10l8-6 8 6v10a1 1 0 01-1 1H5a1 1 0 01-1-1V10z"/><path d="M9 21v-6h6v6"/></svg>',
+  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16"/><path d="M7 8h2v8H7zM15 8h2v8h-2z"/><path d="M4 16h16"/></svg>',
+  '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="5"/><circle cx="15" cy="14" r="4"/><path d="M13.5 12.5l5.5 5.5"/></svg>',
+  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 16l1.5-5h11L19 16"/><path d="M7 16v3M17 16v3"/><circle cx="8.5" cy="19" r="1.5"/><circle cx="15.5" cy="19" r="1.5"/><path d="M3 11h3l1-3h10"/></svg>',
+  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3s5 5.2 5 9a5 5 0 11-10 0c0-3.8 5-9 5-9z"/></svg>',
+  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h8l2 3v15H5V6l2-3z"/><path d="M9 11h6M9 15h6"/></svg>',
+];
+
+function includedFeatureIcon(text, index) {
+  const t = String(text || '').toLowerCase();
+  if (/park|fee|permit|vat|tax/.test(t)) return DEST_INCLUDED_ICONS[0];
+  if (/guide|english|ranger/.test(t)) return DEST_INCLUDED_ICONS[1];
+  if (/airport|flight|transfer|pickup|pick-up/.test(t)) return DEST_INCLUDED_ICONS[2];
+  if (/accommodation|lodge|camp|hotel|hut|stay/.test(t)) return DEST_INCLUDED_ICONS[3];
+  if (/meal|breakfast|lunch|dinner|food/.test(t)) return DEST_INCLUDED_ICONS[4];
+  if (/game|drive|binocular|wildlife|safari/.test(t)) return DEST_INCLUDED_ICONS[5];
+  if (/vehicle|4x4|4×4|jeep|car/.test(t)) return DEST_INCLUDED_ICONS[6];
+  if (/water|drink|bottle/.test(t)) return DEST_INCLUDED_ICONS[7];
+  if (/tax|vat|document|government/.test(t)) return DEST_INCLUDED_ICONS[8];
+  return DEST_INCLUDED_ICONS[index % DEST_INCLUDED_ICONS.length];
+}
+
 function renderDestinationDetail() {
   const root = document.getElementById('detail-root');
   if (!root) return;
 
   if (!window.HAIBO_CONTENT_LOADED) {
     root.innerHTML =
-      '<section class="py-32 px-8 text-center text-gray-400" aria-busy="true">Loading destination…</section>';
+      '<section class="py-32 px-8 text-center text-gray-500" aria-busy="true">Loading destination…</section>';
     return;
   }
 
-  const id = typeof getDestinationIdFromLocation === 'function'
-    ? getDestinationIdFromLocation()
-    : getQueryParam('id');
+  const id =
+    typeof getDestinationIdFromLocation === 'function'
+      ? getDestinationIdFromLocation()
+      : getQueryParam('id');
   const dest = getDestinationById(id);
 
   if (!dest) {
@@ -681,12 +720,12 @@ function renderDestinationDetail() {
         : null;
     const draftHint =
       draft && (draft.active === false || draft.status === 'draft')
-        ? '<p class="text-gray-400 mb-4">This destination is saved as <strong>Draft</strong> in the admin panel. Turn on <strong>Published</strong> and save to show it on the website.</p>'
-        : '<p class="text-gray-400 mb-8">The page you\'re looking for doesn\'t exist or the link uses an old address. Check the spelling or pick a destination from the list.</p>';
+        ? '<p class="text-gray-500 mb-4">This destination is saved as <strong>Draft</strong> in the admin panel. Turn on <strong>Published</strong> and save to show it on the website.</p>'
+        : '<p class="text-gray-500 mb-8">The page you\'re looking for doesn\'t exist or the link uses an old address. Check the spelling or pick a destination from the list.</p>';
 
     root.innerHTML = `
       <section class="py-32 px-8 text-center">
-        <h1 class="text-4xl font-bold mb-4">Destination not available</h1>
+        <h1 class="text-4xl font-bold mb-4 text-gray-900">Destination not available</h1>
         ${draftHint}
         <a href="destinations.html" class="btn-main px-8 py-4 rounded-full">View All Destinations</a>
       </section>
@@ -697,134 +736,130 @@ function renderDestinationDetail() {
   if (typeof window.haiboApplyDestinationSEO === 'function') {
     window.haiboApplyDestinationSEO(dest);
   } else {
-    document.title = `${dest.name} Safari Packages | HAIBO Tours & Safaris`;
+    document.title = `${dest.name} Safari | HAIBO Tours & Safaris`;
   }
 
-  const staticD =
-    typeof haiboStaticDestination === 'function' ? haiboStaticDestination(dest.id) : null;
-  const fromCms = dest._fromFirestore || dest.updatedAt != null;
+  const location = String(dest.region || '').trim();
+  const duration =
+    typeof haiboDestinationDurationLabel === 'function'
+      ? haiboDestinationDurationLabel(dest)
+      : '';
+  const heroTitle =
+    typeof haiboDestinationHeroTitle === 'function'
+      ? haiboDestinationHeroTitle(dest)
+      : dest.name;
+  const heroSubtitle =
+    typeof haiboDestinationHeroSubtitle === 'function'
+      ? haiboDestinationHeroSubtitle(dest)
+      : String(dest.subtitle || '').toUpperCase();
+  const pricing =
+    typeof haiboDestinationStartingPrice === 'function'
+      ? haiboDestinationStartingPrice(dest)
+      : null;
+  const included =
+    typeof haiboDestinationIncludedFeatures === 'function'
+      ? haiboDestinationIncludedFeatures(dest)
+      : [];
+
   let heroRaw =
     typeof haiboResolveHeroImage === 'function'
       ? haiboResolveHeroImage(dest)
       : typeof haiboSanitizeCmsMediaUrl === 'function'
         ? haiboSanitizeCmsMediaUrl(dest.heroImage || dest.image || '')
-        : '';
+        : dest.heroImage || dest.image || '';
   const heroImg =
     heroRaw && typeof window.haiboOptimizeImage === 'function'
       ? window.haiboOptimizeImage(heroRaw, { width: 1920 })
       : heroRaw;
-  const heroStyle = heroImg
-    ? ` style="--hero-bg-image: url('${escapeAttrUrl(heroImg)}')"`
-    : '';
 
-  const waMessage = `Hello HAIBO Tours! I'm interested in the ${dest.name} (${dest.subtitle}) package. Please share details and availability.`;
+  const waMessage = `Hello HAIBO Tours! I'm interested in the ${dest.name}${duration ? ` (${duration})` : ''} package. Please share details and availability.`;
   initWhatsAppFloat(waMessage);
+  const bookHref = getWhatsAppUrl(waMessage);
 
-  const packages = fromCms
-    ? dest.packages || []
-    : Array.isArray(dest.packages) && dest.packages.length
-      ? dest.packages
-      : staticD?.packages || [];
-  const gallery = dest.gallery || [];
-  const highlights = fromCms
-    ? dest.highlights || []
-    : Array.isArray(dest.highlights) && dest.highlights.length
-      ? dest.highlights
-      : staticD?.highlights || [];
-
-  const packagesHtml = packages.map((pkg) => renderPackageCard(pkg, dest)).join('');
-
-  const exp = fromCms ? dest.experience : dest.experience || staticD?.experience;
-  const experienceHtml = exp
-    ? exp.items
-        .map(
-          (item) => `
-    <div class="dest-experience-card glass rounded-3xl p-6 border border-white/10">
-      <h4 class="text-lg font-semibold orange mb-3">${item.title}</h4>
-      <p class="text-gray-400 text-sm leading-relaxed">${item.text}</p>
-    </div>
-  `
-        )
-        .join('')
+  const locationPill = location
+    ? `<span class="dest-detail-hero__pill">${DEST_DETAIL_PIN_SVG}<span>${escapeHtml(location)}</span></span>`
+    : '';
+  const durationPill = duration
+    ? `<span class="dest-detail-hero__pill">${DEST_DETAIL_CAL_SVG}<span>${escapeHtml(duration)}</span></span>`
     : '';
 
-  const galleryItems =
-    typeof haiboNormalizeDestinationGallery === 'function'
-      ? haiboNormalizeDestinationGallery(gallery)
-      : (gallery || []).map((url, i) => ({
-          url: typeof url === 'string' ? url : url?.url || '',
-          alt: '',
-          order: i,
-        }));
+  const includedHtml = included.length
+    ? `<ul class="dest-detail-included__grid">
+        ${included
+          .map(
+            (item, i) => `
+          <li class="dest-detail-included__item">
+            <span class="dest-detail-included__icon" aria-hidden="true">${includedFeatureIcon(item, i)}</span>
+            <p class="dest-detail-included__text">${escapeHtml(item)}</p>
+          </li>`
+          )
+          .join('')}
+      </ul>`
+    : '<p class="dest-detail-included__empty">Inclusions for this safari will appear here once published in the CMS.</p>';
 
-  const galleryHtml = galleryItems
-    .map((item, i) => renderDestinationGalleryCard(item, dest, i))
-    .filter(Boolean)
-    .join('');
+  const priceHtml = pricing
+    ? `<div class="dest-detail-price__row">
+        <span class="dest-detail-price__value">${escapeHtml(pricing.price)}</span>
+        <span class="dest-detail-price__note">${escapeHtml(pricing.note)}</span>
+      </div>`
+    : '<p class="dest-detail-price__empty">Contact us for pricing</p>';
 
-  const highlightsHtml = highlights
-    .map((h) => `<span class="glass px-4 py-2 rounded-full text-sm">${h}</span>`)
-    .join('');
+  const alt = `${dest.name}${location ? ` — ${location}` : ''} safari destination`;
 
-  document.getElementById('detail-root').innerHTML = `
-    <section class="page-hero hero hero-banner flex items-end"${heroStyle}>
-      <div class="hero-inner w-full flex items-end px-8 md:px-20">
-        <div class="max-w-4xl fade-up">
-          <p class="orange uppercase tracking-[5px] text-sm mb-3">${dest.region}</p>
-          <h1 class="page-heading font-extrabold mb-4">${dest.name}</h1>
-          <p class="text-xl text-gray-300 mb-6">${dest.subtitle}</p>
-          <p class="text-gray-200 leading-8 max-w-2xl mb-8">${dest.description}</p>
-          <div class="flex flex-wrap gap-3 mb-6">${highlightsHtml}</div>
-          <p class="text-sm text-gray-400"><strong class="text-white">Best time:</strong> ${dest.bestTime}</p>
+  root.innerHTML = `
+    <section class="dest-detail-hero" aria-label="${escapeHtml(dest.name)}">
+      <div class="dest-detail-hero__media${heroImg ? '' : ' dest-detail-hero__media--empty'}">
+        ${
+          heroImg
+            ? `<img class="dest-detail-hero__img haibo-media" src="${escapeAttrUrl(heroImg)}" alt="${escapeHtml(alt)}" width="1920" height="1080" decoding="async" fetchpriority="high">`
+            : ''
+        }
+        <div class="dest-detail-hero__overlay" aria-hidden="true"></div>
+      </div>
+      <div class="dest-detail-hero__content">
+        <div class="dest-detail-hero__pills">
+          ${locationPill}
+          ${durationPill}
         </div>
+        <h1 class="dest-detail-hero__title">${escapeHtml(heroTitle)}</h1>
+        ${heroSubtitle ? `<p class="dest-detail-hero__subtitle">${escapeHtml(heroSubtitle)}</p>` : ''}
       </div>
     </section>
 
-    <section class="package-cards-section py-20 px-8 md:px-20 bg-[#111]">
-      <div class="text-center mb-14">
-        <p class="orange uppercase tracking-[5px] mb-3">Safari Packages</p>
-        <h2 class="section-title">Choose Your ${dest.name} Package</h2>
-        <p class="text-gray-400 mt-4 max-w-2xl mx-auto">Curated itineraries with park fees, comfortable stays, and HAIBO guest support.</p>
-      </div>
-      <div class="package-cards-grid max-w-6xl mx-auto">
-        ${packagesHtml}
-      </div>
-    </section>
+    <div class="dest-detail-body">
+      <div class="dest-detail-body__inner">
+        <section class="dest-detail-price" aria-label="Starting price">
+          <p class="dest-detail-price__label">Price From</p>
+          ${priceHtml}
+        </section>
 
-    <section class="py-20 px-8 md:px-20 bg-black">
-      <div class="grid lg:grid-cols-2 gap-16 items-start">
-        <div>
-          <p class="orange uppercase tracking-[5px] mb-3">${exp?.label || 'Discover'}</p>
-          <h2 class="section-title mb-6">${exp?.title || `Explore ${dest.name}`}</h2>
-          <p class="text-gray-400 leading-8 mb-10">${exp?.intro || ''}</p>
-          <div class="space-y-5">${experienceHtml}</div>
-        </div>
-        <div>
-          <p class="orange uppercase tracking-[5px] mb-3 text-center lg:text-left">Photo Gallery</p>
-          <h2 class="section-title mb-8 text-center lg:text-left">Visual Journey</h2>
-          <div class="dest-gallery-grid gallery-grid-photos">${galleryHtml || '<p class="text-gray-500 text-sm">Gallery photos coming soon.</p>'}</div>
+        <section class="dest-detail-included" aria-labelledby="dest-included-heading">
+          <h2 id="dest-included-heading" class="dest-detail-included__heading">What's Included</h2>
+          <span class="dest-detail-included__accent" aria-hidden="true"></span>
+          <div class="dest-detail-included__panel">
+            ${includedHtml}
+          </div>
+        </section>
+
+        <div class="dest-detail-book">
+          <a
+            href="${escapeAttrUrl(bookHref)}"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="dest-detail-book__btn"
+          >
+            <span class="dest-detail-book__icon" aria-hidden="true">${DEST_DETAIL_BOOK_CAL_SVG}</span>
+            <span>Book This Package</span>
+            <span class="dest-detail-book__arrow" aria-hidden="true">${DEST_DETAIL_ARROW_SVG}</span>
+          </a>
         </div>
       </div>
-    </section>
-
-    ${renderDestinationCta(dest, waMessage)}
+    </div>
   `;
 
   if (typeof window.haiboEnhanceImages === 'function') {
-    window.haiboEnhanceImages(document.getElementById('detail-root'));
+    window.haiboEnhanceImages(root);
   }
-
-  document.querySelectorAll('#detail-root .gallery-video-card video').forEach((video) => {
-    const card = video.closest('.gallery-video-card');
-    if (!card) return;
-    card.addEventListener('mouseenter', () => {
-      video.play().catch(() => {});
-    });
-    card.addEventListener('mouseleave', () => {
-      video.pause();
-      video.currentTime = 0;
-    });
-  });
 }
 
 function runHaiboApp() {
