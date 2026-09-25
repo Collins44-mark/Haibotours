@@ -698,18 +698,251 @@ const DEST_INCLUDED_ICONS = [
   '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h8l2 3v15H5V6l2-3z"/><path d="M9 11h6M9 15h6"/></svg>',
 ];
 
+const DEST_TAB_ICONS = {
+  included:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.2 2.2 4.8-5"/></svg>',
+  excluded:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg>',
+  itinerary:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M8 3.5v3.5M16 3.5v3.5M3.5 10h17"/></svg>',
+  map:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M9 4.5l-5.5 2v13l5.5-2 6 2 5.5-2v-13L15 6.5 9 4.5z"/><path d="M9 4.5v13M15 6.5v13"/></svg>',
+  info:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 10.5v5M12 7.75h.01"/></svg>',
+};
+
 function includedFeatureIcon(text, index) {
   const t = String(text || '').toLowerCase();
   if (/park|fee|permit|vat|tax/.test(t)) return DEST_INCLUDED_ICONS[0];
-  if (/guide|english|ranger/.test(t)) return DEST_INCLUDED_ICONS[1];
-  if (/airport|flight|transfer|pickup|pick-up/.test(t)) return DEST_INCLUDED_ICONS[2];
+  if (/guide|english|ranger|driver/.test(t)) return DEST_INCLUDED_ICONS[1];
+  if (/airport|flight|transfer|pickup|pick-up|transport/.test(t)) return DEST_INCLUDED_ICONS[2];
   if (/accommodation|lodge|camp|hotel|hut|stay/.test(t)) return DEST_INCLUDED_ICONS[3];
   if (/meal|breakfast|lunch|dinner|food/.test(t)) return DEST_INCLUDED_ICONS[4];
   if (/game|drive|binocular|wildlife|safari/.test(t)) return DEST_INCLUDED_ICONS[5];
   if (/vehicle|4x4|4×4|jeep|car/.test(t)) return DEST_INCLUDED_ICONS[6];
   if (/water|drink|bottle/.test(t)) return DEST_INCLUDED_ICONS[7];
   if (/tax|vat|document|government/.test(t)) return DEST_INCLUDED_ICONS[8];
+  if (/visa|insurance|tip|optional|personal|international/.test(t)) return DEST_TAB_ICONS.excluded;
   return DEST_INCLUDED_ICONS[index % DEST_INCLUDED_ICONS.length];
+}
+
+function resolveMapEmbedSrc(mapUrl, mapQuery) {
+  const url = String(mapUrl || '').trim();
+  if (url) {
+    if (/google\.[^/]+\/maps\/embed/i.test(url) || /output=embed/i.test(url)) return url;
+    if (/google\.[^/]+\/maps/i.test(url)) {
+      try {
+        const u = new URL(url);
+        if (!u.searchParams.has('output')) u.searchParams.set('output', 'embed');
+        return u.toString();
+      } catch (_) {
+        return url;
+      }
+    }
+    return url;
+  }
+  const q = String(mapQuery || 'Tanzania').trim();
+  return `https://maps.google.com/maps?q=${encodeURIComponent(q)}&z=7&output=embed`;
+}
+
+function renderFeatureListHtml(items, emptyMessage) {
+  if (!items.length) {
+    return `<p class="dest-detail-tabs__empty">${escapeHtml(emptyMessage)}</p>`;
+  }
+  return `<ul class="dest-detail-tabs__features">
+    ${items
+      .map(
+        (item, i) => `
+      <li class="dest-detail-tabs__feature">
+        <span class="dest-detail-tabs__feature-icon" aria-hidden="true">${includedFeatureIcon(item.title, i)}</span>
+        <div class="dest-detail-tabs__feature-copy">
+          <p class="dest-detail-tabs__feature-title">${escapeHtml(item.title)}</p>
+          ${item.detail ? `<p class="dest-detail-tabs__feature-detail">${escapeHtml(item.detail)}</p>` : ''}
+        </div>
+      </li>`
+      )
+      .join('')}
+  </ul>`;
+}
+
+function renderItineraryHtml(steps) {
+  if (!steps.length) {
+    return '<p class="dest-detail-tabs__empty">Itinerary details will appear here once published in the CMS.</p>';
+  }
+  return `<ol class="dest-detail-tabs__itinerary">
+    ${steps
+      .map(
+        (step) => `
+      <li class="dest-detail-tabs__day">
+        <div class="dest-detail-tabs__day-rail" aria-hidden="true"></div>
+        <div class="dest-detail-tabs__day-body">
+          <p class="dest-detail-tabs__day-label">${escapeHtml(step.day)}</p>
+          ${step.title ? `<p class="dest-detail-tabs__day-title">${escapeHtml(step.title)}</p>` : ''}
+          ${step.text ? `<p class="dest-detail-tabs__day-text">${escapeHtml(step.text)}</p>` : ''}
+        </div>
+      </li>`
+      )
+      .join('')}
+  </ol>`;
+}
+
+function renderMapOverviewHtml(overview, mapSrc) {
+  return `<div class="dest-detail-tabs__map-grid">
+    <div class="dest-detail-tabs__map-frame">
+      <iframe
+        title="Destination map"
+        src="${escapeAttrUrl(mapSrc)}"
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"
+        allowfullscreen
+      ></iframe>
+    </div>
+    <div class="dest-detail-tabs__overview">
+      <h3 class="dest-detail-tabs__panel-title">Overview</h3>
+      <p class="dest-detail-tabs__overview-text">${
+        overview
+          ? escapeHtml(overview)
+          : 'Overview will appear here once published in the CMS.'
+      }</p>
+    </div>
+  </div>`;
+}
+
+function renderImportantHtml(rows) {
+  if (!rows.length) {
+    return '<p class="dest-detail-tabs__empty">Important information will appear here once published in the CMS.</p>';
+  }
+  return `<dl class="dest-detail-tabs__info">
+    ${rows
+      .map(
+        (row) => `
+      <div class="dest-detail-tabs__info-row">
+        <dt>${escapeHtml(row.label)}</dt>
+        <dd>${escapeHtml(row.value)}</dd>
+      </div>`
+      )
+      .join('')}
+  </dl>`;
+}
+
+function buildDestDetailTabsHtml(dest) {
+  const included =
+    typeof haiboDestinationIncludedFeatures === 'function'
+      ? haiboDestinationIncludedFeatures(dest)
+      : [];
+  const excluded =
+    typeof haiboDestinationExcludedFeatures === 'function'
+      ? haiboDestinationExcludedFeatures(dest)
+      : [];
+  const itinerary =
+    typeof haiboDestinationItinerary === 'function' ? haiboDestinationItinerary(dest) : [];
+  const overview =
+    typeof haiboDestinationOverview === 'function' ? haiboDestinationOverview(dest) : '';
+  const mapUrl =
+    typeof haiboDestinationMapUrl === 'function' ? haiboDestinationMapUrl(dest) : '';
+  const mapQuery =
+    typeof haiboDestinationMapQuery === 'function' ? haiboDestinationMapQuery(dest) : '';
+  const important =
+    typeof haiboDestinationImportantInfo === 'function'
+      ? haiboDestinationImportantInfo(dest)
+      : [];
+  const mapSrc = resolveMapEmbedSrc(mapUrl, mapQuery);
+
+  const tabs = [
+    { id: 'included', label: "What's Included", icon: DEST_TAB_ICONS.included },
+    { id: 'excluded', label: "What's Excluded", icon: DEST_TAB_ICONS.excluded },
+    { id: 'itinerary', label: 'Itinerary', icon: DEST_TAB_ICONS.itinerary },
+    { id: 'map', label: 'Map & Overview', icon: DEST_TAB_ICONS.map },
+    { id: 'info', label: 'Important Information', icon: DEST_TAB_ICONS.info },
+  ];
+
+  const panels = {
+    included: `<h3 class="dest-detail-tabs__panel-title">What's Included</h3>
+      <span class="dest-detail-tabs__accent" aria-hidden="true"></span>
+      ${renderFeatureListHtml(included, 'Inclusions will appear here once published in the CMS.')}`,
+    excluded: `<h3 class="dest-detail-tabs__panel-title">What's Excluded</h3>
+      <span class="dest-detail-tabs__accent" aria-hidden="true"></span>
+      ${renderFeatureListHtml(excluded, 'Exclusions will appear here once published in the CMS.')}`,
+    itinerary: `<h3 class="dest-detail-tabs__panel-title">Itinerary</h3>
+      <span class="dest-detail-tabs__accent" aria-hidden="true"></span>
+      ${renderItineraryHtml(itinerary)}`,
+    map: renderMapOverviewHtml(overview, mapSrc),
+    info: `<h3 class="dest-detail-tabs__panel-title">Important Information</h3>
+      <span class="dest-detail-tabs__accent" aria-hidden="true"></span>
+      ${renderImportantHtml(important)}`,
+  };
+
+  return `
+    <section class="dest-detail-tabs" aria-label="Package information">
+      <div class="dest-detail-tabs__shell">
+        <div class="dest-detail-tabs__nav" role="tablist" aria-label="Package details">
+          ${tabs
+            .map(
+              (tab, i) => `
+            <button
+              type="button"
+              class="dest-detail-tabs__tab${i === 0 ? ' is-active' : ''}"
+              role="tab"
+              id="dest-tab-${tab.id}"
+              aria-selected="${i === 0 ? 'true' : 'false'}"
+              aria-controls="dest-panel-${tab.id}"
+              data-dest-tab="${tab.id}"
+            >
+              <span class="dest-detail-tabs__tab-icon" aria-hidden="true">${tab.icon}</span>
+              <span class="dest-detail-tabs__tab-label">${escapeHtml(tab.label)}</span>
+            </button>`
+            )
+            .join('')}
+        </div>
+        <div class="dest-detail-tabs__panels">
+          ${tabs
+            .map(
+              (tab, i) => `
+            <div
+              class="dest-detail-tabs__panel${i === 0 ? ' is-active' : ''}"
+              role="tabpanel"
+              id="dest-panel-${tab.id}"
+              aria-labelledby="dest-tab-${tab.id}"
+              data-dest-panel="${tab.id}"
+              ${i === 0 ? '' : 'hidden'}
+            >${panels[tab.id]}</div>`
+            )
+            .join('')}
+        </div>
+      </div>
+    </section>`;
+}
+
+function initDestDetailTabs(root) {
+  const section = root?.querySelector('.dest-detail-tabs');
+  if (!section) return;
+  const tabs = [...section.querySelectorAll('[data-dest-tab]')];
+  const panels = [...section.querySelectorAll('[data-dest-panel]')];
+
+  function activate(id) {
+    tabs.forEach((tab) => {
+      const active = tab.dataset.destTab === id;
+      tab.classList.toggle('is-active', active);
+      tab.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    panels.forEach((panel) => {
+      const active = panel.dataset.destPanel === id;
+      panel.classList.toggle('is-active', active);
+      if (active) {
+        panel.hidden = false;
+        panel.classList.remove('is-entering');
+        void panel.offsetWidth;
+        panel.classList.add('is-entering');
+      } else {
+        panel.hidden = true;
+        panel.classList.remove('is-entering');
+      }
+    });
+  }
+
+  tabs.forEach((tab) => {
+    tab.addEventListener('click', () => activate(tab.dataset.destTab));
+  });
 }
 
 function renderDestinationDetail() {
@@ -771,10 +1004,6 @@ function renderDestinationDetail() {
     typeof haiboDestinationStartingPrice === 'function'
       ? haiboDestinationStartingPrice(dest)
       : null;
-  const included =
-    typeof haiboDestinationIncludedFeatures === 'function'
-      ? haiboDestinationIncludedFeatures(dest)
-      : [];
 
   let heroRaw =
     typeof haiboResolveHeroImage === 'function'
@@ -798,20 +1027,6 @@ function renderDestinationDetail() {
     ? `<span class="dest-detail-hero__pill">${DEST_DETAIL_CAL_SVG}<span>${escapeHtml(duration)}</span></span>`
     : '';
 
-  const includedHtml = included.length
-    ? `<ul class="dest-detail-included__grid">
-        ${included
-          .map(
-            (item, i) => `
-          <li class="dest-detail-included__item">
-            <span class="dest-detail-included__icon" aria-hidden="true">${includedFeatureIcon(item, i)}</span>
-            <p class="dest-detail-included__text">${escapeHtml(item)}</p>
-          </li>`
-          )
-          .join('')}
-      </ul>`
-    : '<p class="dest-detail-included__empty">Inclusions for this safari will appear here once published in the CMS.</p>';
-
   const priceHtml = pricing
     ? `<div class="dest-detail-price__row">
         <span class="dest-detail-price__value">${escapeHtml(pricing.price)}</span>
@@ -820,6 +1035,7 @@ function renderDestinationDetail() {
     : '<p class="dest-detail-price__empty">Contact us for pricing</p>';
 
   const alt = `${dest.name}${location ? ` — ${location}` : ''} safari destination`;
+  const tabsHtml = buildDestDetailTabsHtml(dest);
 
   root.innerHTML = `
     <section class="dest-detail-hero" aria-label="${escapeHtml(dest.name)}">
@@ -848,13 +1064,7 @@ function renderDestinationDetail() {
           ${priceHtml}
         </section>
 
-        <section class="dest-detail-included" aria-labelledby="dest-included-heading">
-          <h2 id="dest-included-heading" class="dest-detail-included__heading">What's Included</h2>
-          <span class="dest-detail-included__accent" aria-hidden="true"></span>
-          <div class="dest-detail-included__panel">
-            ${includedHtml}
-          </div>
-        </section>
+        ${tabsHtml}
 
         <div class="dest-detail-book">
           <a
@@ -872,10 +1082,13 @@ function renderDestinationDetail() {
     </div>
   `;
 
+  initDestDetailTabs(root);
+
   if (typeof window.haiboEnhanceImages === 'function') {
     window.haiboEnhanceImages(root);
   }
 }
+
 
 function runHaiboApp() {
   applyLogo();

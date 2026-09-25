@@ -47,6 +47,7 @@
             <button type="button" data-section="images">Images</button>
             <button type="button" data-section="gallery">Gallery</button>
             <button type="button" data-section="highlights">Highlights</button>
+            <button type="button" data-section="package-info">Package Info</button>
             <button type="button" data-section="packages">Packages</button>
             <button type="button" data-section="experiences">Experiences</button>
             <button type="button" data-section="seo">SEO &amp; Meta</button>
@@ -148,6 +149,73 @@
                   <button type="button" class="haibo-btn haibo-btn--ghost" data-chip-add>+ Add</button>
                 </div>
                 <div class="haibo-chips" data-chip-list></div>
+              </div>
+            </section>
+
+            <section class="haibo-form-panel" data-panel="package-info" hidden>
+              <h2>Package Information</h2>
+              <p style="color:#9ca3af;font-size:0.875rem;margin:0 0 1.25rem">Controls the tabbed content on the public destination detail page. Tip: for inclusions use <code>Title — detail</code> (example: Park fees — All national park entrance fees).</p>
+
+              <div class="haibo-field" style="margin-bottom:1.5rem">
+                <label>Overview</label>
+                <textarea class="haibo-input" name="overview" rows="3" style="width:100%" placeholder="Short package overview shown in Map & Overview tab"></textarea>
+              </div>
+
+              <div class="haibo-grid-2" style="margin-bottom:1.5rem">
+                <div class="haibo-field">
+                  <label>Map URL or embed link</label>
+                  <input class="haibo-input" name="mapUrl" style="width:100%" placeholder="https://www.google.com/maps/embed?…" />
+                </div>
+                <div class="haibo-field">
+                  <label>Map search query (fallback)</label>
+                  <input class="haibo-input" name="mapQuery" style="width:100%" placeholder="Serengeti National Park, Tanzania" />
+                </div>
+              </div>
+
+              <div class="haibo-grid-2" style="margin-bottom:1.5rem">
+                <div class="haibo-field"><label>Starting point</label><input class="haibo-input" name="startingPoint" style="width:100%" /></div>
+                <div class="haibo-field"><label>Ending point</label><input class="haibo-input" name="endingPoint" style="width:100%" /></div>
+                <div class="haibo-field"><label>Group size</label><input class="haibo-input" name="groupSize" style="width:100%" placeholder="2–6 travelers" /></div>
+                <div class="haibo-field"><label>Tour type</label><input class="haibo-input" name="tourType" style="width:100%" placeholder="Private safari" /></div>
+                <div class="haibo-field"><label>Difficulty</label><input class="haibo-input" name="difficulty" style="width:100%" placeholder="Easy / Moderate" /></div>
+              </div>
+              <div class="haibo-field" style="margin-bottom:1.75rem">
+                <label>Important travel notes</label>
+                <textarea class="haibo-input" name="importantNotes" rows="2" style="width:100%"></textarea>
+              </div>
+
+              <h3 style="margin:0 0 0.75rem;font-size:1rem">What's Included</h3>
+              <div id="included-root" data-included-root style="margin-bottom:1.75rem">
+                <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem">
+                  <input type="text" class="haibo-input" data-chip-input placeholder="Park fees — All national park entrance fees" style="flex:1" />
+                  <button type="button" class="haibo-btn haibo-btn--ghost" data-chip-add>+ Add</button>
+                </div>
+                <div class="haibo-chips" data-chip-list></div>
+              </div>
+
+              <h3 style="margin:0 0 0.75rem;font-size:1rem">What's Excluded</h3>
+              <div id="excluded-root" data-excluded-root style="margin-bottom:1.75rem">
+                <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem">
+                  <input type="text" class="haibo-input" data-chip-input placeholder="International flights" style="flex:1" />
+                  <button type="button" class="haibo-btn haibo-btn--ghost" data-chip-add>+ Add</button>
+                </div>
+                <div class="haibo-chips" data-chip-list></div>
+              </div>
+
+              <div id="itinerary-root" data-itinerary-root style="margin-bottom:1.75rem">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
+                  <h3 style="margin:0;font-size:1rem">Itinerary</h3>
+                  <button type="button" class="haibo-btn haibo-btn--ghost haibo-btn--sm" data-add-day>+ Add Day</button>
+                </div>
+                <div data-itinerary-list></div>
+              </div>
+
+              <div id="important-info-root" data-important-info-root>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
+                  <h3 style="margin:0;font-size:1rem">Important Information rows</h3>
+                  <button type="button" class="haibo-btn haibo-btn--ghost haibo-btn--sm" data-add-info>+ Add Row</button>
+                </div>
+                <div data-info-list></div>
               </div>
             </section>
 

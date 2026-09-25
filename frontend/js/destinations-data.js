@@ -565,23 +565,126 @@ function haiboDestinationStartingPrice(dest) {
   return { price: String(pkg.price).trim(), note: shortNote };
 }
 
+function haiboNormalizeFeatureItem(item) {
+  if (item && typeof item === 'object') {
+    const title = String(item.title || item.label || item.name || '').trim();
+    const detail = String(item.detail || item.text || item.description || '').trim();
+    if (!title && !detail) return null;
+    return { title: title || detail, detail: title ? detail : '' };
+  }
+  const raw = String(item || '').trim();
+  if (!raw) return null;
+  const em = raw.match(/^(.+?)\s*[—–\-]\s*(.+)$/);
+  if (em) return { title: em[1].trim(), detail: em[2].trim() };
+  const paren = raw.match(/^(.+?)\s*\((.+)\)\s*$/);
+  if (paren) return { title: paren[1].trim(), detail: paren[2].trim() };
+  return { title: raw, detail: '' };
+}
+
 function haiboDestinationIncludedFeatures(dest) {
+  let raw = [];
   if (Array.isArray(dest?.included) && dest.included.length) {
-    return dest.included.map((x) => String(x || '').trim()).filter(Boolean);
+    raw = dest.included;
+  } else {
+    const pkg = haiboDestinationPreferredPackage(dest);
+    if (Array.isArray(pkg?.features) && pkg.features.length) {
+      raw = pkg.features;
+    } else {
+      const aggregated = [];
+      (dest?.packages || []).forEach((p) => {
+        (p?.features || []).forEach((f) => {
+          const text = String(f || '').trim();
+          if (text && !aggregated.includes(text)) aggregated.push(text);
+        });
+      });
+      raw = aggregated.length ? aggregated : dest?.highlights || [];
+    }
   }
-  const pkg = haiboDestinationPreferredPackage(dest);
-  if (Array.isArray(pkg?.features) && pkg.features.length) {
-    return pkg.features.map((x) => String(x || '').trim()).filter(Boolean);
-  }
-  const aggregated = [];
-  (dest?.packages || []).forEach((p) => {
-    (p?.features || []).forEach((f) => {
-      const text = String(f || '').trim();
-      if (text && !aggregated.includes(text)) aggregated.push(text);
+  return raw.map(haiboNormalizeFeatureItem).filter(Boolean);
+}
+
+function haiboDestinationExcludedFeatures(dest) {
+  if (!Array.isArray(dest?.excluded)) return [];
+  return dest.excluded.map(haiboNormalizeFeatureItem).filter(Boolean);
+}
+
+function haiboDestinationItinerary(dest) {
+  if (!Array.isArray(dest?.itinerary)) return [];
+  return dest.itinerary
+    .map((step, i) => {
+      if (!step || typeof step !== 'object') {
+        const text = String(step || '').trim();
+        if (!text) return null;
+        return { day: `Day ${i + 1}`, title: text, text: '' };
+      }
+      const day = String(step.day || step.label || `Day ${i + 1}`).trim();
+      const title = String(step.title || step.name || '').trim();
+      const text = String(step.text || step.description || step.detail || '').trim();
+      if (!day && !title && !text) return null;
+      return { day: day || `Day ${i + 1}`, title, text };
+    })
+    .filter(Boolean);
+}
+
+function haiboDestinationOverview(dest) {
+  const overview = String(dest?.overview || '').trim();
+  if (overview) return overview;
+  return String(dest?.description || dest?.subtitle || '').trim();
+}
+
+function haiboDestinationMapUrl(dest) {
+  const url = String(dest?.mapUrl || dest?.mapEmbed || '').trim();
+  if (url) return url;
+  return '';
+}
+
+function haiboDestinationMapQuery(dest) {
+  const custom = String(dest?.mapQuery || '').trim();
+  if (custom) return custom;
+  const region = String(dest?.region || '').trim();
+  const name = String(dest?.name || '').trim();
+  if (region && name) return `${name}, ${region}, Tanzania`;
+  return region || name || 'Tanzania';
+}
+
+function haiboDestinationImportantInfo(dest) {
+  const rows = [];
+  if (Array.isArray(dest?.importantInfo)) {
+    dest.importantInfo.forEach((row) => {
+      if (!row) return;
+      if (typeof row === 'string') {
+        const parsed = haiboNormalizeFeatureItem(row);
+        if (parsed) rows.push({ label: parsed.title, value: parsed.detail || parsed.title });
+        return;
+      }
+      const label = String(row.label || row.title || row.key || '').trim();
+      const value = String(row.value || row.text || row.detail || '').trim();
+      if (label || value) rows.push({ label: label || 'Note', value: value || label });
     });
+  }
+
+  const extras = [
+    ['Starting point', dest?.startingPoint],
+    ['Ending point', dest?.endingPoint],
+    ['Best travel period', dest?.bestTime],
+    ['Group size', dest?.groupSize],
+    ['Tour type', dest?.tourType],
+    ['Duration', haiboDestinationDurationLabel(dest)],
+    ['Difficulty', dest?.difficulty],
+  ];
+  extras.forEach(([label, value]) => {
+    const v = String(value || '').trim();
+    if (!v) return;
+    if (rows.some((r) => r.label.toLowerCase() === label.toLowerCase())) return;
+    rows.push({ label, value: v });
   });
-  if (aggregated.length) return aggregated;
-  return (dest?.highlights || []).map((h) => String(h || '').trim()).filter(Boolean);
+
+  const notes = String(dest?.importantNotes || '').trim();
+  if (notes && !rows.some((r) => /note/i.test(r.label) && r.value === notes)) {
+    rows.push({ label: 'Travel notes', value: notes });
+  }
+
+  return rows;
 }
 
 function haiboDestinationHeroSubtitle(dest) {
@@ -600,8 +703,15 @@ function haiboDestinationHeroSubtitle(dest) {
 window.haiboDestinationDurationLabel = haiboDestinationDurationLabel;
 window.haiboDestinationStartingPrice = haiboDestinationStartingPrice;
 window.haiboDestinationIncludedFeatures = haiboDestinationIncludedFeatures;
+window.haiboDestinationExcludedFeatures = haiboDestinationExcludedFeatures;
+window.haiboDestinationItinerary = haiboDestinationItinerary;
+window.haiboDestinationOverview = haiboDestinationOverview;
+window.haiboDestinationMapUrl = haiboDestinationMapUrl;
+window.haiboDestinationMapQuery = haiboDestinationMapQuery;
+window.haiboDestinationImportantInfo = haiboDestinationImportantInfo;
 window.haiboDestinationHeroTitle = haiboDestinationHeroTitle;
 window.haiboDestinationHeroSubtitle = haiboDestinationHeroSubtitle;
+window.haiboNormalizeFeatureItem = haiboNormalizeFeatureItem;
 
 const DEST_CARD_PIN_SVG =
   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-5.4 7-11a7 7 0 10-14 0c0 5.6 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>';

@@ -223,3 +223,114 @@ export function initExperienceBuilder(root, experience = {}) {
     })).filter((i) => i.title || i.text),
   });
 }
+
+function itineraryDayHtml(step, index) {
+  return `
+  <article class="haibo-builder-card" data-itinerary-day data-index="${index}">
+    <div class="haibo-builder-card__head">
+      <strong>Day ${index + 1}</strong>
+      <button type="button" class="haibo-btn haibo-btn--ghost haibo-btn--sm" data-remove-day>Remove</button>
+    </div>
+    <div class="haibo-grid-2">
+      <div class="haibo-field"><label>Day label</label><input class="haibo-input" data-day-label value="${escapeHtml(step.day || `Day ${index + 1}`)}" style="width:100%" /></div>
+      <div class="haibo-field"><label>Title / route</label><input class="haibo-input" data-day-title value="${escapeHtml(step.title || '')}" style="width:100%" placeholder="Arusha → Tarangire" /></div>
+    </div>
+    <div class="haibo-field"><label>Description</label><textarea class="haibo-input" data-day-text rows="2" style="width:100%" placeholder="Arrival and afternoon game drive.">${escapeHtml(step.text || '')}</textarea></div>
+  </article>`;
+}
+
+/** @param {HTMLElement} root */
+export function initItineraryBuilder(root, initial = []) {
+  if (!root) return;
+  const list = root.querySelector('[data-itinerary-list]');
+  if (!list) {
+    root.getValues = () => [];
+    return;
+  }
+  let days = Array.isArray(initial) ? JSON.parse(JSON.stringify(initial)) : [];
+
+  function render() {
+    list.innerHTML = days.map((d, i) => itineraryDayHtml(d, i)).join('');
+    list.querySelectorAll('[data-itinerary-day]').forEach((card) => {
+      card.querySelector('[data-remove-day]')?.addEventListener('click', () => {
+        const idx = Number(card.dataset.index);
+        days.splice(idx, 1);
+        render();
+        root.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+      ['data-day-label', 'data-day-title', 'data-day-text'].forEach((sel) => {
+        card.querySelector(`[${sel}]`)?.addEventListener('input', () => {
+          root.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+      });
+    });
+  }
+
+  root.querySelector('[data-add-day]')?.addEventListener('click', () => {
+    days.push({ day: `Day ${days.length + 1}`, title: '', text: '' });
+    render();
+    root.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+
+  root.getValues = () =>
+    [...list.querySelectorAll('[data-itinerary-day]')].map((card, i) => ({
+      day: card.querySelector('[data-day-label]')?.value?.trim() || `Day ${i + 1}`,
+      title: card.querySelector('[data-day-title]')?.value?.trim() || '',
+      text: card.querySelector('[data-day-text]')?.value?.trim() || '',
+    })).filter((d) => d.title || d.text || d.day);
+
+  render();
+}
+
+function importantRowHtml(row, index) {
+  return `
+  <div class="haibo-feature-row" data-info-row data-index="${index}" style="display:flex;gap:0.5rem;margin-bottom:0.5rem;align-items:flex-start">
+    <input type="text" class="haibo-input" data-info-label value="${escapeHtml(row.label || '')}" placeholder="Label" style="flex:0 0 36%" />
+    <input type="text" class="haibo-input" data-info-value value="${escapeHtml(row.value || '')}" placeholder="Value" style="flex:1" />
+    <button type="button" class="haibo-btn haibo-btn--ghost haibo-btn--sm" data-remove-info aria-label="Remove">&times;</button>
+  </div>`;
+}
+
+/** @param {HTMLElement} root */
+export function initImportantInfoBuilder(root, initial = []) {
+  if (!root) return;
+  const list = root.querySelector('[data-info-list]');
+  if (!list) {
+    root.getValues = () => [];
+    return;
+  }
+  let rows = Array.isArray(initial) ? JSON.parse(JSON.stringify(initial)) : [];
+
+  function render() {
+    list.innerHTML = rows.map((r, i) => importantRowHtml(r, i)).join('');
+    list.querySelectorAll('[data-info-row]').forEach((row) => {
+      row.querySelector('[data-remove-info]')?.addEventListener('click', () => {
+        const idx = Number(row.dataset.index);
+        rows.splice(idx, 1);
+        render();
+        root.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+      row.querySelectorAll('input').forEach((input) => {
+        input.addEventListener('input', () => {
+          root.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+      });
+    });
+  }
+
+  root.querySelector('[data-add-info]')?.addEventListener('click', () => {
+    rows.push({ label: '', value: '' });
+    render();
+    root.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+
+  root.getValues = () =>
+    [...list.querySelectorAll('[data-info-row]')]
+      .map((row) => ({
+        label: row.querySelector('[data-info-label]')?.value?.trim() || '',
+        value: row.querySelector('[data-info-value]')?.value?.trim() || '',
+      }))
+      .filter((r) => r.label || r.value);
+
+  render();
+}

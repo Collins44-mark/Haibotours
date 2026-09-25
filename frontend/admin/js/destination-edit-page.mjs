@@ -10,6 +10,8 @@ import {
   initHighlightsChips,
   initPackagesBuilder,
   initExperienceBuilder,
+  initItineraryBuilder,
+  initImportantInfoBuilder,
 } from './admin-form-builders.mjs';
 import {
   loadDestinationById,
@@ -26,6 +28,10 @@ import { bindUnsavedWarning } from './admin-ui.mjs';
 const LIST_URL = '/admin/destinations/index.html';
 const emptyBuilders = {
   highlights: { getValues: () => [] },
+  included: { getValues: () => [] },
+  excluded: { getValues: () => [] },
+  itinerary: { getValues: () => [] },
+  importantInfo: { getValues: () => [] },
   packages: { getValues: () => [] },
   experience: { getValues: () => ({ label: '', title: '', intro: '', items: [] }) },
 };
@@ -305,6 +311,10 @@ function bindBuilders(data) {
   builders = { ...emptyBuilders };
   if (keepGallery?.getValues) builders.gallery = keepGallery;
   const hRoot = document.getElementById('highlights-root');
+  const includedRoot = document.getElementById('included-root');
+  const excludedRoot = document.getElementById('excluded-root');
+  const itineraryRoot = document.getElementById('itinerary-root');
+  const infoRoot = document.getElementById('important-info-root');
   const packagesPanel = document.querySelector('[data-panel="packages"]');
   const eRoot = document.querySelector('[data-panel="experiences"]');
 
@@ -315,6 +325,54 @@ function bindBuilders(data) {
     }
   } catch (err) {
     console.warn('[HAIBO] highlights builder failed', err);
+  }
+
+  try {
+    if (includedRoot) {
+      const seed =
+        Array.isArray(data.included) && data.included.length
+          ? data.included.map((x) =>
+              typeof x === 'string' ? x : [x?.title, x?.detail || x?.text].filter(Boolean).join(' — ')
+            )
+          : [];
+      initHighlightsChips(includedRoot, seed);
+      if (includedRoot.getValues) builders.included = includedRoot;
+    }
+  } catch (err) {
+    console.warn('[HAIBO] included builder failed', err);
+  }
+
+  try {
+    if (excludedRoot) {
+      const seed =
+        Array.isArray(data.excluded) && data.excluded.length
+          ? data.excluded.map((x) =>
+              typeof x === 'string' ? x : [x?.title, x?.detail || x?.text].filter(Boolean).join(' — ')
+            )
+          : [];
+      initHighlightsChips(excludedRoot, seed);
+      if (excludedRoot.getValues) builders.excluded = excludedRoot;
+    }
+  } catch (err) {
+    console.warn('[HAIBO] excluded builder failed', err);
+  }
+
+  try {
+    if (itineraryRoot) {
+      initItineraryBuilder(itineraryRoot, data.itinerary || []);
+      if (itineraryRoot.getValues) builders.itinerary = itineraryRoot;
+    }
+  } catch (err) {
+    console.warn('[HAIBO] itinerary builder failed', err);
+  }
+
+  try {
+    if (infoRoot) {
+      initImportantInfoBuilder(infoRoot, data.importantInfo || []);
+      if (infoRoot.getValues) builders.importantInfo = infoRoot;
+    }
+  } catch (err) {
+    console.warn('[HAIBO] important info builder failed', err);
   }
 
   try {
@@ -336,6 +394,10 @@ function bindBuilders(data) {
   }
 
   hRoot?.addEventListener('change', markDirty);
+  includedRoot?.addEventListener('change', markDirty);
+  excludedRoot?.addEventListener('change', markDirty);
+  itineraryRoot?.addEventListener('change', markDirty);
+  infoRoot?.addEventListener('change', markDirty);
   packagesPanel?.addEventListener('change', markDirty);
   eRoot?.addEventListener('change', markDirty);
 }
@@ -377,6 +439,24 @@ function fillForm(data) {
   if (sub) sub.value = data.subtitle || data.description?.slice(0, 160) || '';
   const desc = form.querySelector('[name="description"]');
   if (desc) desc.value = data.description || '';
+  const overview = form.querySelector('[name="overview"]');
+  if (overview) overview.value = data.overview || '';
+  const mapUrl = form.querySelector('[name="mapUrl"]');
+  if (mapUrl) mapUrl.value = data.mapUrl || '';
+  const mapQuery = form.querySelector('[name="mapQuery"]');
+  if (mapQuery) mapQuery.value = data.mapQuery || '';
+  const startingPoint = form.querySelector('[name="startingPoint"]');
+  if (startingPoint) startingPoint.value = data.startingPoint || '';
+  const endingPoint = form.querySelector('[name="endingPoint"]');
+  if (endingPoint) endingPoint.value = data.endingPoint || '';
+  const groupSize = form.querySelector('[name="groupSize"]');
+  if (groupSize) groupSize.value = data.groupSize || '';
+  const tourType = form.querySelector('[name="tourType"]');
+  if (tourType) tourType.value = data.tourType || '';
+  const difficulty = form.querySelector('[name="difficulty"]');
+  if (difficulty) difficulty.value = data.difficulty || '';
+  const importantNotes = form.querySelector('[name="importantNotes"]');
+  if (importantNotes) importantNotes.value = data.importantNotes || '';
   const order = form.querySelector('[name="order"]');
   if (order) order.value = data.order ?? 0;
   const active = form.querySelector('[name="active"]');
@@ -420,9 +500,22 @@ async function loadData() {
     subtitle: '',
     region: '',
     description: '',
+    overview: '',
+    mapUrl: '',
+    mapQuery: '',
+    startingPoint: '',
+    endingPoint: '',
+    groupSize: '',
+    tourType: '',
+    difficulty: '',
+    importantNotes: '',
     packages: [],
     experience: { label: '', title: '', intro: '', items: [] },
     highlights: [],
+    included: [],
+    excluded: [],
+    itinerary: [],
+    importantInfo: [],
     gallery: [],
     active: true,
     order: 0,
