@@ -592,7 +592,7 @@ const DEST_CARD_PIN_SVG =
 const DEST_CARD_CALENDAR_SVG =
   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M8 3.5v3.5M16 3.5v3.5M3.5 10h17"/></svg>';
 
-/** Premium catalog card — shared by app.js and paint routine (no price on listing) */
+/** Premium catalog card — price left, View Details right */
 function haiboBuildDestinationCard(dest) {
   const href = destinationDetailUrl(dest.id);
   const imageUrl = haiboResolveCardImage(dest);
@@ -604,6 +604,7 @@ function haiboBuildDestinationCard(dest) {
   const duration = haiboDestinationDurationLabel(dest);
   const title = String(dest.name || '').trim();
   const description = haiboDestinationCardDescription(dest);
+  const pricing = haiboDestinationStartingPrice(dest);
   const altParts = [title, dest.subtitle, location].filter(Boolean);
   const alt = `${altParts.join(' — ')} safari destination`;
   const img = imageUrl
@@ -615,6 +616,15 @@ function haiboBuildDestinationCard(dest) {
   const daysPill = duration
     ? `<span class="dest-card-catalog__pill dest-card-catalog__pill--days">${DEST_CARD_CALENDAR_SVG}<span>${haiboEscapeHtml(duration)}</span></span>`
     : '';
+  const priceHtml = pricing
+    ? `<div class="dest-card-catalog__price">
+        <span class="dest-card-catalog__price-label">From</span>
+        <strong class="dest-card-catalog__price-value">${haiboEscapeHtml(pricing.price)}</strong>
+      </div>`
+    : `<div class="dest-card-catalog__price dest-card-catalog__price--empty">
+        <span class="dest-card-catalog__price-label">From</span>
+        <strong class="dest-card-catalog__price-value">On request</strong>
+      </div>`;
 
   return `
     <a href="${haiboEscapeHtml(href)}" class="destination-card dest-card-catalog" aria-label="View details for ${haiboEscapeHtml(title)}">
@@ -629,7 +639,10 @@ function haiboBuildDestinationCard(dest) {
           <div class="dest-card-catalog__footer">
             <h3 class="dest-card-catalog__title">${haiboEscapeHtml(title)}</h3>
             ${description ? `<p class="dest-card-catalog__desc">${haiboEscapeHtml(description)}</p>` : ''}
-            <span class="dest-card-catalog__cta">View Details <span class="dest-card-catalog__cta-arrow" aria-hidden="true">→</span></span>
+            <div class="dest-card-catalog__bottom">
+              ${priceHtml}
+              <span class="dest-card-catalog__cta">View Details <span class="dest-card-catalog__cta-arrow" aria-hidden="true">→</span></span>
+            </div>
           </div>
         </div>
       </div>

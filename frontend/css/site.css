@@ -1,3 +1,19 @@
+:root {
+  --haibo-bg: #080d11;
+  --haibo-bg-secondary: #0d151a;
+  --haibo-glass: rgba(255, 255, 255, 0.055);
+  --haibo-glass-hover: rgba(255, 255, 255, 0.085);
+  --haibo-border: rgba(255, 255, 255, 0.1);
+  --haibo-border-hover: rgba(255, 255, 255, 0.16);
+  --haibo-text: #ffffff;
+  --haibo-text-secondary: rgba(255, 255, 255, 0.68);
+  --haibo-text-muted: rgba(255, 255, 255, 0.48);
+  --haibo-gold: #f5b51b;
+  --haibo-gold-hover: #ffc43d;
+  --haibo-gold-glow: rgba(245, 181, 27, 0.16);
+  --haibo-radius-card: 1.5rem;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -7,8 +23,8 @@
 }
 
 body {
-  background: #0f0f0f;
-  color: white;
+  background: var(--haibo-bg);
+  color: var(--haibo-text);
 }
 
 .page-hero {
@@ -16,9 +32,10 @@ body {
 }
 
 .glass {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--haibo-glass);
   backdrop-filter: blur(18px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--haibo-border);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
@@ -28,12 +45,12 @@ body {
 }
 
 .orange {
-  color: #d98b2b;
+  color: var(--haibo-gold);
 }
 
 .btn-main {
-  background: linear-gradient(135deg, #d98b2b, #ffb347);
-  color: black;
+  background: linear-gradient(135deg, var(--haibo-gold), var(--haibo-gold-hover));
+  color: #0a0a0a;
   font-weight: 600;
   transition: 0.4s;
   display: inline-block;
@@ -41,7 +58,7 @@ body {
 
 .btn-main:hover {
   transform: translateY(-3px) scale(1.03);
-  box-shadow: 0 10px 30px rgba(217, 139, 43, 0.45);
+  box-shadow: 0 10px 30px var(--haibo-gold-glow);
 }
 
 .destination-card {

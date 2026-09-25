@@ -1,27 +1,20 @@
 /**
- * HAIBO — Destination detail page (Apple-style luxury package layout)
- * Visual source: destination detail reference — hero → price → included → single CTA
+ * HAIBO — Destination detail (dark cinematic package page)
+ * Hero → Price → What's Included → single Book CTA
  */
 
 body[data-page='destination-detail'] {
-  background: #f6f1ea;
-  color: #1a1a1a;
-}
-
-body[data-page='destination-detail'] nav.nav-blur,
-body[data-page='destination-detail'] nav.nav-blur a,
-body[data-page='destination-detail'] nav.nav-blur .brand-title,
-body[data-page='destination-detail'] nav.nav-blur #menu-btn {
-  color: #fff;
+  background: var(--haibo-bg, #080d11);
+  color: var(--haibo-text, #fff);
 }
 
 body[data-page='destination-detail'] nav.nav-blur a.orange {
-  color: #d98b2b;
+  color: var(--haibo-gold, #f5b51b);
 }
 
 body[data-page='destination-detail'] .site-footer {
-  background: #0b0b0b;
-  color: #9ca3af;
+  background: #060a0d;
+  color: var(--haibo-text-muted, rgba(255, 255, 255, 0.48));
 }
 
 /* ── Cinematic hero ── */
@@ -32,7 +25,7 @@ body[data-page='destination-detail'] .site-footer {
   display: flex;
   align-items: flex-end;
   overflow: hidden;
-  background: #0a0a0a;
+  background: #080d11;
   isolation: isolate;
 }
 
@@ -55,8 +48,8 @@ body[data-page='destination-detail'] .site-footer {
 
 .dest-detail-hero__media--empty {
   background:
-    radial-gradient(ellipse 70% 50% at 50% 40%, rgba(217, 139, 43, 0.14), transparent 58%),
-    linear-gradient(160deg, #1c1c1c, #0a0a0a);
+    radial-gradient(ellipse 70% 50% at 50% 40%, rgba(245, 181, 27, 0.14), transparent 58%),
+    linear-gradient(160deg, #152028, #080d11);
 }
 
 .dest-detail-hero__overlay {
@@ -69,7 +62,7 @@ body[data-page='destination-detail'] .site-footer {
     rgba(0, 0, 0, 0.28) 0%,
     rgba(0, 0, 0, 0.12) 38%,
     rgba(0, 0, 0, 0.42) 68%,
-    rgba(0, 0, 0, 0.78) 100%
+    rgba(8, 13, 17, 0.92) 100%
   );
 }
 
@@ -80,42 +73,43 @@ body[data-page='destination-detail'] .site-footer {
   max-width: 72rem;
   margin: 0 auto;
   padding:
-    calc(6.5rem + env(safe-area-inset-top, 0px))
-    max(1.25rem, env(safe-area-inset-right, 0px))
-    clamp(2.5rem, 7vh, 4.5rem)
-    max(1.25rem, env(safe-area-inset-left, 0px));
+    0
+    max(1.5rem, env(safe-area-inset-left, 0px))
+    clamp(2.5rem, 7vw, 4rem)
+    max(1.5rem, env(safe-area-inset-right, 0px));
 }
 
 .dest-detail-hero__pills {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.65rem;
-  margin-bottom: 1.35rem;
+  gap: 0.55rem 0.7rem;
+  margin-bottom: 1.15rem;
 }
 
 .dest-detail-hero__pill {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  min-height: 2.15rem;
-  padding: 0.4rem 0.9rem;
+  min-height: 2.05rem;
+  padding: 0.35rem 0.85rem;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(10, 10, 10, 0.42);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(10, 15, 18, 0.55);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   color: #fff;
   font-size: 0.84rem;
   font-weight: 500;
   letter-spacing: 0.01em;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .dest-detail-hero__pill svg {
   width: 0.95rem;
   height: 0.95rem;
   flex-shrink: 0;
-  color: #e4a53d;
+  color: var(--haibo-gold, #f5b51b);
   stroke: currentColor;
   fill: none;
 }
@@ -123,29 +117,29 @@ body[data-page='destination-detail'] .site-footer {
 .dest-detail-hero__title {
   margin: 0 0 0.85rem;
   max-width: 16ch;
-  font-size: clamp(2.15rem, 5.5vw, 4.35rem);
+  font-size: clamp(2.35rem, 5.4vw, 4.6rem);
   font-weight: 800;
   letter-spacing: -0.035em;
   line-height: 1.05;
   color: #fff;
-  text-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  text-shadow: 0 4px 28px rgba(0, 0, 0, 0.45);
 }
 
 .dest-detail-hero__subtitle {
   margin: 0;
   max-width: 42rem;
-  font-size: clamp(0.72rem, 1.4vw, 0.92rem);
+  font-size: clamp(0.78rem, 1.4vw, 0.95rem);
   font-weight: 500;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.88);
   line-height: 1.55;
 }
 
-/* ── Light content shell ── */
+/* ── Dark content shell ── */
 .dest-detail-body {
-  background: #f6f1ea;
-  color: #1f1f1f;
+  background: var(--haibo-bg, #080d11);
+  color: var(--haibo-text, #fff);
   padding:
     clamp(2.75rem, 7vw, 4.5rem)
     max(1.25rem, env(safe-area-inset-left, 0px))
@@ -168,7 +162,7 @@ body[data-page='destination-detail'] .site-footer {
   margin: 0 0 0.55rem;
   font-size: 0.95rem;
   font-weight: 500;
-  color: #8a847c;
+  color: var(--haibo-text-muted, rgba(255, 255, 255, 0.48));
 }
 
 .dest-detail-price__row {
@@ -183,18 +177,18 @@ body[data-page='destination-detail'] .site-footer {
   font-weight: 800;
   letter-spacing: -0.03em;
   line-height: 1;
-  color: #d98b2b;
+  color: var(--haibo-gold, #f5b51b);
 }
 
 .dest-detail-price__note {
   font-size: 1rem;
   font-weight: 500;
-  color: #8a847c;
+  color: var(--haibo-text-secondary, rgba(255, 255, 255, 0.68));
 }
 
 .dest-detail-price__empty {
   margin: 0;
-  color: #6b7280;
+  color: var(--haibo-text-muted, rgba(255, 255, 255, 0.48));
   font-size: 1rem;
 }
 
@@ -208,7 +202,7 @@ body[data-page='destination-detail'] .site-footer {
   font-size: clamp(1.65rem, 3.2vw, 2.15rem);
   font-weight: 700;
   letter-spacing: -0.02em;
-  color: #171717;
+  color: #fff;
 }
 
 .dest-detail-included__accent {
@@ -217,14 +211,17 @@ body[data-page='destination-detail'] .site-footer {
   height: 0.28rem;
   margin-bottom: 1.75rem;
   border-radius: 999px;
-  background: #d98b2b;
+  background: var(--haibo-gold, #f5b51b);
+  box-shadow: 0 0 18px var(--haibo-gold-glow, rgba(245, 181, 27, 0.16));
 }
 
 .dest-detail-included__panel {
-  background: #efe8de;
+  background: var(--haibo-glass, rgba(255, 255, 255, 0.055));
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
   border-radius: 1.5rem;
   padding: clamp(1.35rem, 3.5vw, 2rem);
-  border: 1px solid rgba(28, 25, 23, 0.04);
+  border: 1px solid var(--haibo-border, rgba(255, 255, 255, 0.1));
 }
 
 .dest-detail-included__grid {
@@ -261,12 +258,14 @@ body[data-page='destination-detail'] .site-footer {
   width: 2.35rem;
   height: 2.35rem;
   border-radius: 999px;
-  border: 1.5px solid rgba(217, 139, 43, 0.55);
-  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.055);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #1f1f1f;
+  color: var(--haibo-gold, #f5b51b);
 }
 
 .dest-detail-included__icon svg {
@@ -284,12 +283,12 @@ body[data-page='destination-detail'] .site-footer {
   font-size: 0.95rem;
   font-weight: 500;
   line-height: 1.45;
-  color: #2a2a2a;
+  color: rgba(255, 255, 255, 0.88);
 }
 
 .dest-detail-included__empty {
   margin: 0;
-  color: #6b7280;
+  color: var(--haibo-text-muted, rgba(255, 255, 255, 0.48));
   font-size: 0.95rem;
 }
 
@@ -310,15 +309,15 @@ body[data-page='destination-detail'] .site-footer {
   padding: 0.95rem 1.6rem;
   border-radius: 999px;
   border: none;
-  background: linear-gradient(135deg, #d98b2b 0%, #f0b85a 55%, #d98b2b 100%);
-  color: #111;
+  background: linear-gradient(135deg, var(--haibo-gold, #f5b51b) 0%, var(--haibo-gold-hover, #ffc43d) 55%, var(--haibo-gold, #f5b51b) 100%);
+  color: #0a0a0a;
   font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: 0.01em;
   text-decoration: none;
   box-shadow:
-    0 10px 28px rgba(217, 139, 43, 0.35),
-    0 2px 8px rgba(0, 0, 0, 0.08);
+    0 10px 28px var(--haibo-gold-glow, rgba(245, 181, 27, 0.16)),
+    0 2px 8px rgba(0, 0, 0, 0.25);
   transition:
     transform 0.28s ease,
     box-shadow 0.28s ease,
@@ -329,12 +328,12 @@ body[data-page='destination-detail'] .site-footer {
   transform: translateY(-2px);
   filter: brightness(1.04);
   box-shadow:
-    0 14px 34px rgba(217, 139, 43, 0.42),
-    0 4px 12px rgba(0, 0, 0, 0.1);
+    0 14px 34px rgba(245, 181, 27, 0.28),
+    0 4px 12px rgba(0, 0, 0, 0.28);
 }
 
 .dest-detail-book__btn:focus-visible {
-  outline: 2px solid #d98b2b;
+  outline: 2px solid var(--haibo-gold, #f5b51b);
   outline-offset: 3px;
 }
 

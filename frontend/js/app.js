@@ -594,6 +594,14 @@ function renderDestinationCard(dest) {
   const title = escapeHtml(dest.name || '');
   const location = escapeHtml(dest.region || '');
   const description = escapeHtml(dest.subtitle || '');
+  const duration =
+    typeof haiboDestinationDurationLabel === 'function'
+      ? haiboDestinationDurationLabel(dest)
+      : '';
+  const pricing =
+    typeof haiboDestinationStartingPrice === 'function'
+      ? haiboDestinationStartingPrice(dest)
+      : null;
   const alt = `${dest.name || 'Safari'} — ${dest.subtitle || dest.region || 'Tanzania'} safari destination`;
   const imgSrc =
     typeof window.haiboOptimizeImage === 'function'
@@ -602,6 +610,9 @@ function renderDestinationCard(dest) {
   const img = imageUrl
     ? `<img src="${escapeAttrUrl(imgSrc)}" alt="${escapeHtml(alt)}" loading="lazy" decoding="async" class="haibo-media dest-card-catalog__img" width="1100" height="825">`
     : '';
+  const priceHtml = pricing
+    ? `<div class="dest-card-catalog__price"><span class="dest-card-catalog__price-label">From</span><strong class="dest-card-catalog__price-value">${escapeHtml(pricing.price)}</strong></div>`
+    : `<div class="dest-card-catalog__price dest-card-catalog__price--empty"><span class="dest-card-catalog__price-label">From</span><strong class="dest-card-catalog__price-value">On request</strong></div>`;
   return `
     <a href="${href}" class="destination-card dest-card-catalog" aria-label="View details for ${title}">
       <div class="dest-card-catalog__media${imageUrl ? '' : ' dest-card-catalog__media--empty'}">
@@ -610,11 +621,15 @@ function renderDestinationCard(dest) {
         <div class="dest-card-catalog__content">
           <div class="dest-card-catalog__meta">
             ${location ? `<span class="dest-card-catalog__pill dest-card-catalog__pill--location"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 21s7-5.4 7-11a7 7 0 10-14 0c0 5.6 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></svg><span>${location}</span></span>` : '<span></span>'}
+            ${duration ? `<span class="dest-card-catalog__pill dest-card-catalog__pill--days"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M8 3.5v3.5M16 3.5v3.5M3.5 10h17"/></svg><span>${escapeHtml(duration)}</span></span>` : ''}
           </div>
           <div class="dest-card-catalog__footer">
             <h3 class="dest-card-catalog__title">${title}</h3>
             ${description ? `<p class="dest-card-catalog__desc">${description}</p>` : ''}
-            <span class="dest-card-catalog__cta">View Details <span class="dest-card-catalog__cta-arrow" aria-hidden="true">→</span></span>
+            <div class="dest-card-catalog__bottom">
+              ${priceHtml}
+              <span class="dest-card-catalog__cta">View Details <span class="dest-card-catalog__cta-arrow" aria-hidden="true">→</span></span>
+            </div>
           </div>
         </div>
       </div>
@@ -703,7 +718,7 @@ function renderDestinationDetail() {
 
   if (!window.HAIBO_CONTENT_LOADED) {
     root.innerHTML =
-      '<section class="py-32 px-8 text-center text-gray-500" aria-busy="true">Loading destination…</section>';
+      '<section class="py-32 px-8 text-center text-white/50" aria-busy="true">Loading destination…</section>';
     return;
   }
 
@@ -720,12 +735,12 @@ function renderDestinationDetail() {
         : null;
     const draftHint =
       draft && (draft.active === false || draft.status === 'draft')
-        ? '<p class="text-gray-500 mb-4">This destination is saved as <strong>Draft</strong> in the admin panel. Turn on <strong>Published</strong> and save to show it on the website.</p>'
-        : '<p class="text-gray-500 mb-8">The page you\'re looking for doesn\'t exist or the link uses an old address. Check the spelling or pick a destination from the list.</p>';
+        ? '<p class="text-white/50 mb-4">This destination is saved as <strong>Draft</strong> in the admin panel. Turn on <strong>Published</strong> and save to show it on the website.</p>'
+        : '<p class="text-white/50 mb-8">The page you\'re looking for doesn\'t exist or the link uses an old address. Check the spelling or pick a destination from the list.</p>';
 
     root.innerHTML = `
       <section class="py-32 px-8 text-center">
-        <h1 class="text-4xl font-bold mb-4 text-gray-900">Destination not available</h1>
+        <h1 class="text-4xl font-bold mb-4 text-white">Destination not available</h1>
         ${draftHint}
         <a href="destinations.html" class="btn-main px-8 py-4 rounded-full">View All Destinations</a>
       </section>

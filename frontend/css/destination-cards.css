@@ -1,6 +1,6 @@
 /**
- * HAIBO — Premium destination catalog cards (Apple-style travel)
- * Visual source: luxury safari destination card reference
+ * HAIBO — Premium destination catalog cards
+ * Dark cinematic cards with glass pills, price left, View Details right
  */
 
 .destinations-catalog-grid,
@@ -8,7 +8,7 @@
 #home-destinations.destinations-catalog-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 1.15rem;
+  gap: 1.25rem;
   align-items: stretch;
   width: 100%;
 }
@@ -18,7 +18,7 @@
   #all-destinations.destinations-catalog-grid,
   #home-destinations.destinations-catalog-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1.15rem;
+    gap: 1.25rem;
   }
 }
 
@@ -27,7 +27,7 @@
   #all-destinations.destinations-catalog-grid,
   #home-destinations.destinations-catalog-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 1.35rem;
+    gap: 1.5rem;
   }
 }
 
@@ -40,9 +40,9 @@
   color: inherit;
   border-radius: 1.5rem;
   overflow: hidden;
-  background: #111;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 10px 36px rgba(0, 0, 0, 0.32);
+  background: var(--haibo-bg-secondary, #0d151a);
+  border: 1px solid var(--haibo-border, rgba(255, 255, 255, 0.1));
+  box-shadow: 0 10px 36px rgba(0, 0, 0, 0.36);
   transition:
     transform 0.55s cubic-bezier(0.22, 1, 0.36, 1),
     box-shadow 0.55s ease,
@@ -51,7 +51,7 @@
 }
 
 .destination-card.dest-card-catalog:focus-visible {
-  outline: 2px solid rgba(217, 139, 43, 0.7);
+  outline: 2px solid rgba(245, 181, 27, 0.7);
   outline-offset: 3px;
 }
 
@@ -61,7 +61,7 @@
   aspect-ratio: 4 / 3;
   min-height: 18rem;
   overflow: hidden;
-  background: #141414;
+  background: #0a1014;
 }
 
 .dest-card-catalog__img {
@@ -79,8 +79,8 @@
 
 .dest-card-catalog__media--empty {
   background:
-    radial-gradient(ellipse 70% 50% at 50% 40%, rgba(217, 139, 43, 0.12), transparent 60%),
-    linear-gradient(160deg, #1a1a1a, #0c0c0c);
+    radial-gradient(ellipse 70% 50% at 50% 40%, rgba(245, 181, 27, 0.12), transparent 60%),
+    linear-gradient(160deg, #152028, #080d11);
 }
 
 .dest-card-catalog__overlay {
@@ -90,10 +90,10 @@
   pointer-events: none;
   background: linear-gradient(
     to bottom,
-    rgba(0, 0, 0, 0.08) 0%,
-    rgba(0, 0, 0, 0.12) 32%,
-    rgba(0, 0, 0, 0.58) 68%,
-    rgba(0, 0, 0, 0.94) 100%
+    rgba(0, 0, 0, 0.05) 0%,
+    rgba(0, 0, 0, 0.1) 35%,
+    rgba(0, 0, 0, 0.65) 72%,
+    rgba(0, 0, 0, 0.95) 100%
   );
 }
 
@@ -124,10 +124,10 @@
   min-height: 2rem;
   padding: 0.35rem 0.75rem;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(8, 8, 8, 0.42);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(10, 15, 18, 0.55);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   color: #fff;
   font-size: 0.78rem;
   font-weight: 500;
@@ -143,16 +143,7 @@
   flex-shrink: 0;
   width: 0.9rem;
   height: 0.9rem;
-}
-
-.dest-card-catalog__pill--location svg {
-  color: #e4a53d;
-  stroke: currentColor;
-  fill: none;
-}
-
-.dest-card-catalog__pill--days svg {
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--haibo-gold, #f5b51b);
   stroke: currentColor;
   fill: none;
 }
@@ -165,9 +156,10 @@
 .dest-card-catalog__footer {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: stretch;
   gap: 0.45rem;
   margin-top: auto;
+  min-width: 0;
 }
 
 .dest-card-catalog__title {
@@ -183,26 +175,66 @@
 
 .dest-card-catalog__desc {
   margin: 0;
-  max-width: 92%;
-  font-size: clamp(0.875rem, 1.4vw, 1.05rem);
+  max-width: 100%;
+  font-size: clamp(0.84rem, 1.3vw, 0.98rem);
   font-weight: 400;
-  line-height: 1.5;
-  color: rgba(255, 255, 255, 0.82);
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.75);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
+.dest-card-catalog__bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.55rem;
+  min-width: 0;
+}
+
+.dest-card-catalog__price {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.dest-card-catalog__price-label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.dest-card-catalog__price-value {
+  font-size: clamp(1.15rem, 2vw, 1.45rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--haibo-gold, #f5b51b);
+}
+
+.dest-card-catalog__price--empty .dest-card-catalog__price-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.72);
+}
+
 .dest-card-catalog__cta {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.45rem;
-  margin-top: 0.55rem;
-  min-height: 2.35rem;
-  padding: 0.45rem 1rem;
+  flex-shrink: 0;
+  min-height: 2.5rem;
+  padding: 0.55rem 1.15rem;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.75);
   background: rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -210,6 +242,7 @@
   font-size: 0.875rem;
   font-weight: 500;
   letter-spacing: 0.01em;
+  white-space: nowrap;
   transition:
     transform 0.28s ease,
     border-color 0.28s ease,
@@ -228,10 +261,10 @@
 
   .destination-card.dest-card-catalog:hover {
     transform: translateY(-3px);
-    border-color: rgba(255, 255, 255, 0.16);
+    border-color: var(--haibo-border-hover, rgba(255, 255, 255, 0.16));
     box-shadow:
       0 18px 44px rgba(0, 0, 0, 0.42),
-      0 0 0 1px rgba(217, 139, 43, 0.1);
+      0 0 0 1px var(--haibo-gold-glow, rgba(245, 181, 27, 0.16));
   }
 
   .destination-card.dest-card-catalog:hover .dest-card-catalog__img {
@@ -239,8 +272,7 @@
   }
 
   .destination-card.dest-card-catalog:hover .dest-card-catalog__cta {
-    transform: translateY(-1px);
-    border-color: rgba(255, 255, 255, 0.85);
+    border-color: rgba(255, 255, 255, 0.95);
     background: rgba(255, 255, 255, 0.1);
   }
 
@@ -255,11 +287,6 @@
     min-height: 17.5rem;
   }
 
-  .dest-card-catalog__meta {
-    flex-direction: row;
-    align-items: flex-start;
-  }
-
   .dest-card-catalog__pill {
     font-size: 0.74rem;
     min-height: 1.85rem;
@@ -271,7 +298,16 @@
   }
 
   .dest-card-catalog__desc {
-    font-size: 0.9rem;
+    font-size: 0.88rem;
+  }
+
+  .dest-card-catalog__bottom {
+    flex-wrap: wrap;
+    gap: 0.65rem;
+  }
+
+  .dest-card-catalog__cta {
+    margin-left: auto;
   }
 }
 
