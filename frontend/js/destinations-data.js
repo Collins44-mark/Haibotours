@@ -498,7 +498,21 @@ function haiboResolveCardImage(dest) {
 }
 
 function haiboDestinationDurationLabel(dest) {
-  if (dest?.duration && String(dest.duration).trim()) return String(dest.duration).trim();
+  const name = String(dest?.name || '').trim();
+  const fromName = name.match(/(\d+)\s*Days?/i);
+  if (fromName) {
+    const n = Number(fromName[1]);
+    return n === 1 ? '1 Day' : `${n} Days`;
+  }
+  if (dest?.duration && String(dest.duration).trim()) {
+    const raw = String(dest.duration).trim();
+    const match = raw.match(/(\d+)\s*Days?/i);
+    if (match) {
+      const n = Number(match[1]);
+      return n === 1 ? '1 Day' : `${n} Days`;
+    }
+    return raw;
+  }
   const pkgs = Array.isArray(dest?.packages) ? dest.packages : [];
   const preferred =
     pkgs.find((p) => p?.popular && p?.duration) || pkgs.find((p) => p?.duration) || null;
@@ -510,6 +524,18 @@ function haiboDestinationDurationLabel(dest) {
     return n === 1 ? '1 Day' : `${n} Days`;
   }
   return raw;
+}
+
+function haiboDestinationHeroTitle(dest) {
+  const name = String(dest?.name || '').trim();
+  if (!name) {
+    return haiboDestinationDurationLabel(dest) || 'Safari';
+  }
+  /* Never prepend duration if the title already includes any "N Days" phrase */
+  if (/\d+\s*Days?\b/i.test(name)) return name;
+  const duration = haiboDestinationDurationLabel(dest);
+  if (!duration) return name;
+  return `${duration} ${name}`;
 }
 
 function haiboDestinationCardDescription(dest) {
@@ -556,15 +582,6 @@ function haiboDestinationIncludedFeatures(dest) {
   });
   if (aggregated.length) return aggregated;
   return (dest?.highlights || []).map((h) => String(h || '').trim()).filter(Boolean);
-}
-
-function haiboDestinationHeroTitle(dest) {
-  const name = String(dest?.name || '').trim();
-  const duration = haiboDestinationDurationLabel(dest);
-  if (!name) return duration || 'Safari';
-  if (!duration) return name;
-  if (new RegExp(duration.replace(/\s+/g, '\\s*'), 'i').test(name)) return name;
-  return `${duration} ${name}`;
 }
 
 function haiboDestinationHeroSubtitle(dest) {

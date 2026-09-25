@@ -96,6 +96,8 @@
   min-height: 100svh;
   padding-top: clamp(5rem, 10vh, 7rem);
   padding-bottom: clamp(1.5rem, 4vh, 2.5rem);
+  padding-left: 5vw !important;
+  padding-right: max(1.25rem, env(safe-area-inset-right, 0px)) !important;
 }
 
 /* Contact & gallery heroes */
@@ -106,6 +108,8 @@
   min-height: clamp(20rem, 52vh, 32rem);
   padding-top: clamp(5.5rem, 14vh, 7.5rem);
   padding-bottom: clamp(2rem, 5vh, 4rem);
+  padding-left: 5vw;
+  padding-right: max(1.25rem, env(safe-area-inset-right, 0px));
 }
 
 .gallery-hero.hero-banner {
@@ -115,6 +119,8 @@
   min-height: clamp(18rem, 48vh, 30rem);
   padding-top: clamp(5.5rem, 14vh, 8.5rem);
   padding-bottom: clamp(2rem, 5vh, 4rem);
+  padding-left: 5vw;
+  padding-right: max(1.25rem, env(safe-area-inset-right, 0px));
 }
 
 /* ─── Destination card image overlay ─── */

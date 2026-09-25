@@ -77,10 +77,14 @@ p,
   }
 
   /* Lighter glass / blur on small screens */
-  .glass,
-  .nav-blur {
+  .glass {
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+  }
+
+  nav.nav-blur {
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
   }
 
   .cta-cinematic__overlay {
@@ -133,11 +137,7 @@ p,
     padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
   }
 
-  /* ── Navbar ── */
-  nav.nav-blur {
-    padding: 0.6rem max(1rem, env(safe-area-inset-right)) 0.6rem max(1rem, env(safe-area-inset-left)) !important;
-  }
-
+  /* ── Navbar (floating glass pill — spacing set in site.css) ── */
   nav.nav-blur > .flex.justify-between {
     align-items: center;
     gap: 0.35rem;
@@ -574,7 +574,8 @@ p,
    ═══════════════════════════════════════ */
 @media (min-width: 768px) and (max-width: 1024px) {
   nav.nav-blur {
-    padding: 0.85rem 1.5rem !important;
+    width: calc(100% - 3rem);
+    padding: 0.65rem 0.8rem 0.65rem 1.25rem !important;
   }
 
   nav img[data-haibo-logo] {

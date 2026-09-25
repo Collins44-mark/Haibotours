@@ -178,13 +178,14 @@ button {
     animation: none;
   }
 
-  /* Disable sticky / fixed inner elements that shift layout */
+  /* Floating glass navbar stays inset — do not stretch edge-to-edge */
   nav.nav-blur {
     position: fixed;
-    left: 0;
-    right: 0;
-    width: 100%;
-    max-width: 100%;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: calc(100% - 1.75rem);
+    max-width: none;
   }
 
   .rounded-\[40px\],

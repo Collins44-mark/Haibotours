@@ -39,11 +39,6 @@ body {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
-.nav-blur {
-  backdrop-filter: blur(12px);
-  background: rgba(0, 0, 0, 0.25);
-}
-
 .orange {
   color: var(--haibo-gold);
 }
@@ -59,6 +54,121 @@ body {
 .btn-main:hover {
   transform: translateY(-3px) scale(1.03);
   box-shadow: 0 10px 30px var(--haibo-gold-glow);
+}
+
+/* ── Floating Apple-style glass pill navbar ── */
+nav.nav-blur {
+  position: fixed;
+  top: max(1.25rem, calc(env(safe-area-inset-top, 0px) + 0.5rem));
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  width: calc(100% - 10vw);
+  max-width: 1450px;
+  min-height: 4.75rem;
+  z-index: 50;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0.7rem 0.85rem 0.7rem 1.5rem !important;
+  border-radius: 9999px;
+  background: rgba(20, 28, 34, 0.42);
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 8px 40px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.04);
+}
+
+nav.nav-blur > .flex.justify-between {
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 3.35rem;
+}
+
+nav.nav-blur a.flex.items-center {
+  flex-shrink: 0;
+  padding-left: 0.15rem;
+}
+
+nav.nav-blur .brand-title {
+  letter-spacing: 0.02em;
+}
+
+nav.nav-blur .gap-10 a {
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+nav.nav-blur a.orange {
+  color: var(--haibo-gold);
+}
+
+nav.nav-blur .gap-10 a.orange::after {
+  content: '';
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  bottom: -0.35rem;
+  height: 1.5px;
+  border-radius: 999px;
+  background: var(--haibo-gold);
+  box-shadow: 0 0 10px var(--haibo-gold-glow);
+  opacity: 0.9;
+}
+
+nav.nav-blur .btn-main {
+  background: var(--haibo-gold);
+  color: #080d11;
+  font-weight: 700;
+  border-radius: 9999px;
+  padding: 0.8rem 1.4rem !important;
+  margin-right: 0.25rem;
+  box-shadow: none;
+  transition:
+    transform 0.2s ease,
+    filter 0.2s ease,
+    background 0.2s ease;
+}
+
+nav.nav-blur .btn-main:hover {
+  transform: scale(1.02);
+  filter: brightness(1.05);
+  background: var(--haibo-gold-hover);
+  box-shadow: 0 6px 20px var(--haibo-gold-glow);
+}
+
+body.mobile-nav-open nav.nav-blur {
+  border-radius: 1.65rem;
+  padding-bottom: 0.85rem !important;
+}
+
+@media (max-width: 1023px) {
+  nav.nav-blur {
+    width: calc(100% - 2.5rem);
+    top: max(0.85rem, calc(env(safe-area-inset-top, 0px) + 0.35rem));
+    padding: 0.65rem 0.75rem 0.65rem 1.1rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+  nav.nav-blur {
+    width: calc(100% - 1.75rem);
+    max-width: none;
+    min-height: 3.85rem;
+    top: max(0.75rem, calc(env(safe-area-inset-top, 0px) + 0.25rem));
+    padding: 0.55rem 0.65rem 0.55rem 0.9rem !important;
+  }
+
+  nav.nav-blur .btn-main {
+    margin-right: 0;
+    padding: 0.65rem 1.1rem !important;
+  }
 }
 
 .destination-card {
