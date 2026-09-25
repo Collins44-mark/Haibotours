@@ -262,11 +262,15 @@
 
   function applyDestinationSEO(dest) {
     const page = HAIBO_SEO.pages.destination;
-    const title = page.titleTemplate.replace('%NAME%', dest.name);
+    const title =
+      String(dest.seoTitle || '').trim() ||
+      page.titleTemplate.replace('%NAME%', dest.name);
+    const customDesc = String(dest.metaDescription || '').trim();
     const desc = truncate(
-      page.descriptionTemplate
-        .replace('%NAME%', dest.name)
-        .replace('%DESC%', dest.description),
+      customDesc ||
+        page.descriptionTemplate
+          .replace('%NAME%', dest.name)
+          .replace('%DESC%', dest.overview || dest.description || dest.subtitle || ''),
       160
     );
     const canonical = absoluteUrl(`destinations/${dest.id}`);

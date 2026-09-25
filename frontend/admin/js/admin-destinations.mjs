@@ -55,20 +55,143 @@ function destinationIdKey(id) {
   return slugify(String(id || '').trim());
 }
 
-export function collectDestinationPayload(form, builders) {
-  const slugInput = form.querySelector('[name="id"]');
-  const id = slugify(
-    (
-      slugInput?.value?.trim() ||
-      form.dataset.editId ||
-      slugify(form.querySelector('[name="name"]')?.value)
-    ).trim()
+/** Allocate a unique URL slug for a NEW destination (never used to rename existing). */
+export function allocateUniqueDestinationId(name, existingIds = []) {
+  const base = slugify(name) || 'destination';
+  const taken = new Set(
+    (existingIds || []).map((id) => destinationIdKey(id)).filter(Boolean)
   );
-  const published = form.querySelector('[name="active"]')?.checked !== false;
+  if (!taken.has(base)) return base;
+  let n = 2;
+  while (taken.has(`${base}-${n}`)) n += 1;
+  return `${base}-${n}`;
+}
+
+function formatDestinationPrice(rawPrice, currency = 'USD') {
+  const raw = String(rawPrice || '').trim();
+  if (!raw) return '';
+  if (/^[€$£]/.test(raw) || /USD|EUR|TZS/i.test(raw)) return raw;
+  const num = raw.replace(/,/g, '');
+  if (!/^\d+(\.\d+)?$/.test(num)) return raw;
+  const formatted = Number(num).toLocaleString('en-US');
+  if (currency === 'EUR') return `€${formatted}`;
+  if (currency === 'TZS') return `TZS ${formatted}`;
+  return `$${formatted}`;
+}
+
+function parsePriceFieldsFromDestination(data = {}) {
+  const pkg =
+    (Array.isArray(data.packages) &&
+      (data.packages.find((p) => p?.popular) || data.packages[0])) ||
+    null;
+  let price = String(data.price || pkg?.price || '').trim();
+  let currency = String(data.currency || 'USD').trim() || 'USD';
+  const note = String(data.priceNote || data.priceType || pkg?.priceNote || 'per person')
+    .replace(/^·\s*/, '')
+    .trim();
+
+  if (/^\$/.test(price)) {
+    currency = 'USD';
+    price = price.replace(/^\$\s*/, '');
+  } else if (/^€/.test(price)) {
+    currency = 'EUR';
+    price = price.replace(/^€\s*/, '');
+  } else if (/^TZS\s*/i.test(price)) {
+    currency = 'TZS';
+    price = price.replace(/^TZS\s*/i, '');
+  }
+
+  let priceType = 'per person';
+  if (/group/i.test(note)) priceType = 'per group';
+  else if (/request/i.test(note)) priceType = 'on request';
+  else if (/per person/i.test(note)) priceType = 'per person';
+  else if (note) priceType = note;
+
+  return {
+    duration: String(data.duration || pkg?.duration || '').trim(),
+    price,
+    currency,
+    priceType,
+  };
+}
+
+/** Keep legacy packages[] in sync with destination-level price/duration (single source). */
+function syncPreferredPackage(existingPackages, details) {
+  const pkgs = Array.isArray(existingPackages)
+    ? existingPackages.map((p) => ({ ...p }))
+    : [];
+  const price = formatDestinationPrice(details.price, details.currency);
+  const priceNote = details.priceType || 'per person';
+  const duration = details.duration || '';
+  const features = Array.isArray(details.included) ? details.included : [];
+
+  if (!pkgs.length) {
+    if (!price && !duration && !features.length) return [];
+    return [
+      {
+        name: details.name || 'Safari Package',
+        duration,
+        price,
+        priceNote,
+        features,
+        popular: true,
+      },
+    ];
+  }
+
+  const idx = Math.max(
+    0,
+    pkgs.findIndex((p) => p?.popular)
+  );
+  const target = idx >= 0 && pkgs[idx] ? idx : 0;
+  pkgs[target] = {
+    ...pkgs[target],
+    duration: duration || pkgs[target].duration || '',
+    price: price || pkgs[target].price || '',
+    priceNote: priceNote || pkgs[target].priceNote || 'per person',
+    popular: true,
+  };
+  if (features.length && !(pkgs[target].features || []).length) {
+    pkgs[target].features = features;
+  }
+  return pkgs;
+}
+
+export function collectDestinationPayload(form, builders, options = {}) {
+  const name = form.querySelector('[name="name"]')?.value?.trim() || '';
+  const lockedId = String(options.lockedId || form.dataset.editId || '').trim();
+  const slugInput = form.querySelector('[name="id"]');
+  let id = lockedId
+    ? slugify(lockedId)
+    : slugify(slugInput?.value?.trim() || '') || slugify(name);
+
+  if (!lockedId && options.allocateUnique && typeof options.allocateUnique === 'function') {
+    id = options.allocateUnique(name);
+  }
+
+  const publishStatus = form.querySelector('[name="publishStatus"]')?.value || 'published';
+  const published = publishStatus === 'published';
+  const duration = form.querySelector('[name="duration"]')?.value?.trim() || '';
+  const priceRaw = form.querySelector('[name="price"]')?.value?.trim() || '';
+  const currency = form.querySelector('[name="currency"]')?.value?.trim() || 'USD';
+  const priceType = form.querySelector('[name="priceType"]')?.value?.trim() || 'per person';
+  const overview = form.querySelector('[name="overview"]')?.value?.trim() || '';
+  const subtitle = form.querySelector('[name="subtitle"]')?.value?.trim() || '';
+  const included = builders.included?.getValues?.() ?? [];
+  const preservedPackages = options.preservedPackages || builders.packages?.getValues?.() || [];
+  const packages = syncPreferredPackage(preservedPackages, {
+    name,
+    duration,
+    price: priceRaw,
+    currency,
+    priceType,
+    included,
+  });
+
   return {
     id,
-    name: form.querySelector('[name="name"]')?.value?.trim() || '',
-    subtitle: form.querySelector('[name="subtitle"]')?.value?.trim() || '',
+    name,
+    subtitle,
     region: form.querySelector('[name="region"]')?.value?.trim() || '',
     image: form.querySelector('[name="image"]')?.value?.trim() || '',
     imageUrl: form.querySelector('[name="image"]')?.value?.trim() || '',
@@ -77,17 +200,27 @@ export function collectDestinationPayload(form, builders) {
       form.querySelector('[name="heroImage"]')?.value?.trim() ||
       form.querySelector('[name="image"]')?.value?.trim() ||
       '',
-    description: form.querySelector('[name="description"]')?.value?.trim() || '',
+    description: overview,
+    overview,
     bestTime: form.querySelector('[name="bestTime"]')?.value?.trim() || '',
-    highlights: builders.highlights?.getValues?.() ?? [],
+    duration,
+    price: formatDestinationPrice(priceRaw, currency),
+    currency,
+    priceNote: priceType,
+    priceType,
+    highlights: subtitle
+      ? subtitle
+          .split(/[,&]/)
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : [],
     gallery: builders.gallery?.getValues?.() ?? [],
-    packages: builders.packages?.getValues?.() ?? [],
-    experience: builders.experience?.getValues?.() ?? {},
-    included: builders.included?.getValues?.() ?? [],
+    packages,
+    experience: options.preservedExperience || builders.experience?.getValues?.() || {},
+    included,
     excluded: builders.excluded?.getValues?.() ?? [],
     itinerary: builders.itinerary?.getValues?.() ?? [],
     importantInfo: builders.importantInfo?.getValues?.() ?? [],
-    overview: form.querySelector('[name="overview"]')?.value?.trim() || '',
     mapUrl: form.querySelector('[name="mapUrl"]')?.value?.trim() || '',
     mapQuery: form.querySelector('[name="mapQuery"]')?.value?.trim() || '',
     startingPoint: form.querySelector('[name="startingPoint"]')?.value?.trim() || '',
@@ -96,12 +229,16 @@ export function collectDestinationPayload(form, builders) {
     tourType: form.querySelector('[name="tourType"]')?.value?.trim() || '',
     difficulty: form.querySelector('[name="difficulty"]')?.value?.trim() || '',
     importantNotes: form.querySelector('[name="importantNotes"]')?.value?.trim() || '',
+    seoTitle: form.querySelector('[name="seoTitle"]')?.value?.trim() || '',
+    metaDescription: form.querySelector('[name="metaDescription"]')?.value?.trim() || '',
     active: published,
     published,
     order: Number(form.querySelector('[name="order"]')?.value) || 0,
-    status: published ? 'published' : 'draft',
+    status: publishStatus,
   };
 }
+
+export { parsePriceFieldsFromDestination, formatDestinationPrice };
 
 export function galleryForFirestore(gallery) {
   return normalizeGalleryItems(gallery).map(({ url, alt, order, type }) => ({

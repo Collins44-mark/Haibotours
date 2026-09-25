@@ -29,7 +29,7 @@
             <a href="/admin/destinations/index.html" class="haibo-edit-header__back">← Back to Destinations</a>
             <div class="haibo-breadcrumb"><a href="/admin/destinations/index.html">Destinations</a> &gt; <span id="bc-name">Edit</span></div>
             <h1 style="margin:0.35rem 0 0">Edit Destination</h1>
-            <p style="margin:0.25rem 0 0;color:#9ca3af;font-size:0.875rem">Update destination details and content</p>
+            <p style="margin:0.25rem 0 0;color:#9ca3af;font-size:0.875rem">Package content shown on the public destination page</p>
             <p class="haibo-autosave" id="autosave-status">✓ All changes saved</p>
           </div>
         </div>
@@ -42,30 +42,32 @@
 
       <div class="haibo-content">
         <form id="form-edit" class="haibo-edit-layout" novalidate>
+          <!-- Stable route id — auto for new, locked for existing (not shown to admin) -->
+          <input type="hidden" name="id" value="" autocomplete="off" />
+
           <nav class="haibo-section-nav" id="section-nav" aria-label="Form sections">
-            <button type="button" data-section="general" class="is-active">General Info</button>
-            <button type="button" data-section="images">Images</button>
-            <button type="button" data-section="gallery">Gallery</button>
-            <button type="button" data-section="highlights">Highlights</button>
-            <button type="button" data-section="package-info">Package Info</button>
-            <button type="button" data-section="packages">Packages</button>
-            <button type="button" data-section="experiences">Experiences</button>
-            <button type="button" data-section="seo">SEO &amp; Meta</button>
+            <button type="button" data-section="general" class="is-active">General</button>
+            <button type="button" data-section="package-details">Package Details</button>
+            <button type="button" data-section="included">What's Included</button>
+            <button type="button" data-section="excluded">What's Excluded</button>
+            <button type="button" data-section="itinerary">Itinerary</button>
+            <button type="button" data-section="map-overview">Map &amp; Overview</button>
+            <button type="button" data-section="important">Important Info</button>
+            <button type="button" data-section="media">Media</button>
+            <button type="button" data-section="seo">SEO</button>
             <button type="button" data-section="status">Status</button>
           </nav>
 
           <div class="haibo-form-panels">
             <section class="haibo-form-panel" data-panel="general">
-              <h2>General Information</h2>
+              <h2>General</h2>
+              <p class="admin-muted" style="color:#9ca3af;font-size:0.875rem;margin:0 0 1.25rem">Core identity shown in the hero and destination cards.</p>
+              <div class="haibo-field">
+                <label>Destination / Package Name <span class="req">*</span></label>
+                <input class="haibo-input" name="name" required style="width:100%" placeholder="6 Days Best Northern Tanzania Safari" />
+                <div class="haibo-field-hint" id="url-preview" hidden></div>
+              </div>
               <div class="haibo-grid-2">
-                <div class="haibo-field">
-                  <label>Destination Name <span class="req">*</span></label>
-                  <input class="haibo-input" name="name" required style="width:100%" />
-                </div>
-                <div class="haibo-field">
-                  <label>Slug <span class="req">*</span></label>
-                  <input class="haibo-input" name="id" required style="width:100%" />
-                </div>
                 <div class="haibo-field">
                   <label>Region</label>
                   <select class="haibo-select" name="region" style="width:100%">
@@ -88,23 +90,133 @@
               </div>
               <div class="haibo-field">
                 <label>Short Description</label>
-                <textarea class="haibo-input" name="subtitle" rows="3" maxlength="160" style="width:100%"></textarea>
-                <div class="haibo-field-hint"><span id="short-count">0</span>/160 characters</div>
-              </div>
-              <div class="haibo-field">
-                <label>Full Description</label>
-                <div class="haibo-richtext-toolbar" data-toolbar>
-                  <button type="button" data-cmd="bold" title="Bold">B</button>
-                  <button type="button" data-cmd="italic" title="Italic">I</button>
-                  <button type="button" data-cmd="ul" title="List">≡</button>
-                </div>
-                <textarea class="haibo-richtext" name="description" rows="6" maxlength="2000"></textarea>
-                <div class="haibo-field-hint"><span id="full-count">0</span>/2000 characters</div>
+                <textarea class="haibo-input" name="subtitle" rows="2" maxlength="160" style="width:100%" placeholder="TARANGIRE, NGORONGORO, SERENGETI &amp; LAKE MANYARA"></textarea>
+                <div class="haibo-field-hint">Hero + card subtitle · <span id="short-count">0</span>/160</div>
               </div>
             </section>
 
-            <section class="haibo-form-panel" data-panel="images" hidden>
-              <h2>Images</h2>
+            <section class="haibo-form-panel" data-panel="package-details" hidden>
+              <h2>Package Details</h2>
+              <p class="admin-muted" style="color:#9ca3af;font-size:0.875rem;margin:0 0 1.25rem">Single source for price, duration, and trip logistics on the public page.</p>
+              <div class="haibo-grid-2">
+                <div class="haibo-field">
+                  <label>Duration</label>
+                  <input class="haibo-input" name="duration" style="width:100%" placeholder="6 Days" />
+                </div>
+                <div class="haibo-field">
+                  <label>Price From</label>
+                  <input class="haibo-input" name="price" style="width:100%" placeholder="3095" />
+                </div>
+                <div class="haibo-field">
+                  <label>Currency</label>
+                  <select class="haibo-select" name="currency" style="width:100%">
+                    <option value="USD">USD</option>
+                    <option value="EUR">EUR</option>
+                    <option value="TZS">TZS</option>
+                  </select>
+                </div>
+                <div class="haibo-field">
+                  <label>Price Type</label>
+                  <select class="haibo-select" name="priceType" style="width:100%">
+                    <option value="per person">Per Person</option>
+                    <option value="per group">Per Group</option>
+                    <option value="on request">On Request</option>
+                  </select>
+                </div>
+                <div class="haibo-field">
+                  <label>Group Size</label>
+                  <input class="haibo-input" name="groupSize" style="width:100%" placeholder="2–12 People" />
+                </div>
+                <div class="haibo-field">
+                  <label>Tour Type</label>
+                  <input class="haibo-input" name="tourType" style="width:100%" placeholder="Private or Group Safari" />
+                </div>
+                <div class="haibo-field">
+                  <label>Starting Point</label>
+                  <input class="haibo-input" name="startingPoint" style="width:100%" placeholder="Arusha" />
+                </div>
+                <div class="haibo-field">
+                  <label>Ending Point</label>
+                  <input class="haibo-input" name="endingPoint" style="width:100%" placeholder="Arusha" />
+                </div>
+              </div>
+            </section>
+
+            <section class="haibo-form-panel" data-panel="included" hidden>
+              <h2>What's Included</h2>
+              <p class="admin-muted" style="color:#9ca3af;font-size:0.875rem;margin:0 0 1rem">Shown in the public “What's Included” tab. Tip: <code>Title — detail</code></p>
+              <div id="included-root" data-included-root>
+                <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem">
+                  <input type="text" class="haibo-input" data-chip-input placeholder="Park fees — All national park entrance fees" style="flex:1" />
+                  <button type="button" class="haibo-btn haibo-btn--ghost" data-chip-add>+ Add</button>
+                </div>
+                <div class="haibo-chips" data-chip-list></div>
+              </div>
+            </section>
+
+            <section class="haibo-form-panel" data-panel="excluded" hidden>
+              <h2>What's Excluded</h2>
+              <p class="admin-muted" style="color:#9ca3af;font-size:0.875rem;margin:0 0 1rem">Shown in the public “What's Excluded” tab.</p>
+              <div id="excluded-root" data-excluded-root>
+                <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem">
+                  <input type="text" class="haibo-input" data-chip-input placeholder="International flights" style="flex:1" />
+                  <button type="button" class="haibo-btn haibo-btn--ghost" data-chip-add>+ Add</button>
+                </div>
+                <div class="haibo-chips" data-chip-list></div>
+              </div>
+            </section>
+
+            <section class="haibo-form-panel" data-panel="itinerary" hidden>
+              <h2>Itinerary</h2>
+              <div id="itinerary-root" data-itinerary-root>
+                <div style="display:flex;justify-content:flex-end;margin-bottom:0.75rem">
+                  <button type="button" class="haibo-btn haibo-btn--ghost haibo-btn--sm" data-add-day>+ Add Day</button>
+                </div>
+                <div data-itinerary-list></div>
+              </div>
+            </section>
+
+            <section class="haibo-form-panel" data-panel="map-overview" hidden>
+              <h2>Map &amp; Overview</h2>
+              <div class="haibo-field" style="margin-bottom:1.25rem">
+                <label>Overview</label>
+                <textarea class="haibo-input" name="overview" rows="4" style="width:100%" placeholder="A 6-day Northern Tanzania safari covering Tarangire, Serengeti, Ngorongoro and Lake Manyara."></textarea>
+                <div class="haibo-field-hint">Shown in the Map &amp; Overview tab · <span id="overview-count">0</span> characters</div>
+              </div>
+              <div class="haibo-grid-2">
+                <div class="haibo-field">
+                  <label>Map URL or embed link</label>
+                  <input class="haibo-input" name="mapUrl" style="width:100%" placeholder="https://www.google.com/maps/embed?…" />
+                </div>
+                <div class="haibo-field">
+                  <label>Map search query</label>
+                  <input class="haibo-input" name="mapQuery" style="width:100%" placeholder="Serengeti National Park, Tanzania" />
+                </div>
+              </div>
+            </section>
+
+            <section class="haibo-form-panel" data-panel="important" hidden>
+              <h2>Important Information</h2>
+              <div class="haibo-field" style="margin-bottom:1.25rem">
+                <label>Travel notes</label>
+                <textarea class="haibo-input" name="importantNotes" rows="3" style="width:100%" placeholder="Pickup information, clothing tips, health notes…"></textarea>
+              </div>
+              <div class="haibo-field" style="margin-bottom:1.25rem">
+                <label>Difficulty</label>
+                <input class="haibo-input" name="difficulty" style="width:100%;max-width:20rem" placeholder="Easy / Moderate" />
+              </div>
+              <div id="important-info-root" data-important-info-root>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
+                  <label style="margin:0">Custom rows</label>
+                  <button type="button" class="haibo-btn haibo-btn--ghost haibo-btn--sm" data-add-info>+ Add Row</button>
+                </div>
+                <div data-info-list></div>
+              </div>
+            </section>
+
+            <section class="haibo-form-panel" data-panel="media" hidden>
+              <h2>Media</h2>
+              <p class="admin-muted" style="color:#9ca3af;font-size:0.875rem;margin:0 0 1.25rem">Hero image for the detail page · Card image for destination listings · Gallery for additional photos.</p>
               <div class="haibo-image-pair">
                 <div class="haibo-image-block" data-image-block="card">
                   <label>Card Image</label>
@@ -133,127 +245,38 @@
                   <input type="hidden" name="heroImage" />
                 </div>
               </div>
-            </section>
-
-            <section class="haibo-form-panel" data-panel="gallery" hidden>
-              <h2>Destination Gallery</h2>
-              <p style="color:#9ca3af;font-size:0.875rem;margin:0 0 1rem">Photos shown on the public destination page. Upload, reorder, and replace — no manual URLs.</p>
+              <h3 style="margin:1.75rem 0 0.75rem;font-size:1rem">Gallery</h3>
               <div id="dest-gallery-root" data-dest-gallery-root></div>
             </section>
 
-            <section class="haibo-form-panel" data-panel="highlights" hidden>
-              <h2>Highlights</h2>
-              <div id="highlights-root" data-highlights-root>
-                <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem">
-                  <input type="text" class="haibo-input" data-chip-input placeholder="Add highlight" style="flex:1" />
-                  <button type="button" class="haibo-btn haibo-btn--ghost" data-chip-add>+ Add</button>
-                </div>
-                <div class="haibo-chips" data-chip-list></div>
-              </div>
-            </section>
-
-            <section class="haibo-form-panel" data-panel="package-info" hidden>
-              <h2>Package Information</h2>
-              <p style="color:#9ca3af;font-size:0.875rem;margin:0 0 1.25rem">Controls the tabbed content on the public destination detail page. Tip: for inclusions use <code>Title — detail</code> (example: Park fees — All national park entrance fees).</p>
-
-              <div class="haibo-field" style="margin-bottom:1.5rem">
-                <label>Overview</label>
-                <textarea class="haibo-input" name="overview" rows="3" style="width:100%" placeholder="Short package overview shown in Map & Overview tab"></textarea>
-              </div>
-
-              <div class="haibo-grid-2" style="margin-bottom:1.5rem">
-                <div class="haibo-field">
-                  <label>Map URL or embed link</label>
-                  <input class="haibo-input" name="mapUrl" style="width:100%" placeholder="https://www.google.com/maps/embed?…" />
-                </div>
-                <div class="haibo-field">
-                  <label>Map search query (fallback)</label>
-                  <input class="haibo-input" name="mapQuery" style="width:100%" placeholder="Serengeti National Park, Tanzania" />
-                </div>
-              </div>
-
-              <div class="haibo-grid-2" style="margin-bottom:1.5rem">
-                <div class="haibo-field"><label>Starting point</label><input class="haibo-input" name="startingPoint" style="width:100%" /></div>
-                <div class="haibo-field"><label>Ending point</label><input class="haibo-input" name="endingPoint" style="width:100%" /></div>
-                <div class="haibo-field"><label>Group size</label><input class="haibo-input" name="groupSize" style="width:100%" placeholder="2–6 travelers" /></div>
-                <div class="haibo-field"><label>Tour type</label><input class="haibo-input" name="tourType" style="width:100%" placeholder="Private safari" /></div>
-                <div class="haibo-field"><label>Difficulty</label><input class="haibo-input" name="difficulty" style="width:100%" placeholder="Easy / Moderate" /></div>
-              </div>
-              <div class="haibo-field" style="margin-bottom:1.75rem">
-                <label>Important travel notes</label>
-                <textarea class="haibo-input" name="importantNotes" rows="2" style="width:100%"></textarea>
-              </div>
-
-              <h3 style="margin:0 0 0.75rem;font-size:1rem">What's Included</h3>
-              <div id="included-root" data-included-root style="margin-bottom:1.75rem">
-                <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem">
-                  <input type="text" class="haibo-input" data-chip-input placeholder="Park fees — All national park entrance fees" style="flex:1" />
-                  <button type="button" class="haibo-btn haibo-btn--ghost" data-chip-add>+ Add</button>
-                </div>
-                <div class="haibo-chips" data-chip-list></div>
-              </div>
-
-              <h3 style="margin:0 0 0.75rem;font-size:1rem">What's Excluded</h3>
-              <div id="excluded-root" data-excluded-root style="margin-bottom:1.75rem">
-                <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem">
-                  <input type="text" class="haibo-input" data-chip-input placeholder="International flights" style="flex:1" />
-                  <button type="button" class="haibo-btn haibo-btn--ghost" data-chip-add>+ Add</button>
-                </div>
-                <div class="haibo-chips" data-chip-list></div>
-              </div>
-
-              <div id="itinerary-root" data-itinerary-root style="margin-bottom:1.75rem">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
-                  <h3 style="margin:0;font-size:1rem">Itinerary</h3>
-                  <button type="button" class="haibo-btn haibo-btn--ghost haibo-btn--sm" data-add-day>+ Add Day</button>
-                </div>
-                <div data-itinerary-list></div>
-              </div>
-
-              <div id="important-info-root" data-important-info-root>
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
-                  <h3 style="margin:0;font-size:1rem">Important Information rows</h3>
-                  <button type="button" class="haibo-btn haibo-btn--ghost haibo-btn--sm" data-add-info>+ Add Row</button>
-                </div>
-                <div data-info-list></div>
-              </div>
-            </section>
-
-            <section class="haibo-form-panel" data-panel="packages" hidden>
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-                <h2 style="margin:0">Safari Packages</h2>
-                <button type="button" class="haibo-btn haibo-btn--ghost haibo-btn--sm" data-add-package>+ Add Package</button>
-              </div>
-              <div data-packages-list></div>
-            </section>
-
-            <section class="haibo-form-panel" data-panel="experiences" hidden>
-              <h2>Experience</h2>
-              <div data-exp-meta class="haibo-grid-2" style="margin-bottom:1rem">
-                <div class="haibo-field"><label>Label</label><input class="haibo-input" data-exp-label style="width:100%" /></div>
-                <div class="haibo-field"><label>Section title</label><input class="haibo-input" data-exp-title style="width:100%" /></div>
-              </div>
-              <div class="haibo-field"><label>Intro</label><textarea class="haibo-input" data-exp-intro rows="2" style="width:100%"></textarea></div>
-              <div data-exp-items></div>
-              <button type="button" class="haibo-btn haibo-btn--ghost haibo-btn--sm" data-add-exp-item style="margin-top:0.75rem">+ Add Experience</button>
-            </section>
-
             <section class="haibo-form-panel" data-panel="seo" hidden>
-              <h2>SEO &amp; Meta</h2>
+              <h2>SEO</h2>
               <div class="haibo-field">
-                <label>Sort order (homepage listing)</label>
+                <label>SEO Title</label>
+                <input class="haibo-input" name="seoTitle" style="width:100%" maxlength="70" placeholder="Leave blank to use the default template" />
+              </div>
+              <div class="haibo-field">
+                <label>Meta Description</label>
+                <textarea class="haibo-input" name="metaDescription" rows="3" maxlength="160" style="width:100%" placeholder="Leave blank to use the default template"></textarea>
+              </div>
+              <div class="haibo-field">
+                <label>Sort order (listing)</label>
                 <input class="haibo-input" name="order" type="number" value="0" style="width:100%;max-width:120px" />
               </div>
-              <p class="admin-muted" style="color:#9ca3af;font-size:0.85rem">Slug is used in the public URL: /destinations/your-slug</p>
+              <p class="admin-muted" style="color:#9ca3af;font-size:0.85rem;margin-top:0.75rem">Social share image uses the hero image automatically.</p>
             </section>
 
             <section class="haibo-form-panel" data-panel="status" hidden>
               <h2>Status</h2>
-              <label class="admin-check" style="display:flex;align-items:center;gap:0.5rem;font-size:1rem">
-                <input type="checkbox" name="active" checked style="width:18px;height:18px" />
-                Published on live website
-              </label>
-              <p style="color:#9ca3af;font-size:0.85rem;margin-top:0.75rem">Unpublished destinations stay in the CMS but are hidden from visitors.</p>
+              <div class="haibo-field" style="max-width:20rem">
+                <label>Publish status</label>
+                <select class="haibo-select" name="publishStatus" style="width:100%">
+                  <option value="published">Published</option>
+                  <option value="draft">Draft</option>
+                  <option value="archived">Archived</option>
+                </select>
+              </div>
+              <p style="color:#9ca3af;font-size:0.85rem;margin-top:0.75rem">Draft and Archived destinations stay in the CMS but are hidden from the live website.</p>
             </section>
           </div>
         </form>
@@ -266,6 +289,6 @@
   <script src="/js/firebase-config.js"></script>
   <script src="/js/destinations-data.js"></script>
   <script src="/js/haibo-defaults.js"></script>
-  <script type="module" src="/admin/js/destination-edit-page.mjs?v=11"></script>
+  <script type="module" src="/admin/js/destination-edit-page.mjs?v=12"></script>
 </body>
 </html>

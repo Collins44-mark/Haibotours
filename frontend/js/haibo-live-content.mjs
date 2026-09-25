@@ -15,7 +15,8 @@ export function haiboNormalizeFirestoreDestination(doc) {
   const cardImage = sanitizeUrl(doc.cardImage || doc.image || doc.imageUrl || '');
   const heroImage = sanitizeUrl(doc.heroImage || doc.hero_image || '') || cardImage;
   const id = String(doc.id).trim().toLowerCase().replace(/\s+/g, '-');
-  const showOnSite = doc.active !== false && doc.status !== 'draft';
+  const showOnSite =
+    doc.active !== false && doc.status !== 'draft' && doc.status !== 'archived';
 
   return {
     ...doc,
@@ -37,9 +38,16 @@ export function haiboNormalizeFirestoreDestination(doc) {
     excluded: Array.isArray(doc.excluded) ? doc.excluded : [],
     itinerary: Array.isArray(doc.itinerary) ? doc.itinerary : [],
     importantInfo: Array.isArray(doc.importantInfo) ? doc.importantInfo : [],
-    overview: String(doc.overview || '').trim(),
+    overview: String(doc.overview || doc.description || '').trim(),
     mapUrl: String(doc.mapUrl || doc.mapEmbed || '').trim(),
     mapQuery: String(doc.mapQuery || '').trim(),
+    duration: String(doc.duration || '').trim(),
+    price: String(doc.price || '').trim(),
+    currency: String(doc.currency || 'USD').trim() || 'USD',
+    priceNote: String(doc.priceNote || doc.priceType || '').trim(),
+    priceType: String(doc.priceType || doc.priceNote || '').trim(),
+    seoTitle: String(doc.seoTitle || '').trim(),
+    metaDescription: String(doc.metaDescription || '').trim(),
     startingPoint: String(doc.startingPoint || '').trim(),
     endingPoint: String(doc.endingPoint || '').trim(),
     groupSize: String(doc.groupSize || '').trim(),

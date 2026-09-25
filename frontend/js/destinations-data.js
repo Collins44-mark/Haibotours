@@ -498,12 +498,6 @@ function haiboResolveCardImage(dest) {
 }
 
 function haiboDestinationDurationLabel(dest) {
-  const name = String(dest?.name || '').trim();
-  const fromName = name.match(/(\d+)\s*Days?/i);
-  if (fromName) {
-    const n = Number(fromName[1]);
-    return n === 1 ? '1 Day' : `${n} Days`;
-  }
   if (dest?.duration && String(dest.duration).trim()) {
     const raw = String(dest.duration).trim();
     const match = raw.match(/(\d+)\s*Days?/i);
@@ -512,6 +506,12 @@ function haiboDestinationDurationLabel(dest) {
       return n === 1 ? '1 Day' : `${n} Days`;
     }
     return raw;
+  }
+  const name = String(dest?.name || '').trim();
+  const fromName = name.match(/(\d+)\s*Days?/i);
+  if (fromName) {
+    const n = Number(fromName[1]);
+    return n === 1 ? '1 Day' : `${n} Days`;
   }
   const pkgs = Array.isArray(dest?.packages) ? dest.packages : [];
   const preferred =
@@ -556,6 +556,17 @@ function haiboDestinationPreferredPackage(dest) {
 }
 
 function haiboDestinationStartingPrice(dest) {
+  if (dest?.price && String(dest.price).trim()) {
+    const note = String(dest.priceNote || dest.priceType || 'per person')
+      .replace(/^·\s*/, '')
+      .trim();
+    const shortNote = /per person/i.test(note)
+      ? 'per person'
+      : /group/i.test(note)
+        ? 'per group'
+        : note || 'per person';
+    return { price: String(dest.price).trim(), note: shortNote };
+  }
   const pkg = haiboDestinationPreferredPackage(dest);
   if (!pkg?.price) return null;
   const note = String(pkg.priceNote || 'per person')
@@ -688,6 +699,8 @@ function haiboDestinationImportantInfo(dest) {
 }
 
 function haiboDestinationHeroSubtitle(dest) {
+  const subtitle = String(dest?.subtitle || '').trim();
+  if (subtitle) return subtitle.toUpperCase();
   if (Array.isArray(dest?.highlights) && dest.highlights.length) {
     return dest.highlights
       .map((h) => String(h || '').trim())
@@ -696,8 +709,7 @@ function haiboDestinationHeroSubtitle(dest) {
       .join(', ')
       .toUpperCase();
   }
-  const subtitle = String(dest?.subtitle || '').trim();
-  return subtitle ? subtitle.toUpperCase() : '';
+  return '';
 }
 
 window.haiboDestinationDurationLabel = haiboDestinationDurationLabel;

@@ -8,8 +8,6 @@ import { protectAdminPage } from './admin-gate.mjs';
 import { renderSidebar, initSidebar, userDisplayFromAuth } from './admin-layout.mjs';
 import {
   initHighlightsChips,
-  initPackagesBuilder,
-  initExperienceBuilder,
   initItineraryBuilder,
   initImportantInfoBuilder,
 } from './admin-form-builders.mjs';
@@ -18,6 +16,9 @@ import {
   saveDestinationRecord,
   collectDestinationPayload,
   deleteDestinationById,
+  allocateUniqueDestinationId,
+  parsePriceFieldsFromDestination,
+  mergeDestinationsForAdmin,
 } from './admin-destinations.mjs';
 import { confirmDialog } from './admin-ui.mjs';
 import { initDestinationGallery, normalizeGalleryItems } from './admin-destination-gallery.mjs';
@@ -27,14 +28,15 @@ import { bindUnsavedWarning } from './admin-ui.mjs';
 
 const LIST_URL = '/admin/destinations/index.html';
 const emptyBuilders = {
-  highlights: { getValues: () => [] },
   included: { getValues: () => [] },
   excluded: { getValues: () => [] },
   itinerary: { getValues: () => [] },
   importantInfo: { getValues: () => [] },
-  packages: { getValues: () => [] },
-  experience: { getValues: () => ({ label: '', title: '', intro: '', items: [] }) },
 };
+
+/** Preserved legacy fields not shown in the simplified editor. */
+let preservedPackages = [];
+let preservedExperience = { label: '', title: '', intro: '', items: [] };
 
 let dirty = false;
 let saving = false;
@@ -118,9 +120,9 @@ async function save() {
     const form = document.getElementById('form-edit');
     if (!form) throw new Error('Edit form not found. Refresh the page.');
 
-    const payload = collectDestinationPayload(form, builders);
+    const payload = collectPayloadForSave(form);
     if (!payload.name?.trim()) throw new Error('Destination name is required');
-    if (!payload.id?.trim()) throw new Error('Slug is required');
+    if (!payload.id?.trim()) throw new Error('Could not create a destination URL. Check the name and try again.');
 
     const saved = await saveDestinationRecord(payload);
     dirty = false;
@@ -148,6 +150,20 @@ async function save() {
 
 window.haiboSaveDestination = () => void save();
 
+function collectPayloadForSave(form) {
+  const existingIds = mergeDestinationsForAdmin()
+    .map((d) => d.id)
+    .filter(Boolean);
+  return collectDestinationPayload(form, builders, {
+    lockedId: editId || form.dataset.editId || '',
+    preservedPackages,
+    preservedExperience,
+    allocateUnique: editId
+      ? null
+      : (name) => allocateUniqueDestinationId(name, existingIds),
+  });
+}
+
 function initSectionNav() {
   const nav = document.getElementById('section-nav');
   const panels = document.querySelectorAll('[data-panel]');
@@ -165,18 +181,18 @@ function initSectionNav() {
 
 function initCharCounters() {
   const sub = document.querySelector('[name="subtitle"]');
-  const desc = document.querySelector('[name="description"]');
+  const overview = document.querySelector('[name="overview"]');
   const shortCount = document.getElementById('short-count');
-  const fullCount = document.getElementById('full-count');
+  const overviewCount = document.getElementById('overview-count');
   const upd = () => {
     if (shortCount) shortCount.textContent = String((sub?.value || '').length);
-    if (fullCount) fullCount.textContent = String((desc?.value || '').length);
+    if (overviewCount) overviewCount.textContent = String((overview?.value || '').length);
   };
   sub?.addEventListener('input', () => {
     upd();
     markDirty();
   });
-  desc?.addEventListener('input', () => {
+  overview?.addEventListener('input', () => {
     upd();
     markDirty();
   });
@@ -184,22 +200,7 @@ function initCharCounters() {
 }
 
 function initRichToolbar() {
-  const desc = document.querySelector('[name="description"]');
-  if (!desc) return;
-  document.querySelectorAll('[data-toolbar] [data-cmd]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const cmd = btn.dataset.cmd;
-      const start = desc.selectionStart;
-      const end = desc.selectionEnd;
-      const v = desc.value;
-      let insert = '';
-      if (cmd === 'bold') insert = '**bold**';
-      if (cmd === 'italic') insert = '_italic_';
-      if (cmd === 'ul') insert = '\n- item\n';
-      desc.value = v.slice(0, start) + insert + v.slice(end);
-      markDirty();
-    });
-  });
+  /* Overview uses a plain textarea — rich toolbar removed from visible UI. */
 }
 
 function setImagePreview(field, url) {
@@ -250,9 +251,9 @@ function bindImages() {
         const form = document.getElementById('form-edit');
         if (!form) return;
         try {
-          const payload = collectDestinationPayload(form, builders);
+          const payload = collectPayloadForSave(form);
           if (!payload.id?.trim() || !payload.name?.trim()) {
-            showToast('Image uploaded — enter name and slug, then Save Changes', 'info');
+            showToast('Image uploaded — enter a destination name, then Save Changes', 'info');
             return;
           }
           if (field === 'image') {
@@ -280,7 +281,7 @@ function bindImages() {
 async function persistGalleryOnly() {
   const form = document.getElementById('form-edit');
   if (!form) return;
-  const payload = collectDestinationPayload(form, builders);
+  const payload = collectPayloadForSave(form);
   if (!payload.id?.trim() || !payload.name?.trim()) return;
   await saveDestinationRecord(payload);
   dirty = false;
@@ -310,22 +311,17 @@ function bindBuilders(data) {
   const keepGallery = builders.gallery;
   builders = { ...emptyBuilders };
   if (keepGallery?.getValues) builders.gallery = keepGallery;
-  const hRoot = document.getElementById('highlights-root');
+
+  preservedPackages = Array.isArray(data.packages) ? JSON.parse(JSON.stringify(data.packages)) : [];
+  preservedExperience =
+    data.experience && typeof data.experience === 'object'
+      ? JSON.parse(JSON.stringify(data.experience))
+      : { label: '', title: '', intro: '', items: [] };
+
   const includedRoot = document.getElementById('included-root');
   const excludedRoot = document.getElementById('excluded-root');
   const itineraryRoot = document.getElementById('itinerary-root');
   const infoRoot = document.getElementById('important-info-root');
-  const packagesPanel = document.querySelector('[data-panel="packages"]');
-  const eRoot = document.querySelector('[data-panel="experiences"]');
-
-  try {
-    if (hRoot) {
-      initHighlightsChips(hRoot, data.highlights || []);
-      if (hRoot.getValues) builders.highlights = hRoot;
-    }
-  } catch (err) {
-    console.warn('[HAIBO] highlights builder failed', err);
-  }
 
   try {
     if (includedRoot) {
@@ -334,7 +330,9 @@ function bindBuilders(data) {
           ? data.included.map((x) =>
               typeof x === 'string' ? x : [x?.title, x?.detail || x?.text].filter(Boolean).join(' — ')
             )
-          : [];
+          : Array.isArray(preservedPackages[0]?.features)
+            ? preservedPackages[0].features.map(String)
+            : [];
       initHighlightsChips(includedRoot, seed);
       if (includedRoot.getValues) builders.included = includedRoot;
     }
@@ -375,31 +373,10 @@ function bindBuilders(data) {
     console.warn('[HAIBO] important info builder failed', err);
   }
 
-  try {
-    if (packagesPanel) {
-      initPackagesBuilder(packagesPanel, data.packages || []);
-      if (packagesPanel.getValues) builders.packages = packagesPanel;
-    }
-  } catch (err) {
-    console.warn('[HAIBO] packages builder failed', err);
-  }
-
-  try {
-    if (eRoot) {
-      initExperienceBuilder(eRoot, data.experience || {});
-      if (eRoot.getValues) builders.experience = eRoot;
-    }
-  } catch (err) {
-    console.warn('[HAIBO] experience builder failed', err);
-  }
-
-  hRoot?.addEventListener('change', markDirty);
   includedRoot?.addEventListener('change', markDirty);
   excludedRoot?.addEventListener('change', markDirty);
   itineraryRoot?.addEventListener('change', markDirty);
   infoRoot?.addEventListener('change', markDirty);
-  packagesPanel?.addEventListener('change', markDirty);
-  eRoot?.addEventListener('change', markDirty);
 }
 
 function fillForm(data) {
@@ -407,14 +384,12 @@ function fillForm(data) {
   if (!form) return;
 
   form.dataset.editId = editId || data.id || '';
-  if (!editId) form.querySelector('[name="id"]').disabled = false;
 
   const nameInput = form.querySelector('[name="name"]');
   const idInput = form.querySelector('[name="id"]');
   if (nameInput) nameInput.value = data.name || '';
   if (idInput) {
     idInput.value = data.id || '';
-    idInput.disabled = Boolean(editId);
   }
 
   const regionSel = form.querySelector('[name="region"]');
@@ -435,37 +410,43 @@ function fillForm(data) {
     bestSel.value = bestVal;
   }
 
-  const sub = form.querySelector('[name="subtitle"]');
-  if (sub) sub.value = data.subtitle || data.description?.slice(0, 160) || '';
-  const desc = form.querySelector('[name="description"]');
-  if (desc) desc.value = data.description || '';
-  const overview = form.querySelector('[name="overview"]');
-  if (overview) overview.value = data.overview || '';
-  const mapUrl = form.querySelector('[name="mapUrl"]');
-  if (mapUrl) mapUrl.value = data.mapUrl || '';
-  const mapQuery = form.querySelector('[name="mapQuery"]');
-  if (mapQuery) mapQuery.value = data.mapQuery || '';
-  const startingPoint = form.querySelector('[name="startingPoint"]');
-  if (startingPoint) startingPoint.value = data.startingPoint || '';
-  const endingPoint = form.querySelector('[name="endingPoint"]');
-  if (endingPoint) endingPoint.value = data.endingPoint || '';
-  const groupSize = form.querySelector('[name="groupSize"]');
-  if (groupSize) groupSize.value = data.groupSize || '';
-  const tourType = form.querySelector('[name="tourType"]');
-  if (tourType) tourType.value = data.tourType || '';
-  const difficulty = form.querySelector('[name="difficulty"]');
-  if (difficulty) difficulty.value = data.difficulty || '';
-  const importantNotes = form.querySelector('[name="importantNotes"]');
-  if (importantNotes) importantNotes.value = data.importantNotes || '';
-  const order = form.querySelector('[name="order"]');
-  if (order) order.value = data.order ?? 0;
-  const active = form.querySelector('[name="active"]');
-  if (active) active.checked = data.active !== false;
+  const pricing = parsePriceFieldsFromDestination(data);
+  const setVal = (name, value) => {
+    const el = form.querySelector(`[name="${name}"]`);
+    if (el) el.value = value ?? '';
+  };
+
+  setVal('subtitle', data.subtitle || '');
+  setVal('overview', data.overview || data.description || '');
+  setVal('duration', pricing.duration);
+  setVal('price', pricing.price);
+  setVal('currency', pricing.currency || 'USD');
+  setVal('priceType', pricing.priceType || 'per person');
+  setVal('mapUrl', data.mapUrl || '');
+  setVal('mapQuery', data.mapQuery || '');
+  setVal('startingPoint', data.startingPoint || '');
+  setVal('endingPoint', data.endingPoint || '');
+  setVal('groupSize', data.groupSize || '');
+  setVal('tourType', data.tourType || '');
+  setVal('difficulty', data.difficulty || '');
+  setVal('importantNotes', data.importantNotes || '');
+  setVal('seoTitle', data.seoTitle || '');
+  setVal('metaDescription', data.metaDescription || '');
+  setVal('order', data.order ?? 0);
+
+  const statusSel = form.querySelector('[name="publishStatus"]');
+  if (statusSel) {
+    if (data.status === 'archived') statusSel.value = 'archived';
+    else if (data.active === false || data.status === 'draft') statusSel.value = 'draft';
+    else statusSel.value = 'published';
+  }
+
   setImagePreview('image', data.image || '');
   setImagePreview('heroImage', data.heroImage || data.image || '');
 
   bindBuilders(data);
   bindGallery(data);
+  updateUrlPreview();
 
   const bc = document.getElementById('bc-name');
   if (bc) bc.textContent = data.name || 'New';
@@ -501,6 +482,10 @@ async function loadData() {
     region: '',
     description: '',
     overview: '',
+    duration: '',
+    price: '',
+    currency: 'USD',
+    priceType: 'per person',
     mapUrl: '',
     mapQuery: '',
     startingPoint: '',
@@ -509,6 +494,8 @@ async function loadData() {
     tourType: '',
     difficulty: '',
     importantNotes: '',
+    seoTitle: '',
+    metaDescription: '',
     packages: [],
     experience: { label: '', title: '', intro: '', items: [] },
     highlights: [],
@@ -518,22 +505,39 @@ async function loadData() {
     importantInfo: [],
     gallery: [],
     active: true,
+    status: 'published',
     order: 0,
   };
 }
 
+function updateUrlPreview() {
+  const preview = document.getElementById('url-preview');
+  const name = document.querySelector('[name="name"]')?.value?.trim() || '';
+  const idInput = document.querySelector('[name="id"]');
+  if (!preview) return;
+  if (editId) {
+    preview.hidden = false;
+    preview.textContent = `Public URL: /destinations/${editId}`;
+    return;
+  }
+  const slug = slugify(name);
+  if (!slug) {
+    preview.hidden = true;
+    preview.textContent = '';
+    return;
+  }
+  preview.hidden = false;
+  preview.textContent = `Public URL will be: /destinations/${slug}`;
+  if (idInput && !editId) idInput.value = slug;
+}
+
 function nameInputSlugSync() {
   const name = document.querySelector('[name="name"]');
-  const id = document.querySelector('[name="id"]');
-  if (!name || !id || editId) return;
+  if (!name) return;
   name.addEventListener('input', () => {
-    if (!id.value || id.dataset.touched !== '1') {
-      id.value = slugify(name.value);
-    }
+    updateUrlPreview();
   });
-  id.addEventListener('input', () => {
-    id.dataset.touched = '1';
-  });
+  updateUrlPreview();
 }
 
 async function bootPage(user) {
