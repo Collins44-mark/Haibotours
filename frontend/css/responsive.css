@@ -554,8 +554,8 @@ p,
 
 /* Very small phones */
 @media (max-width: 374px) {
-  #home-destinations,
-  #all-destinations,
+  #home-destinations:not(.destinations-catalog-grid),
+  #all-destinations:not(.destinations-catalog-grid),
   #contact-cards {
     gap: 0.55rem !important;
   }
@@ -628,9 +628,9 @@ p,
     min-height: clamp(18rem, 44vh, 28rem);
   }
 
-  /* Grids: 2 columns on tablet */
-  #home-destinations,
-  #all-destinations {
+  /* Grids: 2 columns on tablet (legacy grids only) */
+  #home-destinations:not(.destinations-catalog-grid),
+  #all-destinations:not(.destinations-catalog-grid) {
     grid-template-columns: repeat(2, 1fr) !important;
     gap: 1.25rem !important;
   }

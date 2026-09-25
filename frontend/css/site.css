@@ -57,11 +57,11 @@ body {
   transition: 0.7s;
 }
 
-.destination-card:hover img {
+.destination-card:not(.dest-card-catalog):hover img {
   transform: scale(1.1);
 }
 
-.destination-card:hover {
+.destination-card:not(.dest-card-catalog):hover {
   transform: translateY(-8px);
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
 }

@@ -497,36 +497,78 @@ function haiboResolveCardImage(dest) {
   return '';
 }
 
-/** Safari card HTML — shared by app.js and paint routine */
+function haiboDestinationDurationLabel(dest) {
+  if (dest?.duration && String(dest.duration).trim()) return String(dest.duration).trim();
+  const pkgs = Array.isArray(dest?.packages) ? dest.packages : [];
+  const preferred =
+    pkgs.find((p) => p?.popular && p?.duration) || pkgs.find((p) => p?.duration) || null;
+  if (!preferred?.duration) return '';
+  const raw = String(preferred.duration).trim();
+  const match = raw.match(/(\d+)\s*Days?/i);
+  if (match) {
+    const n = Number(match[1]);
+    return n === 1 ? '1 Day' : `${n} Days`;
+  }
+  return raw;
+}
+
+function haiboDestinationCardDescription(dest) {
+  if (dest?.subtitle && String(dest.subtitle).trim()) return String(dest.subtitle).trim();
+  if (Array.isArray(dest?.highlights) && dest.highlights.length) {
+    return dest.highlights
+      .map((h) => String(h || '').trim())
+      .filter(Boolean)
+      .slice(0, 4)
+      .join(', ');
+  }
+  return '';
+}
+
+const DEST_CARD_PIN_SVG =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-5.4 7-11a7 7 0 10-14 0c0 5.6 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>';
+
+const DEST_CARD_CALENDAR_SVG =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M8 3.5v3.5M16 3.5v3.5M3.5 10h17"/></svg>';
+
+/** Premium catalog card — shared by app.js and paint routine (no price on listing) */
 function haiboBuildDestinationCard(dest) {
   const href = destinationDetailUrl(dest.id);
   const imageUrl = haiboResolveCardImage(dest);
-  const bg = imageUrl.replace(/'/g, '%27').replace(/"/g, '%22');
   const imgSrc =
     imageUrl && typeof window.haiboOptimizeImage === 'function'
-      ? window.haiboOptimizeImage(imageUrl, { width: 800 })
+      ? window.haiboOptimizeImage(imageUrl, { width: 1100 })
       : imageUrl;
-  const alt = `${dest.name} safari — ${dest.subtitle}`;
-  const fbAttr = '';
+  const location = String(dest.region || '').trim();
+  const duration = haiboDestinationDurationLabel(dest);
+  const title = String(dest.name || '').trim();
+  const description = haiboDestinationCardDescription(dest);
+  const altParts = [title, dest.subtitle, location].filter(Boolean);
+  const alt = `${altParts.join(' — ')} safari destination`;
   const img = imageUrl
-    ? `<img src="${haiboEscapeHtml(imgSrc)}" alt="${haiboEscapeHtml(alt)}" loading="lazy" decoding="async" class="haibo-media dest-card-img w-full object-cover" width="800" height="533"${fbAttr}>`
+    ? `<img src="${haiboEscapeHtml(imgSrc)}" alt="${haiboEscapeHtml(alt)}" loading="lazy" decoding="async" class="haibo-media dest-card-catalog__img" width="1100" height="825">`
     : '';
-  const price =
-    Array.isArray(dest.packages) && dest.packages[0]?.price
-      ? dest.packages[0].price
-      : 'Contact us';
+  const locationPill = location
+    ? `<span class="dest-card-catalog__pill dest-card-catalog__pill--location">${DEST_CARD_PIN_SVG}<span>${haiboEscapeHtml(location)}</span></span>`
+    : '<span></span>';
+  const daysPill = duration
+    ? `<span class="dest-card-catalog__pill dest-card-catalog__pill--days">${DEST_CARD_CALENDAR_SVG}<span>${haiboEscapeHtml(duration)}</span></span>`
+    : '';
 
   return `
-    <a href="${haiboEscapeHtml(href)}" class="destination-card dest-card-premium glass rounded-[30px] overflow-hidden">
-      <div class="relative dest-card-media"${bg ? ` style="background-image:url('${bg}')"` : ''}>
+    <a href="${haiboEscapeHtml(href)}" class="destination-card dest-card-catalog" aria-label="View details for ${haiboEscapeHtml(title)}">
+      <div class="dest-card-catalog__media${imageUrl ? '' : ' dest-card-catalog__media--empty'}">
         ${img}
-        <div class="dest-card-overlay overlay-dark" aria-hidden="true"></div>
-        <div class="dest-card-shine" aria-hidden="true"></div>
-        <div class="dest-card-body absolute bottom-6 left-6 right-6">
-          <p class="dest-card-region text-xs orange uppercase tracking-[3px] mb-1">${haiboEscapeHtml(dest.region)}</p>
-          <h3 class="dest-card-title text-2xl font-semibold mb-1">${haiboEscapeHtml(dest.name)}</h3>
-          <p class="dest-card-subtitle text-gray-300">${haiboEscapeHtml(dest.subtitle)}</p>
-          <p class="dest-card-price text-sm mt-3">From <span>${haiboEscapeHtml(price)}</span></p>
+        <div class="dest-card-catalog__overlay" aria-hidden="true"></div>
+        <div class="dest-card-catalog__content">
+          <div class="dest-card-catalog__meta">
+            ${locationPill}
+            ${daysPill}
+          </div>
+          <div class="dest-card-catalog__footer">
+            <h3 class="dest-card-catalog__title">${haiboEscapeHtml(title)}</h3>
+            ${description ? `<p class="dest-card-catalog__desc">${haiboEscapeHtml(description)}</p>` : ''}
+            <span class="dest-card-catalog__cta">View Details <span class="dest-card-catalog__cta-arrow" aria-hidden="true">→</span></span>
+          </div>
         </div>
       </div>
     </a>`;

@@ -79,9 +79,10 @@ img {
   height: auto;
 }
 
-/* Gallery cards: fill aspect-ratio frame (avoid black gaps from height:auto) */
+/* Gallery / destination catalog cards: fill aspect-ratio frame (avoid black gaps from height:auto) */
 .gallery-media-card__img,
-.gallery-media-card__video {
+.gallery-media-card__video,
+.dest-card-catalog__img {
   position: absolute;
   inset: 0;
   max-width: none !important;

@@ -591,26 +591,31 @@ function renderDestinationCard(dest) {
   }
   const href = destinationDetailUrl(dest.id);
   const imageUrl = resolveDestinationImage(dest);
-  const alt = `${dest.name} safari — ${dest.subtitle}`;
-  const bg = escapeAttrUrl(imageUrl);
+  const title = escapeHtml(dest.name || '');
+  const location = escapeHtml(dest.region || '');
+  const description = escapeHtml(dest.subtitle || '');
+  const alt = `${dest.name || 'Safari'} — ${dest.subtitle || dest.region || 'Tanzania'} safari destination`;
   const imgSrc =
     typeof window.haiboOptimizeImage === 'function'
-      ? window.haiboOptimizeImage(imageUrl, { width: 900 })
+      ? window.haiboOptimizeImage(imageUrl, { width: 1100 })
       : imageUrl;
   const img = imageUrl
-    ? `<img src="${escapeAttrUrl(imgSrc)}" alt="${alt.replace(/"/g, '&quot;')}" loading="lazy" decoding="async" class="haibo-media dest-card-img w-full object-cover" width="900" height="600">`
+    ? `<img src="${escapeAttrUrl(imgSrc)}" alt="${escapeHtml(alt)}" loading="lazy" decoding="async" class="haibo-media dest-card-catalog__img" width="1100" height="825">`
     : '';
   return `
-    <a href="${href}" class="destination-card dest-card-premium glass rounded-[30px] overflow-hidden">
-      <div class="relative dest-card-media"${bg ? ` style="background-image:url('${bg}')"` : ''}>
+    <a href="${href}" class="destination-card dest-card-catalog" aria-label="View details for ${title}">
+      <div class="dest-card-catalog__media${imageUrl ? '' : ' dest-card-catalog__media--empty'}">
         ${img}
-        <div class="dest-card-overlay overlay-dark" aria-hidden="true"></div>
-        <div class="dest-card-shine" aria-hidden="true"></div>
-        <div class="dest-card-body absolute bottom-6 left-6 right-6">
-          <p class="dest-card-region text-xs orange uppercase tracking-[3px] mb-1">${dest.region}</p>
-          <h3 class="dest-card-title text-2xl font-semibold mb-1">${dest.name}</h3>
-          <p class="dest-card-subtitle text-gray-300">${dest.subtitle}</p>
-          <p class="dest-card-price text-sm mt-3">From <span>${dest.packages?.[0]?.price || 'Contact us'}</span></p>
+        <div class="dest-card-catalog__overlay" aria-hidden="true"></div>
+        <div class="dest-card-catalog__content">
+          <div class="dest-card-catalog__meta">
+            ${location ? `<span class="dest-card-catalog__pill dest-card-catalog__pill--location"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 21s7-5.4 7-11a7 7 0 10-14 0c0 5.6 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></svg><span>${location}</span></span>` : '<span></span>'}
+          </div>
+          <div class="dest-card-catalog__footer">
+            <h3 class="dest-card-catalog__title">${title}</h3>
+            ${description ? `<p class="dest-card-catalog__desc">${description}</p>` : ''}
+            <span class="dest-card-catalog__cta">View Details <span class="dest-card-catalog__cta-arrow" aria-hidden="true">→</span></span>
+          </div>
         </div>
       </div>
     </a>

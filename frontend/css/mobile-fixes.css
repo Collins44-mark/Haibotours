@@ -34,7 +34,7 @@ body {
   box-sizing: border-box;
 }
 
-img:not(.dest-card-img):not(.gallery-media-card__img):not(.gallery-media-card__video),
+img:not(.dest-card-img):not(.dest-card-catalog__img):not(.gallery-media-card__img):not(.gallery-media-card__video),
 video:not(.gallery-media-card__video),
 svg,
 canvas,
@@ -45,7 +45,8 @@ iframe {
 
 /* Gallery / destination gallery tiles — always fill aspect-ratio frame */
 .gallery-media-card__img,
-.gallery-media-card__video {
+.gallery-media-card__video,
+.dest-card-catalog__img {
   max-width: none !important;
   width: 100% !important;
   height: 100% !important;
@@ -54,7 +55,7 @@ iframe {
   display: block !important;
 }
 
-.haibo-media:not(.dest-card-img) {
+.haibo-media:not(.dest-card-img):not(.dest-card-catalog__img) {
   width: 100%;
   max-width: 100%;
 }
