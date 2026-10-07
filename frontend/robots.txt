@@ -1,15 +1,10 @@
-# HAIBO Tours & Safaris
+# Haibo Africa Tours — https://haiboafricatours.co.tz
 User-agent: *
 Allow: /
+Disallow: /admin
 Disallow: /admin/
 Disallow: /admin-login
-Disallow: /frontend/admin/
+Disallow: /admin-dashboard
+Disallow: /api/
 
-# Google
-User-agent: Googlebot
-Allow: /
-
-User-agent: Googlebot-Image
-Allow: /
-
-Sitemap: https://haibotours.com/sitemap.xml
+Sitemap: https://haiboafricatours.co.tz/sitemap.xml

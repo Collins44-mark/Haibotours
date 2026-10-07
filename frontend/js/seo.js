@@ -4,13 +4,13 @@
 (function () {
   'use strict';
 
+  /** Always the production origin — never the current host (localhost, *.vercel.app, www). */
   function getSiteUrl() {
-    const configured = typeof HAIBO_SEO !== 'undefined' && HAIBO_SEO.siteUrl;
-    if (configured && !configured.includes('localhost')) return configured.replace(/\/$/, '');
-    if (typeof window !== 'undefined' && window.location?.origin) {
-      return window.location.origin.replace(/\/$/, '');
-    }
-    return 'https://haibotours.com';
+    const configured =
+      (typeof HAIBO_SEO !== 'undefined' && HAIBO_SEO.siteUrl) ||
+      (typeof window !== 'undefined' && window.HAIBO_SITE_URL) ||
+      'https://haiboafricatours.co.tz';
+    return String(configured).replace(/\/$/, '');
   }
 
   function absoluteUrl(path) {
@@ -87,19 +87,39 @@
     document.head.appendChild(script);
   }
 
+  function defaultOgImage() {
+    return {
+      url: absoluteUrl(HAIBO_SEO.defaultOgImage),
+      width: HAIBO_SEO.defaultOgImageWidth,
+      height: HAIBO_SEO.defaultOgImageHeight,
+      alt: `${HAIBO_SEO.siteName} logo`,
+    };
+  }
+
+  function removeMeta(selector) {
+    document.querySelector(selector)?.remove();
+  }
+
   function applyMetaBundle({ title, description, canonical, image, type, noindex }) {
     document.title = title;
     upsertMeta('meta[name="description"]', { name: 'description', content: description });
     upsertMeta('meta[name="robots"]', {
       name: 'robots',
-      content: noindex ? 'noindex, nofollow' : 'index, follow, max-image-preview:large',
+      content: noindex ? 'noindex, follow' : 'index, follow, max-image-preview:large',
     });
 
-    setLinkRel('canonical', canonical);
+    if (noindex) {
+      document.querySelector('link[rel="canonical"]')?.remove();
+      removeMeta('meta[property="og:url"]');
+    } else {
+      setLinkRel('canonical', canonical);
+      upsertMeta('meta[property="og:url"]', { property: 'og:url', content: canonical });
+    }
+
+    const img = image?.url ? image : defaultOgImage();
 
     upsertMeta('meta[property="og:title"]', { property: 'og:title', content: title });
     upsertMeta('meta[property="og:description"]', { property: 'og:description', content: description });
-    upsertMeta('meta[property="og:url"]', { property: 'og:url', content: canonical });
     upsertMeta('meta[property="og:type"]', { property: 'og:type', content: type || 'website' });
     upsertMeta('meta[property="og:site_name"]', {
       property: 'og:site_name',
@@ -109,60 +129,71 @@
       property: 'og:locale',
       content: HAIBO_SEO.locale,
     });
-    upsertMeta('meta[property="og:image"]', { property: 'og:image', content: image });
-    upsertMeta('meta[property="og:image:alt"]', {
-      property: 'og:image:alt',
-      content: `${HAIBO_SEO.siteName} — Tanzania safari`,
-    });
+    upsertMeta('meta[property="og:image"]', { property: 'og:image', content: img.url });
+    upsertMeta('meta[property="og:image:alt"]', { property: 'og:image:alt', content: img.alt });
+    if (img.width && img.height) {
+      upsertMeta('meta[property="og:image:width"]', { property: 'og:image:width', content: String(img.width) });
+      upsertMeta('meta[property="og:image:height"]', { property: 'og:image:height', content: String(img.height) });
+    } else {
+      removeMeta('meta[property="og:image:width"]');
+      removeMeta('meta[property="og:image:height"]');
+    }
 
     upsertMeta('meta[name="twitter:card"]', { name: 'twitter:card', content: 'summary_large_image' });
     upsertMeta('meta[name="twitter:title"]', { name: 'twitter:title', content: title });
     upsertMeta('meta[name="twitter:description"]', { name: 'twitter:description', content: description });
-    upsertMeta('meta[name="twitter:image"]', { name: 'twitter:image', content: image });
-    if (HAIBO_SEO.twitterSite) {
-      upsertMeta('meta[name="twitter:site"]', { name: 'twitter:site', content: HAIBO_SEO.twitterSite });
+    upsertMeta('meta[name="twitter:image"]', { name: 'twitter:image', content: img.url });
+    upsertMeta('meta[name="twitter:image:alt"]', { name: 'twitter:image:alt', content: img.alt });
+  }
+
+  /** https URL with tracking query params removed, or '' if not a valid public profile URL. */
+  function cleanProfileUrl(url) {
+    try {
+      const u = new URL(String(url || '').trim());
+      if (u.protocol !== 'https:' && u.protocol !== 'http:') return '';
+      u.protocol = 'https:';
+      u.search = '';
+      u.hash = '';
+      return u.toString().replace(/\/$/, '');
+    } catch {
+      return '';
     }
   }
 
+  /** Only values present in the live CMS (contact/socials) are emitted; nothing is guessed. */
   function businessJsonLd() {
     const b = HAIBO_SEO.business;
-    const logo = absoluteUrl(
-      typeof HAIBO_CONFIG !== 'undefined' && HAIBO_CONFIG.logoPath
-        ? HAIBO_CONFIG.logoPath
-        : '/assets/logo/logo.png'
-    );
-    return {
+    const cfg = typeof HAIBO_CONFIG !== 'undefined' ? HAIBO_CONFIG : {};
+    const contact = window.HAIBO_CONTENT?.contact || {};
+    const socials = window.HAIBO_CONTENT?.socials || {};
+    const logoPath = cfg.logoPath || HAIBO_SEO.defaultOgImage;
+    const logo = /^https?:\/\//.test(logoPath) ? logoPath : absoluteUrl(logoPath);
+
+    const data = {
       '@context': 'https://schema.org',
       '@type': 'TravelAgency',
       '@id': `${getSiteUrl()}/#organization`,
       name: b.name,
+      alternateName: b.alternateName,
       description: b.description,
-      url: getSiteUrl(),
+      url: `${getSiteUrl()}/`,
       logo,
-      image: HAIBO_SEO.defaultOgImage,
-      telephone: b.telephone,
-      email: b.email,
-      priceRange: b.priceRange,
-      openingHours: b.openingHours,
-      address: {
-        '@type': 'PostalAddress',
-        streetAddress: b.streetAddress,
-        addressLocality: b.addressLocality,
-        addressRegion: b.addressRegion,
-        postalCode: b.postalCode,
-        addressCountry: b.addressCountry,
-      },
-      geo: {
-        '@type': 'GeoCoordinates',
-        latitude: b.latitude,
-        longitude: b.longitude,
-      },
-      areaServed: { '@type': 'Country', name: 'Tanzania' },
-      sameAs: [
-        typeof HAIBO_CONFIG !== 'undefined' && HAIBO_CONFIG.social?.instagram,
-        typeof HAIBO_CONFIG !== 'undefined' && HAIBO_CONFIG.social?.facebook,
-      ].filter(Boolean),
+      image: logo,
+      areaServed: { '@type': 'Country', name: b.areaServed },
+      address: { '@type': 'PostalAddress', addressCountry: b.addressCountry },
     };
+
+    const phone = String(contact.phoneDisplay || '').trim();
+    if (phone) data.telephone = phone.replace(/[^\d+]/g, '');
+    const email = String(contact.email || '').trim();
+    if (email && email.includes('@')) data.email = email;
+
+    const sameAs = [socials.instagram, socials.tiktok]
+      .map(cleanProfileUrl)
+      .filter(Boolean);
+    if (sameAs.length) data.sameAs = [...new Set(sameAs)];
+
+    return data;
   }
 
   function websiteJsonLd() {
@@ -170,31 +201,34 @@
       '@context': 'https://schema.org',
       '@type': 'WebSite',
       '@id': `${getSiteUrl()}/#website`,
-      url: getSiteUrl(),
+      url: `${getSiteUrl()}/`,
       name: HAIBO_SEO.siteName,
-      description: HAIBO_SEO.business.description,
+      alternateName: HAIBO_SEO.business.alternateName,
       publisher: { '@id': `${getSiteUrl()}/#organization` },
       inLanguage: HAIBO_SEO.language,
     };
   }
 
+  function destinationDescription(dest) {
+    return String(dest.metaDescription || dest.overview || dest.description || '')
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
   function destinationJsonLd(dest, canonical) {
     const img = optimizeImageUrl(dest.heroImage || dest.image, { width: 1200 });
-    return {
+    const data = {
       '@context': 'https://schema.org',
       '@type': 'TouristTrip',
-      name: `${dest.name} Safari — ${dest.subtitle}`,
-      description: dest.description,
-      image: img,
+      name: dest.name,
       url: canonical,
-      touristType: 'Safari and wildlife travelers',
       provider: { '@id': `${getSiteUrl()}/#organization` },
-      itinerary: {
-        '@type': 'Place',
-        name: dest.name,
-        address: { '@type': 'Place', name: dest.region || 'Tanzania' },
-      },
     };
+    const desc = destinationDescription(dest);
+    if (desc) data.description = truncate(desc, 300);
+    if (img) data.image = img;
+    return data;
   }
 
   function breadcrumbJsonLd(items) {
@@ -217,77 +251,115 @@
         : typeof DESTINATIONS !== 'undefined'
           ? DESTINATIONS
           : [];
+    if (!list.length) return null;
     return {
       '@context': 'https://schema.org',
       '@type': 'ItemList',
-      name: 'Tanzania Safari Destinations',
+      name: 'Tanzania Safari & Tour Packages',
       itemListElement: list.map((d, i) => ({
         '@type': 'ListItem',
         position: i + 1,
-        name: `${d.name} — ${d.subtitle}`,
+        name: d.name,
         url: absoluteUrl(`destinations/${d.id}`),
       })),
     };
   }
 
+  function homeCrumb() {
+    return { name: 'Home', url: `${getSiteUrl()}/` };
+  }
+
+  function injectOrganizationSchemas() {
+    injectJsonLd('haibo-schema-org', businessJsonLd());
+    injectJsonLd('haibo-schema-website', websiteJsonLd());
+  }
+
+  let currentPageKey = null;
+  let currentDestination = null;
+
   function applyPageSEO(pageKey) {
     const page = HAIBO_SEO.pages[pageKey];
-    if (!page) return;
+    if (!page || !page.path) return;
+    currentPageKey = pageKey;
 
     const canonical = absoluteUrl(page.path);
-    const image = optimizeImageUrl(HAIBO_SEO.defaultOgImage, { width: 1200 });
 
     applyMetaBundle({
       title: page.title,
       description: page.description,
       canonical,
-      image,
       type: page.ogType,
     });
 
-    injectJsonLd('haibo-schema-org', businessJsonLd());
-    injectJsonLd('haibo-schema-website', websiteJsonLd());
+    injectOrganizationSchemas();
 
-    if (pageKey === 'home') {
-      /* WebSite + TravelAgency sufficient */
-    } else if (pageKey === 'destinations') {
-      injectJsonLd('haibo-schema-list', destinationsListJsonLd());
-    } else if (pageKey === 'contact') {
-      injectJsonLd('haibo-schema-local', {
-        ...businessJsonLd(),
-        '@type': ['TravelAgency', 'LocalBusiness'],
-      });
+    if (page.breadcrumb) {
+      injectJsonLd(
+        'haibo-schema-breadcrumb',
+        breadcrumbJsonLd([homeCrumb(), { name: page.breadcrumb, url: canonical }])
+      );
+    }
+
+    if (pageKey === 'destinations') {
+      const list = destinationsListJsonLd();
+      if (list) injectJsonLd('haibo-schema-list', list);
+      else removeJsonLd('haibo-schema-list');
     }
   }
 
   function applyDestinationSEO(dest) {
+    currentPageKey = 'destination';
+    currentDestination = dest;
     const page = HAIBO_SEO.pages.destination;
     const title =
       String(dest.seoTitle || '').trim() ||
       page.titleTemplate.replace('%NAME%', dest.name);
-    const customDesc = String(dest.metaDescription || '').trim();
     const desc = truncate(
-      customDesc ||
-        page.descriptionTemplate
-          .replace('%NAME%', dest.name)
-          .replace('%DESC%', dest.overview || dest.description || dest.subtitle || ''),
+      destinationDescription(dest) || page.fallbackDescription.replace('%NAME%', dest.name),
       160
     );
     const canonical = absoluteUrl(`destinations/${dest.id}`);
-    const image = optimizeImageUrl(dest.heroImage || dest.image, { width: 1200 });
+    const imgUrl = optimizeImageUrl(dest.heroImage || dest.image, { width: 1200 });
+    const image = imgUrl ? { url: imgUrl, alt: dest.name } : null;
 
-    applyMetaBundle({ title, description: desc, canonical, image, type: 'website' });
+    applyMetaBundle({ title, description: desc, canonical, image, type: page.ogType });
 
-    injectJsonLd('haibo-schema-org', businessJsonLd());
+    injectOrganizationSchemas();
     injectJsonLd('haibo-schema-trip', destinationJsonLd(dest, canonical));
     injectJsonLd(
       'haibo-schema-breadcrumb',
       breadcrumbJsonLd([
-        { name: 'Home', url: getSiteUrl() },
+        homeCrumb(),
         { name: 'Destinations', url: absoluteUrl('destinations.html') },
         { name: dest.name, url: canonical },
       ])
     );
+  }
+
+  /** Unknown, draft or removed destination slugs must not be indexed. */
+  function applyNotFoundSEO() {
+    currentPageKey = 'not-found';
+    currentDestination = null;
+    applyMetaBundle({
+      title: `Destination not available | ${HAIBO_SEO.siteName}`,
+      description: HAIBO_SEO.pages.destinations.description,
+      noindex: true,
+    });
+    removeJsonLd('haibo-schema-trip');
+    removeJsonLd('haibo-schema-breadcrumb');
+  }
+
+  /** CMS data (contact, socials, destinations) arrives after first paint — refresh schemas. */
+  function refreshSchemasFromContent() {
+    if (currentPageKey === 'destination' && currentDestination) {
+      injectOrganizationSchemas();
+    } else if (currentPageKey && HAIBO_SEO.pages[currentPageKey]?.path) {
+      injectOrganizationSchemas();
+      if (currentPageKey === 'destinations') {
+        const list = destinationsListJsonLd();
+        if (list) injectJsonLd('haibo-schema-list', list);
+      }
+    }
   }
 
   function haiboImgTag(src, alt, options) {
@@ -381,6 +453,7 @@
 
     const key = map[pageKey] || pageKey;
     if (key !== 'destination') applyPageSEO(key);
+    window.addEventListener('haiboContentUpdated', refreshSchemasFromContent);
     initLazyReveal();
     initA11y();
     enhanceImages();
@@ -391,6 +464,7 @@
   window.haiboEnhanceImages = enhanceImages;
   window.haiboApplyDestinationSEO = applyDestinationSEO;
   window.haiboApplyPageSEO = applyPageSEO;
+  window.haiboApplyNotFoundSEO = applyNotFoundSEO;
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initSEO);

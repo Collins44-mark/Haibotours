@@ -90,7 +90,7 @@ function initContactPage() {
     { icon: 'whatsapp', label: 'WhatsApp', value: 'Message us anytime', href: getWhatsAppUrl(), external: true },
     { icon: 'office', label: 'Office', value: HAIBO_CONFIG.address, href: HAIBO_CONFIG.mapUrl, external: true },
     { icon: 'hours', label: 'Hours', value: HAIBO_CONFIG.officeHours, href: null },
-    { icon: 'website', label: 'Website', value: 'haibotours.com', href: 'index.html' },
+    { icon: 'website', label: 'Website', value: 'haiboafricatours.co.tz', href: '/' },
   ];
 
   cards.innerHTML = items
@@ -978,13 +978,14 @@ function renderDestinationDetail() {
         <a href="destinations.html" class="btn-main px-8 py-4 rounded-full">View All Destinations</a>
       </section>
     `;
+    if (typeof window.haiboApplyNotFoundSEO === 'function') window.haiboApplyNotFoundSEO();
     return;
   }
 
   if (typeof window.haiboApplyDestinationSEO === 'function') {
     window.haiboApplyDestinationSEO(dest);
   } else {
-    document.title = `${dest.name} Safari | HAIBO Tours & Safaris`;
+    document.title = `${dest.name} | Haibo Africa Tours`;
   }
 
   const location = String(dest.region || '').trim();

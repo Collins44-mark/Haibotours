@@ -160,7 +160,7 @@ function initGalleryLightbox() {
     mediaWrap.innerHTML = '';
     if (type === 'image') {
       const item = images[index];
-      mediaWrap.innerHTML = `<img src="${item.src.replace('w=800', 'w=1600')}" alt="${item.title}">`;
+      mediaWrap.innerHTML = `<img src="${item.src.replace('w=800', 'w=1600')}" alt="${escapeHtml(item.title)}">`;
       caption.textContent = `${item.title} · ${item.tag}`;
     } else {
       const item = videos[index];

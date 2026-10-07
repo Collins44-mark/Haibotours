@@ -1,71 +1,67 @@
 /**
- * HAIBO SEO — site-wide defaults (update siteUrl for production domain)
+ * HAIBO SEO — site-wide defaults.
+ * Titles/descriptions must match the static <head> tags in each public HTML page.
+ * Business contact details are NOT hardcoded here: JSON-LD reads the live CMS values
+ * (HAIBO_CONFIG, filled from Firestore contact/socials) and omits anything missing.
  */
 const HAIBO_SEO = {
-  siteName: 'HAIBO Tours & Safaris',
-  /** Canonical base URL (no trailing slash). Override via HAIBO_CONFIG.siteUrl */
-  siteUrl: 'https://haibotours.com',
-  locale: 'en_TZ',
+  siteName: 'Haibo Africa Tours',
+  siteUrl:
+    (typeof HAIBO_SITE_URL !== 'undefined' && HAIBO_SITE_URL) || 'https://haiboafricatours.co.tz',
+  locale: 'en_US',
   language: 'en',
-  twitterSite: '@haibotours',
   defaultOgImage: '/assets/logo/logo.png',
+  defaultOgImageWidth: 1179,
+  defaultOgImageHeight: 731,
 
   business: {
-    name: 'HAIBO Tours & Safaris',
+    name: 'Haibo Africa Tours',
+    alternateName: 'HAIBO Tours & Safaris',
     description:
-      'Luxury Tanzania safaris, beach escapes, and cultural journeys with expert local guides based in Arusha.',
-    telephone: '+255712345678',
-    email: 'info@haibotours.com',
-    streetAddress: 'Sokoine Road',
-    addressLocality: 'Arusha',
-    addressRegion: 'Arusha',
-    postalCode: '23100',
+      'Tanzania tours and safaris, Kilimanjaro climbs and Zanzibar experiences with local guides.',
     addressCountry: 'TZ',
-    latitude: -3.3869,
-    longitude: 36.683,
-    priceRange: '$$$',
-    openingHours: 'Mo-Sa 08:00-18:00',
+    areaServed: 'Tanzania',
   },
 
   pages: {
     home: {
-      title: 'HAIBO Tours & Safaris | Luxury Tanzania Safari & Travel',
+      title: 'Haibo Africa Tours | Tanzania Tours & Safaris',
       description:
-        'Book authentic Tanzania safaris, Serengeti migration tours, Zanzibar beach holidays, and Kilimanjaro adventures with HAIBO Tours — expert guides from Arusha.',
+        'Tanzania safaris, Kilimanjaro climbs and Zanzibar trips with Haibo Africa Tours. Explore itineraries and inclusions, and plan your trip with local experts.',
       path: '/',
+      breadcrumb: null,
       ogType: 'website',
     },
     destinations: {
-      title: 'Tanzania Safari Destinations | HAIBO Tours & Safaris',
+      title: 'Tanzania Safari & Tour Packages | Haibo Africa Tours',
       description:
-        'Explore Serengeti, Ngorongoro, Zanzibar, Kilimanjaro, Tarangire, and more. Compare packages, prices, and book your Tanzania safari with HAIBO.',
+        'Browse Haibo Africa Tours packages: Serengeti migration safaris, Ngorongoro Crater, Tarangire, Mikumi, Kilimanjaro climbs and Zanzibar Stone Town experiences.',
       path: '/destinations.html',
+      breadcrumb: 'Destinations',
       ogType: 'website',
     },
     destination: {
-      titleTemplate: '%NAME% Safari Packages | HAIBO Tours & Safaris',
-      descriptionTemplate:
-        'Plan your %NAME% safari in Tanzania with HAIBO Tours. %DESC% View packages, best travel seasons, and WhatsApp booking.',
+      titleTemplate: '%NAME% | Haibo Africa Tours',
+      fallbackDescription:
+        '%NAME% with Haibo Africa Tours: itinerary, inclusions, exclusions and trip details. Contact us on WhatsApp to plan your trip.',
       pathTemplate: '/destinations/%ID%',
       ogType: 'website',
     },
     gallery: {
-      title: 'Safari Gallery | HAIBO Tours & Safaris Tanzania',
+      title: 'Safari Photo & Video Gallery | Haibo Africa Tours',
       description:
-        'Browse safari photos and guest videos from Tanzania — wildlife, landscapes, and luxury camps captured on HAIBO Tours adventures.',
+        'Photos and videos of wildlife, landscapes and safari moments across Tanzania from Haibo Africa Tours.',
       path: '/gallery.html',
+      breadcrumb: 'Gallery',
       ogType: 'website',
     },
     contact: {
-      title: 'Contact HAIBO Tours | Arusha Tanzania Safari Experts',
+      title: 'Contact Us | Haibo Africa Tours',
       description:
-        'Call, email, or WhatsApp HAIBO Tours in Arusha, Tanzania. Office hours, map, and fast safari inquiries for your next East Africa trip.',
+        'Contact Haibo Africa Tours by phone, email or WhatsApp to plan your Tanzania safari, Kilimanjaro climb or Zanzibar trip.',
       path: '/contact.html',
+      breadcrumb: 'Contact',
       ogType: 'website',
     },
   },
 };
-
-if (typeof HAIBO_CONFIG !== 'undefined' && HAIBO_CONFIG.siteUrl) {
-  HAIBO_SEO.siteUrl = HAIBO_CONFIG.siteUrl.replace(/\/$/, '');
-}

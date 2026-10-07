@@ -58,11 +58,16 @@ Mobile layouts use `frontend/css/responsive.css`, `mobile-fixes.css` (no horizon
 
 ## SEO & performance
 
-- Dynamic meta titles, descriptions, canonical URLs, Open Graph, and Twitter cards (`js/seo.js`)
-- JSON-LD: `TravelAgency`, `WebSite`, `TouristTrip`, `BreadcrumbList`, `ItemList`
-- `robots.txt` and `sitemap.xml` (regenerate: `node scripts/generate-sitemap.js https://your-domain.com`)
-- Cloudinary/Unsplash images auto-optimized to WebP (`f_auto` / `fm=webp`), lazy loading
-- Set production domain in `js/config.js` → `siteUrl`
+- Canonical domain: **https://haiboafricatours.co.tz** (`HAIBO_SITE_URL` in `js/config.js`). The same value is
+  hardcoded in each public page `<head>`, `robots.txt`, and `api/sitemap.js` — change all of them together.
+- Static `<head>` tags (title, description, canonical, Open Graph, Twitter card) in each public page so crawlers and
+  link previews work without JavaScript; `js/seo.js` sets per-destination tags at runtime.
+- JSON-LD: `TravelAgency` + `WebSite` (contact details read from the live CMS; empty fields are omitted),
+  `TouristTrip` + `BreadcrumbList` on destination pages, `ItemList` on the destinations page.
+- `/sitemap.xml` is generated on request by `frontend/api/sitemap.js` (static pages + published destinations from
+  Firestore, `lastmod` from each destination's `updatedAt`). Unknown/draft destination URLs are set to `noindex`.
+- Admin pages: `noindex` meta + `X-Robots-Tag` header, and disallowed in `robots.txt`.
+- Cloudinary images auto-optimized (`f_auto`), lazy loading
 
 Submit sitemap in [Google Search Console](https://search.google.com/search-console).
 
