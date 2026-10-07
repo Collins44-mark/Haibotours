@@ -4,11 +4,11 @@
  */
 const HAIBO_DEFAULTS = {
   hero: {
-    eyebrow: 'Explore Tanzania',
-    title: 'Discover the soul of',
-    titleAccent: 'Tanzania',
+    eyebrow: 'Discover the soul of Tanzania',
+    title: 'Tanzania Safari',
+    titleAccent: 'Tours',
     subtitle:
-      'Authentic safaris, luxury adventures, cultural journeys and unforgettable wildlife experiences across East Africa.',
+      'Serengeti migration safaris, Northern Tanzania wildlife tours, Kilimanjaro climbs and Zanzibar trips with Haibo Africa Tours.',
     backgroundImageUrl: '',
     ctaPrimaryText: 'Explore Safaris',
     ctaPrimaryLink: 'destinations',

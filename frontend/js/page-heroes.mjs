@@ -34,11 +34,11 @@ export const PAGE_HERO_META = {
 export function defaultPageHeroPages() {
   return {
     home: {
-      eyebrow: 'Explore Tanzania',
-      title: 'Discover the soul of',
-      titleAccent: 'Tanzania',
+      eyebrow: 'Discover the soul of Tanzania',
+      title: 'Tanzania Safari',
+      titleAccent: 'Tours',
       subtitle:
-        'Authentic safaris, luxury adventures, cultural journeys and unforgettable wildlife experiences across East Africa.',
+        'Serengeti migration safaris, Northern Tanzania wildlife tours, Kilimanjaro climbs and Zanzibar trips with Haibo Africa Tours.',
       backgroundImageUrl: '',
       ctaPrimaryText: 'Explore Safaris',
       ctaPrimaryLink: 'destinations',
@@ -47,10 +47,10 @@ export function defaultPageHeroPages() {
     },
     destinations: {
       eyebrow: 'Explore Tanzania',
-      title: 'All Safari',
-      titleAccent: 'Destinations',
+      title: 'Tanzania Safari',
+      titleAccent: 'Packages',
       subtitle:
-        'Discover breathtaking parks, beaches, and treks across Tanzania — compare packages, guides, and pricing, then book your safari with HAIBO.',
+        'Compare our Tanzania safaris, Kilimanjaro climb and Zanzibar trip, then open a package to see its route, inclusions and pricing.',
       backgroundImageUrl: '',
       ctaPrimaryText: 'Explore Destinations',
       ctaPrimaryLink: '#all-destinations',
@@ -59,15 +59,15 @@ export function defaultPageHeroPages() {
     },
     gallery: {
       eyebrow: 'Guest Moments',
-      title: 'Safari',
+      title: 'Tanzania Safari',
       titleAccent: 'Gallery',
       subtitle:
-        'Photos and videos from real HAIBO adventures — wildlife, beaches, treks, and unforgettable guest experiences across Tanzania.',
+        'Photos and videos from real HAIBO adventures: wildlife, beaches, treks and unforgettable guest experiences across Tanzania.',
       backgroundImageUrl: '',
     },
     contact: {
       eyebrow: 'Get In Touch',
-      title: "Let's Plan Your",
+      title: "Let's Plan Your Tanzania",
       titleAccent: 'Safari',
       subtitle:
         'Reach our team in Arusha for custom itineraries, group bookings, and travel advice across Tanzania.',
