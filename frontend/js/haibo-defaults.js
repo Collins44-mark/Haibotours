@@ -60,7 +60,7 @@ const HAIBO_DEFAULTS = {
       brand: 'HAIBO',
       description:
         'Luxury safari experiences crafted for explorers seeking unforgettable adventures in Tanzania.',
-      copyright: '© 2026 HAIBO Tours & Safaris',
+      copyright: '© 2026 Haibo Africa Tours',
       quickLinks: [
         { label: 'About Us', href: '#about' },
         { label: 'Destinations', href: 'destinations' },

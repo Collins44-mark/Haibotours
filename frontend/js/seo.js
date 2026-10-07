@@ -163,15 +163,14 @@
   /** Only values present in the live CMS (contact/socials) are emitted; nothing is guessed. */
   function businessJsonLd() {
     const b = HAIBO_SEO.business;
-    const cfg = typeof HAIBO_CONFIG !== 'undefined' ? HAIBO_CONFIG : {};
     const contact = window.HAIBO_CONTENT?.contact || {};
     const socials = window.HAIBO_CONTENT?.socials || {};
-    const logoPath = cfg.logoPath || HAIBO_SEO.defaultOgImage;
-    const logo = /^https?:\/\//.test(logoPath) ? logoPath : absoluteUrl(logoPath);
+    const logo = absoluteUrl(HAIBO_SEO.logo);
 
+    /* One business entity: must stay identical in identity to the static copy in index.html. */
     const data = {
       '@context': 'https://schema.org',
-      '@type': 'TravelAgency',
+      '@type': ['TravelAgency', 'Organization'],
       '@id': `${getSiteUrl()}/#organization`,
       name: b.name,
       alternateName: b.alternateName,

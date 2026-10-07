@@ -13,6 +13,8 @@ const HAIBO_SEO = {
   defaultOgImage: '/assets/logo/logo.png',
   defaultOgImageWidth: 1179,
   defaultOgImageHeight: 731,
+  /** Square crop of the official logo; also the source of /favicon.png and /favicon.ico. */
+  logo: '/assets/logo/haibo-logo-512.png',
 
   business: {
     name: 'Haibo Africa Tours',
