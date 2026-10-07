@@ -39,6 +39,10 @@
   };
   const FADE_MS = 160;
   const PREFETCH_TTL_MS = 30000;
+  /* Public pages live at the site root (or use <base href="/">), so their relative URLs resolve
+     against "/". Resolve attributes against that instead of the live URL, which on Back/Forward
+     already points at the next page before its content is swapped in. */
+  const SITE_ROOT = location.origin + '/';
 
   const root = document.documentElement;
   const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -119,9 +123,8 @@
   /** Scripts the new page needs that this document has not run yet, or null if unsupported. */
   function missingScripts(doc, base) {
     const loaded = new Set();
-    Array.prototype.forEach.call(document.scripts, (s) => {
-      if (!s.src) return;
-      const u = new URL(s.src);
+    document.querySelectorAll('script[src]').forEach((s) => {
+      const u = new URL(s.getAttribute('src'), SITE_ROOT);
       loaded.add(u.origin === location.origin ? u.pathname : u.href);
     });
     const missing = [];
@@ -152,7 +155,7 @@
       (l) => new URL(l.getAttribute('href'), base).href
     );
     const live = new Map();
-    document.querySelectorAll('link[rel="stylesheet"][href]').forEach((l) => live.set(l.href, l));
+    document.querySelectorAll('link[rel="stylesheet"][href]').forEach((l) => live.set(styleKey(l), l));
     const pending = [];
     let prev = null;
     wanted.forEach((href) => {
@@ -176,9 +179,13 @@
     return Promise.all(pending).then(() => new Set(wanted));
   }
 
+  function styleKey(link) {
+    return new URL(link.getAttribute('href'), SITE_ROOT).href;
+  }
+
   function applyStyles(wanted) {
     document.querySelectorAll('link[rel="stylesheet"][href]').forEach((l) => {
-      if (l.sheet) l.sheet.disabled = !wanted.has(l.href);
+      if (l.sheet) l.sheet.disabled = !wanted.has(styleKey(l));
     });
   }
 
@@ -287,6 +294,7 @@
     fetchUrl.hash = '';
 
     entries.set(currentKey, { scrollY: window.scrollY, title: document.title });
+    if (mode === 'pop') setBase('/');
 
     root.classList.add('haibo-nav-active', 'haibo-nav-leaving');
     root.setAttribute('aria-busy', 'true');
