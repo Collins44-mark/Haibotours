@@ -302,6 +302,7 @@ async function loadAboutForm() {
   f.title.value = d.title || '';
   f.body.value = d.body || '';
   f.imageUrl.value = d.imageUrl || '';
+  f.imageAlt.value = d.imageAlt || '';
   (d.featureCards || []).forEach((c, i) => {
     if (f[`featureTitle${i}`]) f[`featureTitle${i}`].value = c.title || '';
     if (f[`featureSub${i}`]) f[`featureSub${i}`].value = c.subtitle || '';
@@ -321,6 +322,7 @@ async function saveAboutForm(e) {
       title: f.title.value,
       body: f.body.value,
       imageUrl: f.imageUrl.value,
+      imageAlt: f.imageAlt.value.trim(),
       featureCards,
     };
     await saveSectionToFirestore('about', getAdminCms().about);
@@ -546,6 +548,7 @@ function fillGalleryForm(item) {
   f.src.value = item.src || '';
   f.thumb.value = item.thumb || item.src || '';
   f.title.value = item.title || '';
+  f.alt.value = item.alt || '';
   f.tag.value = item.tag || '';
   f.order.value = item.order ?? 0;
   syncGalleryUploadPanels(mediaType);
@@ -632,6 +635,7 @@ async function addGalleryImage(e) {
     src,
     thumb: f.thumb.value?.trim() || (f.type.value === 'image' ? src : ''),
     title: f.title.value,
+    alt: f.alt.value.trim(),
     tag: f.tag.value,
     order: Number(f.order.value) || 0,
     active: true,

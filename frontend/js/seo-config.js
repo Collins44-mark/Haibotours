@@ -25,17 +25,17 @@ const HAIBO_SEO = {
 
   pages: {
     home: {
-      title: 'Haibo Africa Tours | Tanzania Tours & Safaris',
+      title: 'Tanzania Safari Tours, Kilimanjaro & Zanzibar | Haibo Africa Tours',
       description:
-        'Tanzania safaris, Kilimanjaro climbs and Zanzibar trips with Haibo Africa Tours. Explore itineraries and inclusions, and plan your trip with local experts.',
+        'Tanzania safari tours with Haibo Africa Tours: Serengeti migration and Northern Tanzania safaris, Mikumi National Park, a Kilimanjaro climb and Zanzibar trips.',
       path: '/',
       breadcrumb: null,
       ogType: 'website',
     },
     destinations: {
-      title: 'Tanzania Safari & Tour Packages | Haibo Africa Tours',
+      title: 'Tanzania Safari Packages & Tours | Haibo Africa Tours',
       description:
-        'Browse Haibo Africa Tours packages: Serengeti migration safaris, Ngorongoro Crater, Tarangire, Mikumi, Kilimanjaro climbs and Zanzibar Stone Town experiences.',
+        'Compare Tanzania safari packages: Serengeti migration and calving safaris, Northern Tanzania circuits, Mikumi, a Kilimanjaro Lemosho climb and a Zanzibar tour.',
       path: '/destinations',
       breadcrumb: 'Destinations',
       ogType: 'website',
@@ -48,17 +48,17 @@ const HAIBO_SEO = {
       ogType: 'website',
     },
     gallery: {
-      title: 'Safari Photo & Video Gallery | Haibo Africa Tours',
+      title: 'Tanzania Safari Photo & Video Gallery | Haibo Africa Tours',
       description:
-        'Photos and videos of wildlife, landscapes and safari moments across Tanzania from Haibo Africa Tours.',
+        "Tanzania safari photos and videos from Haibo Africa Tours: elephants, zebras and giraffes, game drives, Mount Kilimanjaro above the clouds and Zanzibar's coast.",
       path: '/gallery.html',
       breadcrumb: 'Gallery',
       ogType: 'website',
     },
     contact: {
-      title: 'Contact Us | Haibo Africa Tours',
+      title: 'Contact Haibo Africa Tours | Plan Your Tanzania Safari',
       description:
-        'Contact Haibo Africa Tours by phone, email or WhatsApp to plan your Tanzania safari, Kilimanjaro climb or Zanzibar trip.',
+        'Contact Haibo Africa Tours by WhatsApp, phone or email to plan a Tanzania safari, the Kilimanjaro Lemosho climb or a Zanzibar trip and to check availability.',
       path: '/contact.html',
       breadcrumb: 'Contact',
       ogType: 'website',

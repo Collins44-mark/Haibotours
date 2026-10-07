@@ -200,6 +200,7 @@ export function collectDestinationPayload(form, builders, options = {}) {
       form.querySelector('[name="heroImage"]')?.value?.trim() ||
       form.querySelector('[name="image"]')?.value?.trim() ||
       '',
+    heroImageAlt: form.querySelector('[name="heroImageAlt"]')?.value?.trim() || '',
     description: overview,
     overview,
     bestTime: form.querySelector('[name="bestTime"]')?.value?.trim() || '',

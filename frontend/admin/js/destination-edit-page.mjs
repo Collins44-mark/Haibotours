@@ -477,6 +477,7 @@ function fillForm(data) {
   setVal('importantNotes', data.importantNotes || '');
   setVal('seoTitle', data.seoTitle || '');
   setVal('metaDescription', data.metaDescription || '');
+  setVal('heroImageAlt', data.heroImageAlt || '');
   setVal('order', data.order ?? 0);
 
   const statusSel = form.querySelector('[name="publishStatus"]');

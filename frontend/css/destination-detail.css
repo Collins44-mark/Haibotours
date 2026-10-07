@@ -561,11 +561,73 @@ body[data-page='destination-detail'] .site-footer {
   }
 }
 
+/* ── Key facts, overview, FAQ ── */
+.dest-detail-section {
+  margin-bottom: clamp(2.5rem, 6vw, 3.75rem);
+}
+
+.dest-detail-section__title {
+  margin: 0 0 1rem;
+  font-size: clamp(1.35rem, 2.6vw, 1.75rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+
+.dest-detail-section__text {
+  margin: 0;
+  max-width: 48rem;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.76);
+}
+
+.dest-detail-faq__item {
+  padding: 1rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.dest-detail-faq__question {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  line-height: 1.4;
+}
+
+.dest-detail-faq__answer {
+  margin: 0.4rem 0 0;
+  max-width: 48rem;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.68);
+}
+
 /* ── Single Book CTA ── */
 .dest-detail-book {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
   padding-top: 0.25rem;
+}
+
+.dest-detail-book__alt {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+  text-align: center;
+}
+
+.dest-detail-book__alt a {
+  color: var(--haibo-gold, #f5b51b);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.dest-detail-book__alt a:hover,
+.dest-detail-book__alt a:focus-visible {
+  text-decoration: underline;
 }
 
 /* ── Related tours (internal links) ── */

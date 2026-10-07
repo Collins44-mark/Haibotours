@@ -219,6 +219,7 @@
               <img id="about-preview" class="admin-preview hidden" alt="About preview" />
             </div>
             <div class="admin-field"><label>Image URL</label><input name="imageUrl" /></div>
+            <div class="admin-field"><label>Image description (alt text)</label><input name="imageAlt" maxlength="125" placeholder="What the photo shows" /></div>
             <div class="admin-grid-2">
               <div class="admin-field"><label>Eyebrow</label><input name="eyebrow" /></div>
               <div class="admin-field"><label>Title</label><input name="title" /></div>
@@ -252,6 +253,7 @@
               <div class="admin-field"><label>Title</label><input name="title" /></div>
               <div class="admin-field"><label>Tag</label><input name="tag" /></div>
             </div>
+            <div class="admin-field"><label>Image description (alt text)</label><input name="alt" maxlength="125" placeholder="What the photo or video thumbnail shows" /></div>
             <div id="gallery-upload-photo" class="admin-upload-zone" data-gallery-upload-panel="image">
               <label>Upload photo</label>
               <p class="admin-muted" style="font-size:0.85rem;margin:0 0 0.5rem">Choose a file — no URL needed.</p>
@@ -382,8 +384,8 @@
 
   <script src="/js/firebase-config.js"></script>
   <script src="/js/config.js"></script>
-  <script src="/js/haibo-defaults.js?v=20261007b"></script>
-  <script src="/js/destinations-data.js?v=20261007b"></script>
+  <script src="/js/haibo-defaults.js?v=20261008"></script>
+  <script src="/js/destinations-data.js?v=20261008"></script>
   <script src="/js/gallery-data.js"></script>
   <script type="module" src="/admin/js/dashboard-auth.js?v=10"></script>
 </body>

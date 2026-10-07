@@ -703,8 +703,11 @@ function haiboBuildDestinationCard(dest) {
   const title = String(dest.name || '').trim();
   const description = haiboDestinationCardDescription(dest);
   const pricing = haiboDestinationStartingPrice(dest);
-  const altParts = [title, dest.subtitle, location].filter(Boolean);
-  const alt = `${altParts.join(' — ')} safari destination`;
+  /* The link is already named by the tour title; only describe the photo when its description is known. */
+  const alt =
+    imageUrl && imageUrl === String(dest.heroImage || '').trim()
+      ? String(dest.heroImageAlt || '').trim()
+      : '';
   const img = imageUrl
     ? `<img src="${haiboEscapeHtml(imgSrc)}" alt="${haiboEscapeHtml(alt)}" loading="lazy" decoding="async" class="haibo-media dest-card-catalog__img" width="1100" height="825">`
     : '';

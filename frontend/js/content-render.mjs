@@ -103,7 +103,7 @@ function renderAbout() {
   if (aboutImg) {
     document.querySelectorAll('[data-haibo-about-image]').forEach((img) => {
       img.src = optimizeImg(aboutImg, 1000);
-      img.alt = a.imageAlt || 'Luxury Tanzania safari experience with HAIBO Tours';
+      img.alt = String(a.imageAlt || '').trim();
       img.loading = 'lazy';
       img.decoding = 'async';
     });
@@ -145,9 +145,7 @@ function renderHomeGallery() {
   grid.innerHTML = slice
     .map((img, i) => {
       const src = optimizeImg(img.src || img.url, 900);
-      const alt = img.title
-        ? `${img.title} — Tanzania safari gallery`
-        : 'Tanzania safari wildlife photo';
+      const alt = String(img.alt || img.title || '').trim();
       const title = img.title || 'Safari moment';
       const tag = img.tag || 'Tanzania';
       const loading = i === 0 ? 'eager' : 'lazy';

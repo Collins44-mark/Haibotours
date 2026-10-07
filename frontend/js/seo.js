@@ -255,7 +255,7 @@
     return {
       '@context': 'https://schema.org',
       '@type': 'ItemList',
-      name: 'Tanzania Safari & Tour Packages',
+      name: 'Tanzania Safari Packages & Tours',
       itemListElement: list.map((d, i) => ({
         '@type': 'ListItem',
         position: i + 1,
@@ -320,7 +320,8 @@
     );
     const canonical = absoluteUrl(`destinations/${dest.id}`);
     const imgUrl = optimizeImageUrl(dest.heroImage || dest.image, { width: 1200 });
-    const image = imgUrl ? { url: imgUrl, alt: dest.name } : null;
+    const imgAlt = String(dest.heroImageAlt || '').trim() || dest.name;
+    const image = imgUrl ? { url: imgUrl, alt: imgAlt } : null;
 
     applyMetaBundle({ title, description: desc, canonical, image, type: page.ogType });
 
@@ -347,6 +348,25 @@
     });
     removeJsonLd('haibo-schema-trip');
     removeJsonLd('haibo-schema-breadcrumb');
+    removeJsonLd('haibo-schema-faq');
+  }
+
+  /** Must receive the exact question/answer pairs rendered in the visible FAQ section. */
+  function applyFaqSchema(faqs) {
+    const items = (faqs || []).filter((f) => f && f.question && f.answer);
+    if (!items.length) {
+      removeJsonLd('haibo-schema-faq');
+      return;
+    }
+    injectJsonLd('haibo-schema-faq', {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: items.map((f) => ({
+        '@type': 'Question',
+        name: f.question,
+        acceptedAnswer: { '@type': 'Answer', text: f.answer },
+      })),
+    });
   }
 
   /** CMS data (contact, socials, destinations) arrives after first paint — refresh schemas. */
@@ -465,6 +485,7 @@
   window.haiboApplyDestinationSEO = applyDestinationSEO;
   window.haiboApplyPageSEO = applyPageSEO;
   window.haiboApplyNotFoundSEO = applyNotFoundSEO;
+  window.haiboApplyFaqSchema = applyFaqSchema;
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initSEO);

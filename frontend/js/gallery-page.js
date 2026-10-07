@@ -15,7 +15,7 @@ function galleryCardMedia(item, type, index) {
     const src = imgSrc(item.src, 900);
     return `
       <div class="gallery-media-card__media">
-        <img class="gallery-media-card__img haibo-media" src="${src}" alt="${escapeHtml(item.title)} — Tanzania safari photo" loading="lazy" decoding="async" width="600" height="800">
+        <img class="gallery-media-card__img haibo-media" src="${src}" alt="${escapeHtml(item.alt || item.title)}" loading="lazy" decoding="async" width="600" height="800">
         <div class="gallery-media-card__overlay" aria-hidden="true"></div>
         <div class="gallery-media-card__body">
           ${item.tag ? `<p class="gallery-media-card__tag">${escapeHtml(item.tag)}</p>` : ''}
@@ -51,6 +51,7 @@ function getGalleryData() {
       images: (g.images || []).map((i) => ({
         src: i.src || i.url,
         title: i.title || '',
+        alt: i.alt || '',
         tag: i.tag || '',
       })),
       videos: (g.videos || []).map((v) => ({
@@ -160,7 +161,7 @@ function initGalleryLightbox() {
     mediaWrap.innerHTML = '';
     if (type === 'image') {
       const item = images[index];
-      mediaWrap.innerHTML = `<img src="${item.src.replace('w=800', 'w=1600')}" alt="${escapeHtml(item.title)}">`;
+      mediaWrap.innerHTML = `<img src="${item.src.replace('w=800', 'w=1600')}" alt="${escapeHtml(item.alt || item.title)}">`;
       caption.textContent = `${item.title} · ${item.tag}`;
     } else {
       const item = videos[index];

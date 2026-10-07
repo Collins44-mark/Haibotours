@@ -792,9 +792,8 @@ function renderItineraryHtml(steps) {
   </ol>`;
 }
 
-function renderMapOverviewHtml(overview, mapSrc, mapTitle) {
-  const mapHtml = mapSrc
-    ? `<div class="dest-detail-tabs__map-frame">
+function renderMapHtml(mapSrc, mapTitle) {
+  return `<div class="dest-detail-tabs__map-frame">
       <iframe
         title="${escapeHtml(mapTitle)}"
         src="${escapeAttrUrl(mapSrc)}"
@@ -802,18 +801,7 @@ function renderMapOverviewHtml(overview, mapSrc, mapTitle) {
         referrerpolicy="no-referrer-when-downgrade"
         allowfullscreen
       ></iframe>
-    </div>`
-    : '';
-  const overviewHtml = overview
-    ? `<div class="dest-detail-tabs__overview">
-      <h3 class="dest-detail-tabs__panel-title">Overview</h3>
-      <p class="dest-detail-tabs__overview-text">${escapeHtml(overview)}</p>
-    </div>`
-    : '';
-  return `<div class="dest-detail-tabs__map-grid${mapSrc ? '' : ' dest-detail-tabs__map-grid--text'}">
-    ${mapHtml}
-    ${overviewHtml}
-  </div>`;
+    </div>`;
 }
 
 function renderImportantHtml(rows) {
@@ -841,25 +829,27 @@ function buildDestDetailTabsHtml(dest) {
       : [];
   const itinerary =
     typeof haiboDestinationItinerary === 'function' ? haiboDestinationItinerary(dest) : [];
-  const overview =
-    typeof haiboDestinationOverview === 'function' ? haiboDestinationOverview(dest) : '';
   const mapUrl =
     typeof haiboDestinationMapUrl === 'function' ? haiboDestinationMapUrl(dest) : '';
   const mapQuery =
     typeof haiboDestinationMapQuery === 'function' ? haiboDestinationMapQuery(dest) : '';
-  const important =
-    typeof haiboDestinationImportantInfo === 'function'
-      ? haiboDestinationImportantInfo(dest)
-      : [];
   const mapSrc = mapUrl || mapQuery ? resolveMapEmbedSrc(mapUrl, mapQuery) : '';
 
   /* A tab exists only when this tour's own record has data for it. */
   const tabs = [
+    itinerary.length && {
+      id: 'itinerary',
+      label: 'Itinerary',
+      icon: DEST_TAB_ICONS.itinerary,
+      html: `<h2 class="dest-detail-tabs__panel-title">Itinerary</h2>
+      <span class="dest-detail-tabs__accent" aria-hidden="true"></span>
+      ${renderItineraryHtml(itinerary)}`,
+    },
     included.length && {
       id: 'included',
       label: "What's Included",
       icon: DEST_TAB_ICONS.included,
-      html: `<h3 class="dest-detail-tabs__panel-title">What's Included</h3>
+      html: `<h2 class="dest-detail-tabs__panel-title">What's Included</h2>
       <span class="dest-detail-tabs__accent" aria-hidden="true"></span>
       ${renderFeatureListHtml(included)}`,
     },
@@ -867,31 +857,17 @@ function buildDestDetailTabsHtml(dest) {
       id: 'excluded',
       label: "What's Excluded",
       icon: DEST_TAB_ICONS.excluded,
-      html: `<h3 class="dest-detail-tabs__panel-title">What's Excluded</h3>
+      html: `<h2 class="dest-detail-tabs__panel-title">What's Excluded</h2>
       <span class="dest-detail-tabs__accent" aria-hidden="true"></span>
       ${renderFeatureListHtml(excluded)}`,
     },
-    itinerary.length && {
-      id: 'itinerary',
-      label: 'Itinerary',
-      icon: DEST_TAB_ICONS.itinerary,
-      html: `<h3 class="dest-detail-tabs__panel-title">Itinerary</h3>
-      <span class="dest-detail-tabs__accent" aria-hidden="true"></span>
-      ${renderItineraryHtml(itinerary)}`,
-    },
-    (overview || mapSrc) && {
+    mapSrc && {
       id: 'map',
-      label: mapSrc ? 'Map & Overview' : 'Overview',
+      label: 'Map',
       icon: DEST_TAB_ICONS.map,
-      html: renderMapOverviewHtml(overview, mapSrc, `Map: ${dest.name || 'tour location'}`),
-    },
-    important.length && {
-      id: 'info',
-      label: 'Important Information',
-      icon: DEST_TAB_ICONS.info,
-      html: `<h3 class="dest-detail-tabs__panel-title">Important Information</h3>
+      html: `<h2 class="dest-detail-tabs__panel-title">Map</h2>
       <span class="dest-detail-tabs__accent" aria-hidden="true"></span>
-      ${renderImportantHtml(important)}`,
+      ${renderMapHtml(mapSrc, `Map: ${dest.name || 'tour location'}`)}`,
     },
   ].filter(Boolean);
 
@@ -935,6 +911,166 @@ function buildDestDetailTabsHtml(dest) {
             .join('')}
         </div>
       </div>
+    </section>`;
+}
+
+const PLACE_SMALL_WORDS = new Set(['and', 'of', 'the']);
+
+function titleCasePlace(s) {
+  return String(s || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[a-z]+/g, (w, i) =>
+      i > 0 && PLACE_SMALL_WORDS.has(w) ? w : w.charAt(0).toUpperCase() + w.slice(1)
+    );
+}
+
+/** Places listed on the tour record itself (subtitle, else highlights). */
+function destinationPlacesVisited(dest) {
+  const subtitle = String(dest?.subtitle || '').trim();
+  const raw = subtitle
+    ? subtitle.split(',')
+    : Array.isArray(dest?.highlights)
+      ? dest.highlights
+      : [];
+  const seen = new Set();
+  return raw
+    .map(titleCasePlace)
+    .filter((p) => p && !seen.has(p.toLowerCase()) && seen.add(p.toLowerCase()));
+}
+
+function joinWithAnd(items) {
+  if (items.length < 2) return items.join('');
+  return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
+}
+
+function asSentence(s) {
+  const t = String(s || '').trim();
+  return !t || /[.!?]$/.test(t) ? t : `${t}.`;
+}
+
+function featureText(item) {
+  return item.detail ? `${item.title} (${item.detail})` : item.title;
+}
+
+function destinationKeyFacts(dest) {
+  const rows = [];
+  const duration =
+    typeof haiboDestinationDurationLabel === 'function' ? haiboDestinationDurationLabel(dest) : '';
+  if (duration) rows.push({ label: 'Duration', value: duration });
+  const region = String(dest?.region || '').trim();
+  if (region) rows.push({ label: 'Region', value: region });
+  const places = destinationPlacesVisited(dest);
+  if (places.length) rows.push({ label: 'Places visited', value: places.join(', ') });
+  const important =
+    typeof haiboDestinationImportantInfo === 'function' ? haiboDestinationImportantInfo(dest) : [];
+  important.forEach((row) => {
+    if (!rows.some((r) => r.label.toLowerCase() === String(row.label).toLowerCase())) rows.push(row);
+  });
+  return rows;
+}
+
+/** Questions are generated only from fields stored on the tour and the CMS contact record. */
+function destinationFaqs(dest) {
+  const name = String(dest?.name || '').trim() || 'this tour';
+  const faqs = [];
+
+  const places = destinationPlacesVisited(dest);
+  if (places.length > 1) {
+    faqs.push({
+      question: `Which places does the ${name} visit?`,
+      answer: `The tour visits ${joinWithAnd(places)}.`,
+    });
+  }
+
+  const start = String(dest?.startingPoint || '').trim();
+  const end = String(dest?.endingPoint || '').trim();
+  if (start || end) {
+    faqs.push({
+      question: `Where does the ${name} start and end?`,
+      answer: [start && `Starting point: ${asSentence(start)}`, end && `Ending point: ${asSentence(end)}`]
+        .filter(Boolean)
+        .join(' '),
+    });
+  }
+
+  const included =
+    typeof haiboDestinationIncludedFeatures === 'function' ? haiboDestinationIncludedFeatures(dest) : [];
+  if (included.length) {
+    faqs.push({
+      question: `What is included in the ${name}?`,
+      answer: asSentence(`Included: ${included.map(featureText).join('; ')}`),
+    });
+  }
+
+  const excluded =
+    typeof haiboDestinationExcludedFeatures === 'function' ? haiboDestinationExcludedFeatures(dest) : [];
+  if (excluded.length) {
+    faqs.push({
+      question: `What is not included in the ${name}?`,
+      answer: asSentence(`Not included: ${excluded.map(featureText).join('; ')}`),
+    });
+  }
+
+  const phone = String(HAIBO_CONFIG.phoneDisplay || '').trim();
+  const wa = normalizeWhatsAppNumber(HAIBO_CONFIG.whatsappNumber);
+  const email = String(HAIBO_CONFIG.email || '').trim();
+  const hours = String(HAIBO_CONFIG.officeHours || '').trim();
+  const channels = [];
+  if (phone) {
+    channels.push(
+      wa && normalizeWhatsAppNumber(phone) === wa
+        ? `by WhatsApp or phone on ${phone}`
+        : `by phone on ${phone}`
+    );
+  } else if (wa) {
+    channels.push(`on WhatsApp at +${wa}`);
+  }
+  if (email.includes('@')) channels.push(`by email at ${email}`);
+  if (channels.length) {
+    faqs.push({
+      question: `How do I book the ${name}?`,
+      answer: `Contact Haibo Africa Tours ${channels.join(', or ')} to book or check availability.${
+        hours ? ` Office hours: ${asSentence(hours)}` : ''
+      }`,
+    });
+  }
+
+  return faqs.length >= 2 ? faqs : [];
+}
+
+function renderKeyFactsHtml(rows) {
+  if (!rows.length) return '';
+  return `
+    <section class="dest-detail-section" aria-labelledby="dest-facts-title">
+      <h2 id="dest-facts-title" class="dest-detail-section__title">Tour at a glance</h2>
+      ${renderImportantHtml(rows)}
+    </section>`;
+}
+
+function renderOverviewSectionHtml(overview) {
+  if (!overview) return '';
+  return `
+    <section class="dest-detail-section" aria-labelledby="dest-overview-title">
+      <h2 id="dest-overview-title" class="dest-detail-section__title">Tour overview</h2>
+      <p class="dest-detail-section__text">${escapeHtml(overview)}</p>
+    </section>`;
+}
+
+function renderFaqHtml(faqs) {
+  if (!faqs.length) return '';
+  return `
+    <section class="dest-detail-section dest-detail-faq" aria-labelledby="dest-faq-title">
+      <h2 id="dest-faq-title" class="dest-detail-section__title">Frequently asked questions</h2>
+      ${faqs
+        .map(
+          (f) => `
+      <div class="dest-detail-faq__item">
+        <h3 class="dest-detail-faq__question">${escapeHtml(f.question)}</h3>
+        <p class="dest-detail-faq__answer">${escapeHtml(f.answer)}</p>
+      </div>`
+        )
+        .join('')}
     </section>`;
 }
 
@@ -1128,8 +1264,11 @@ function renderDestinationDetail() {
       </div>`
     : '<p class="dest-detail-price__empty">Contact us for pricing</p>';
 
-  const alt = `${dest.name}${location ? ` — ${location}` : ''} safari destination`;
+  const alt = String(dest.heroImageAlt || '').trim() || dest.name;
   const tabsHtml = buildDestDetailTabsHtml(dest);
+  const overview =
+    typeof haiboDestinationOverview === 'function' ? haiboDestinationOverview(dest) : '';
+  const faqs = destinationFaqs(dest);
 
   root.innerHTML = `
     <section class="dest-detail-hero" aria-label="${escapeHtml(dest.name)}">
@@ -1159,7 +1298,10 @@ function renderDestinationDetail() {
           ${priceHtml}
         </section>
 
+        ${renderKeyFactsHtml(destinationKeyFacts(dest))}
+        ${renderOverviewSectionHtml(overview)}
         ${tabsHtml}
+        ${renderFaqHtml(faqs)}
 
         <div class="dest-detail-book">
           <a
@@ -1172,12 +1314,15 @@ function renderDestinationDetail() {
             <span>Book This Package</span>
             <span class="dest-detail-book__arrow" aria-hidden="true">${DEST_DETAIL_ARROW_SVG}</span>
           </a>
+          <p class="dest-detail-book__alt">Prefer email or a call? <a href="contact.html">Contact Haibo Africa Tours</a></p>
         </div>
 
         ${renderRelatedToursHtml(dest)}
       </div>
     </div>
   `;
+
+  if (typeof window.haiboApplyFaqSchema === 'function') window.haiboApplyFaqSchema(faqs);
 
   initDestDetailTabs(root);
 
