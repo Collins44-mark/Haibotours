@@ -235,7 +235,7 @@ export async function seedAllDefaults() {
         copyright: '© 2026 HAIBO Tours & Safaris',
         quickLinks: [
           { label: 'About Us', href: '#about' },
-          { label: 'Destinations', href: 'destinations.html' },
+          { label: 'Destinations', href: 'destinations' },
           { label: 'Gallery', href: 'gallery.html' },
           { label: 'Safaris', href: '#safaris' },
           { label: 'Contact', href: 'contact.html' },
@@ -245,7 +245,7 @@ export async function seedAllDefaults() {
         { label: 'Home', href: '#home' },
         { label: 'About', href: '#about' },
         { label: 'Safaris', href: '#safaris' },
-        { label: 'Destinations', href: 'destinations.html' },
+        { label: 'Destinations', href: 'destinations' },
         { label: 'Gallery', href: 'gallery.html' },
         { label: 'Contact', href: 'contact.html' },
       ],

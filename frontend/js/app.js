@@ -45,7 +45,7 @@ function renderDestinationCta(dest, waMessage) {
                   ${DEST_CTA_WA_ICON}
                   <span>WhatsApp Inquiry</span>
                 </a>
-                <a href="destinations.html" class="glass dest-cta-btn dest-cta-btn--secondary">
+                <a href="destinations" class="glass dest-cta-btn dest-cta-btn--secondary">
                   <span>More Destinations</span>
                   <span class="dest-cta-btn__chevron" aria-hidden="true">›</span>
                 </a>
@@ -243,6 +243,18 @@ function showHaiboToast(message, title) {
   showHaiboToast._timer = setTimeout(() => {
     toast.classList.remove('is-visible');
   }, 3800);
+}
+
+/* Local static servers have no Vercel rewrites: send the clean /destinations route to the file */
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+  document.addEventListener(
+    'click',
+    (e) => {
+      const link = e.target.closest?.('a[href="destinations"], a[href="/destinations"]');
+      if (link) link.setAttribute('href', 'destinations.html');
+    },
+    true
+  );
 }
 
 function safariSearchRedirectUrl(slug) {
@@ -980,7 +992,7 @@ function renderRelatedToursHtml(dest) {
       <div class="destinations-catalog-grid">
         ${related.map((d) => haiboBuildDestinationCard(d)).join('')}
       </div>
-      <p class="dest-detail-related__all"><a href="destinations.html">See all Tanzania safari tours</a></p>
+      <p class="dest-detail-related__all"><a href="destinations">See all Tanzania safari tours</a></p>
     </section>`;
 }
 
@@ -988,7 +1000,7 @@ function renderDestinationBreadcrumbHtml(dest) {
   return `<nav class="dest-detail-crumbs" aria-label="Breadcrumb">
     <ol>
       <li><a href="/">Home</a></li>
-      <li><a href="destinations.html">Destinations</a></li>
+      <li><a href="destinations">Destinations</a></li>
       <li aria-current="page">${escapeHtml(dest.name)}</li>
     </ol>
   </nav>`;
@@ -1056,7 +1068,7 @@ function renderDestinationDetail() {
       <section class="py-32 px-8 text-center">
         <h1 class="text-4xl font-bold mb-4 text-white">Destination not available</h1>
         ${draftHint}
-        <a href="destinations.html" class="btn-main px-8 py-4 rounded-full">View All Destinations</a>
+        <a href="destinations" class="btn-main px-8 py-4 rounded-full">View All Destinations</a>
       </section>
     `;
     if (typeof window.haiboApplyNotFoundSEO === 'function') window.haiboApplyNotFoundSEO();

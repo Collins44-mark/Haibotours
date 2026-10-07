@@ -11,7 +11,7 @@ const HAIBO_DEFAULTS = {
       'Authentic safaris, luxury adventures, cultural journeys and unforgettable wildlife experiences across East Africa.',
     backgroundImageUrl: '',
     ctaPrimaryText: 'Explore Safaris',
-    ctaPrimaryLink: 'destinations.html',
+    ctaPrimaryLink: 'destinations',
     ctaSecondaryText: 'View Gallery',
     ctaSecondaryLink: 'gallery.html',
     homeCta: {
@@ -63,7 +63,7 @@ const HAIBO_DEFAULTS = {
       copyright: '© 2026 HAIBO Tours & Safaris',
       quickLinks: [
         { label: 'About Us', href: '#about' },
-        { label: 'Destinations', href: 'destinations.html' },
+        { label: 'Destinations', href: 'destinations' },
         { label: 'Gallery', href: 'gallery.html' },
         { label: 'Safaris', href: '#safaris' },
         { label: 'Contact', href: 'contact.html' },
@@ -73,7 +73,7 @@ const HAIBO_DEFAULTS = {
       { label: 'Home', href: '#home' },
       { label: 'About', href: '#about' },
       { label: 'Safaris', href: '#safaris' },
-      { label: 'Destinations', href: 'destinations.html' },
+      { label: 'Destinations', href: 'destinations' },
       { label: 'Gallery', href: 'gallery.html' },
       { label: 'Contact', href: 'contact.html' },
     ],

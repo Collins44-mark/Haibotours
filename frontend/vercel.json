@@ -1,8 +1,70 @@
 {
+  "redirects": [
+    { "source": "/destinations.html", "destination": "/destinations", "permanent": true },
+    {
+      "source": "/destinations/arusha",
+      "destination": "/destinations/7-day-tanzania-wilderness-safari",
+      "permanent": true
+    },
+    {
+      "source": "/destinations/lake-manyara",
+      "destination": "/destinations/7-day-off-peak-tanzania-safari",
+      "permanent": true
+    },
+    {
+      "source": "/destinations/ngorongoro",
+      "destination": "/destinations/6-day-northern-tanzania-safari",
+      "permanent": true
+    },
+    {
+      "source": "/destinations/ruaha",
+      "destination": "/destinations/5-day-serengeti-great-migration-safari",
+      "permanent": true
+    },
+    {
+      "source": "/destinations/tarangire",
+      "destination": "/destinations/5-day-wildebeest-calving-safari",
+      "permanent": true
+    },
+    {
+      "source": "/destination.html",
+      "has": [{ "type": "query", "key": "id", "value": "arusha" }],
+      "destination": "/destinations/7-day-tanzania-wilderness-safari",
+      "permanent": true
+    },
+    {
+      "source": "/destination.html",
+      "has": [{ "type": "query", "key": "id", "value": "lake-manyara" }],
+      "destination": "/destinations/7-day-off-peak-tanzania-safari",
+      "permanent": true
+    },
+    {
+      "source": "/destination.html",
+      "has": [{ "type": "query", "key": "id", "value": "ngorongoro" }],
+      "destination": "/destinations/6-day-northern-tanzania-safari",
+      "permanent": true
+    },
+    {
+      "source": "/destination.html",
+      "has": [{ "type": "query", "key": "id", "value": "ruaha" }],
+      "destination": "/destinations/5-day-serengeti-great-migration-safari",
+      "permanent": true
+    },
+    {
+      "source": "/destination.html",
+      "has": [{ "type": "query", "key": "id", "value": "tarangire" }],
+      "destination": "/destinations/5-day-wildebeest-calving-safari",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/sitemap.xml",
       "destination": "/api/sitemap"
+    },
+    {
+      "source": "/destinations",
+      "destination": "/destinations.html"
     },
     {
       "source": "/destinations/:slug",

@@ -8,7 +8,7 @@ const SITE_URL = 'https://haiboafricatours.co.tz';
 const FIRESTORE_DOCS =
   'https://firestore.googleapis.com/v1/projects/haibo-tours/databases/(default)/documents';
 
-const STATIC_PATHS = ['/', '/destinations.html', '/gallery.html', '/contact.html'];
+const STATIC_PATHS = ['/', '/destinations', '/gallery.html', '/contact.html'];
 
 function normalizeId(id) {
   return String(id || '')

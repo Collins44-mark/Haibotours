@@ -67,6 +67,9 @@ Mobile layouts use `frontend/css/responsive.css`, `mobile-fixes.css` (no horizon
 - `/sitemap.xml` is generated on request by `frontend/api/sitemap.js` (static pages + published destinations from
   Firestore, `lastmod` from each destination's `updatedAt`). Unknown/draft destination URLs are set to `noindex`.
 - Admin pages: `noindex` meta + `X-Robots-Tag` header, and disallowed in `robots.txt`.
+- URLs: `/destinations` (served from `destinations.html`, which 308-redirects to it) and `/destinations/<id>`, where
+  `<id>` is the Firestore document ID. Renaming a tour's ID means a new document plus a permanent redirect from the old
+  path in `frontend/vercel.json` (and the repo-root `vercel.json`).
 - Cloudinary images auto-optimized (`f_auto`), lazy loading
 
 Submit sitemap in [Google Search Console](https://search.google.com/search-console).

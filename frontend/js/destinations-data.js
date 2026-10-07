@@ -471,12 +471,12 @@ function destinationPrettyUrl(id) {
 }
 
 function getDestinationIdFromLocation() {
-  const params = new URLSearchParams(window.location.search);
-  const q = params.get('id');
-  if (q) return q.trim().toLowerCase();
-
+  /* Path wins: redirected legacy URLs (destination.html?id=old) keep their old ?id= */
   const pathMatch = window.location.pathname.match(/\/destinations\/([^/]+)\/?$/i);
   if (pathMatch) return decodeURIComponent(pathMatch[1]).toLowerCase();
+
+  const q = new URLSearchParams(window.location.search).get('id');
+  if (q) return q.trim().toLowerCase();
 
   return null;
 }

@@ -13,7 +13,7 @@ export const PAGE_HERO_META = {
   },
   destinations: {
     label: 'Destinations',
-    livePath: '/destinations.html',
+    livePath: '/destinations',
     rootSelector: '.hero-destination.hero-banner',
     hasCta: true,
   },
@@ -41,7 +41,7 @@ export function defaultPageHeroPages() {
         'Authentic safaris, luxury adventures, cultural journeys and unforgettable wildlife experiences across East Africa.',
       backgroundImageUrl: '',
       ctaPrimaryText: 'Explore Safaris',
-      ctaPrimaryLink: 'destinations.html',
+      ctaPrimaryLink: 'destinations',
       ctaSecondaryText: 'View Gallery',
       ctaSecondaryLink: 'gallery.html',
     },

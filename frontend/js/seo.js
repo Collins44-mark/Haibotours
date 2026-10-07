@@ -330,7 +330,7 @@
       'haibo-schema-breadcrumb',
       breadcrumbJsonLd([
         homeCrumb(),
-        { name: 'Destinations', url: absoluteUrl('destinations.html') },
+        { name: 'Destinations', url: absoluteUrl('destinations') },
         { name: dest.name, url: canonical },
       ])
     );

@@ -35,7 +35,7 @@ const manifest = {
     backgroundImageUrl:
       '',
     ctaPrimaryText: 'Explore Safaris',
-    ctaPrimaryLink: 'destinations.html',
+    ctaPrimaryLink: 'destinations',
   },
   settings: {
     destinationsSection: { eyebrow: 'Explore Tanzania', title: 'Popular Destinations' },

@@ -36,7 +36,7 @@ const HAIBO_SEO = {
       title: 'Tanzania Safari & Tour Packages | Haibo Africa Tours',
       description:
         'Browse Haibo Africa Tours packages: Serengeti migration safaris, Ngorongoro Crater, Tarangire, Mikumi, Kilimanjaro climbs and Zanzibar Stone Town experiences.',
-      path: '/destinations.html',
+      path: '/destinations',
       breadcrumb: 'Destinations',
       ogType: 'website',
     },
