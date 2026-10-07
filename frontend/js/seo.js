@@ -455,8 +455,7 @@
     }
   }
 
-  function initSEO() {
-    initPerf();
+  function initPageSEO() {
     const pageKey =
       document.querySelector('meta[name="haibo-seo-page"]')?.content ||
       document.body?.dataset?.page ||
@@ -472,10 +471,15 @@
 
     const key = map[pageKey] || pageKey;
     if (key !== 'destination') applyPageSEO(key);
-    window.addEventListener('haiboContentUpdated', refreshSchemasFromContent);
     initLazyReveal();
     initA11y();
     enhanceImages();
+  }
+
+  function initSEO() {
+    initPerf();
+    window.addEventListener('haiboContentUpdated', refreshSchemasFromContent);
+    initPageSEO();
   }
 
   window.haiboOptimizeImage = optimizeImageUrl;
@@ -485,6 +489,7 @@
   window.haiboApplyPageSEO = applyPageSEO;
   window.haiboApplyNotFoundSEO = applyNotFoundSEO;
   window.haiboApplyFaqSchema = applyFaqSchema;
+  window.haiboInitPageSEO = initPageSEO;
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initSEO);

@@ -58,11 +58,12 @@ function renderDestinationCta(dest, waMessage) {
 }
 
 function applyLogo() {
+  const path = HAIBO_CONFIG.logoPath;
   document.querySelectorAll('[data-haibo-logo]').forEach((img) => {
-    img.src = HAIBO_CONFIG.logoPath;
     img.onerror = () => {
-      img.style.display = 'none';
+      img.style.visibility = 'hidden';
     };
+    if (path && img.getAttribute('src') !== path) img.src = path;
   });
 }
 
@@ -126,7 +127,8 @@ function initContactPage() {
     `;
   }
 
-  if (form) {
+  if (form && form.dataset.haiboBound !== '1') {
+    form.dataset.haiboBound = '1';
     let msgEl = form.querySelector('.form-message');
     if (!msgEl) {
       msgEl = document.createElement('p');
@@ -347,12 +349,12 @@ function initSearchBar() {
   });
 }
 
+/* Binds per header element: in-page navigation (js/site-nav.js) swaps in a fresh <nav>. */
 function initMobileMenu() {
-  if (window.__HAIBO_MOBILE_MENU_INIT) return;
   const menuBtn = document.getElementById('menu-btn');
   const mobileMenu = document.getElementById('mobile-menu');
-  if (!menuBtn || !mobileMenu) return;
-  window.__HAIBO_MOBILE_MENU_INIT = true;
+  if (!menuBtn || !mobileMenu || menuBtn.dataset.haiboMenuBound === '1') return;
+  menuBtn.dataset.haiboMenuBound = '1';
 
   let backdrop = document.getElementById('mobile-menu-backdrop');
   if (!backdrop) {
@@ -371,6 +373,7 @@ function initMobileMenu() {
     backdrop.setAttribute('aria-hidden', open ? 'false' : 'true');
     menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
   }
+  window.haiboSetMobileMenuOpen = setMenuOpen;
 
   menuBtn.addEventListener('click', (e) => {
     e.preventDefault();
@@ -378,15 +381,19 @@ function initMobileMenu() {
     setMenuOpen(!mobileMenu.classList.contains('open'));
   });
 
-  backdrop.addEventListener('click', () => setMenuOpen(false));
-
-  mobileMenu.querySelectorAll('a').forEach((link) => {
-    link.addEventListener('click', () => setMenuOpen(false));
+  mobileMenu.addEventListener('click', (e) => {
+    if (e.target.closest('a')) setMenuOpen(false);
   });
 
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && mobileMenu.classList.contains('open')) setMenuOpen(false);
-  });
+  if (backdrop.dataset.haiboBound !== '1') {
+    backdrop.dataset.haiboBound = '1';
+    backdrop.addEventListener('click', () => window.haiboSetMobileMenuOpen(false));
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && document.getElementById('mobile-menu')?.classList.contains('open')) {
+        window.haiboSetMobileMenuOpen(false);
+      }
+    });
+  }
 }
 
 function initWhatsAppFloat(customMessage) {
@@ -1439,6 +1446,14 @@ function bootHaiboApp() {
   window.addEventListener('haiboContentUpdated', refreshHaiboLiveContent);
 }
 
+/** Renders the page currently in the DOM; used after an in-page navigation (js/site-nav.js). */
+function runHaiboPage() {
+  primeHaiboLocalContent();
+  runHaiboApp();
+  if (window.HAIBO_CONTENT_LOADED) refreshHaiboLiveContent();
+}
+
 window.refreshHaiboLiveContent = refreshHaiboLiveContent;
+window.runHaiboPage = runHaiboPage;
 
 document.addEventListener('DOMContentLoaded', bootHaiboApp);

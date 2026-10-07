@@ -51,7 +51,7 @@ const HAIBO_DEFAULTS = {
     whatsapp: '',
   },
   settings: {
-    logoUrl: 'assets/logo/logo.png',
+    logoUrl: '/favicon.png',
     brandName: 'HAIBO',
     tagline: 'TOURS & SAFARIS',
     destinationsSection: { eyebrow: 'Explore Tanzania', title: 'Popular Tanzania safari tours' },

@@ -9,7 +9,7 @@ const HAIBO_CONFIG = {
   siteUrl: HAIBO_SITE_URL,
   /** Your Render API URL after deploy, e.g. https://haibo-tours-api.onrender.com */
   apiBaseUrl: '',
-  logoPath: 'assets/logo/logo.png',
+  logoPath: '/favicon.png',
   whatsappNumber: '255718975060',
   defaultTourMessage:
     'Hello HAIBO Tours & Safaris! I would like to inquire about a simple tour package in Tanzania. Please share availability and pricing. Thank you!',

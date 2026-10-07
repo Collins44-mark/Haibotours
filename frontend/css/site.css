@@ -453,3 +453,31 @@ body.haibo-content-loading main {
 body.haibo-content-ready main {
   opacity: 1;
 }
+
+/* Header logo: sized here (not only by the Tailwind runtime) so its box exists before the
+   image or Tailwind loads; alt text stays for assistive tech but never renders as large text. */
+nav img[data-haibo-logo] {
+  display: block;
+  width: 3.5rem;
+  height: 3.5rem;
+  flex-shrink: 0;
+  object-fit: contain;
+  color: transparent;
+  font-size: 0;
+  overflow: hidden;
+}
+
+/* In-page navigation (js/site-nav.js): page content fades, the header stays put */
+html.haibo-nav-active body > :is(main, header, footer) {
+  transition: opacity 0.16s ease;
+}
+
+html.haibo-nav-leaving body > :is(main, header, footer) {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.haibo-nav-active body > :is(main, header, footer) {
+    transition: none;
+  }
+}

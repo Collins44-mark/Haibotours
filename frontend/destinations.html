@@ -12,6 +12,7 @@
   <link rel="icon" href="/favicon.ico" sizes="48x48" />
   <link rel="icon" href="/favicon.png" type="image/png" sizes="192x192" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="preload" href="/favicon.png" as="image" type="image/png" />
   <meta property="og:site_name" content="Haibo Africa Tours" />
   <meta property="og:locale" content="en_US" />
   <meta property="og:type" content="website" />
@@ -32,7 +33,7 @@
   <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="css/site.css">
+  <link rel="stylesheet" href="css/site.css?v=20261008e">
   <link rel="stylesheet" href="css/hero-overlays.css">
   <link rel="stylesheet" href="css/responsive.css">
   <link rel="stylesheet" href="css/mobile-fixes.css">
@@ -51,7 +52,7 @@
   <nav class="fixed w-full z-50 nav-blur px-6 md:px-8 py-5" role="navigation" aria-label="Main navigation">
     <div class="flex justify-between items-center">
       <a href="index.html" class="flex items-center gap-3">
-        <img data-haibo-logo src="assets/logo/logo.png" alt="Haibo Africa Tours logo" class="w-14 h-14 rounded-xl object-cover">
+        <img data-haibo-logo src="/favicon.png" alt="Haibo Africa Tours logo" width="56" height="56" class="w-14 h-14 object-contain">
         <div>
           <p class="brand-title text-2xl font-bold tracking-wide">HAIBO</p>
           <p class="text-xs orange tracking-[4px]">TOURS & SAFARIS</p>
@@ -135,15 +136,16 @@
     </div>
   </footer>
 
-  <script src="js/config.js"></script>
-  <script src="js/seo-config.js?v=20261008d"></script>
-  <script src="js/seo.js?v=20261008d" defer></script>
+  <script src="js/site-nav.js?v=20261008e"></script>
+  <script src="js/config.js?v=20261008e"></script>
+  <script src="js/seo-config.js?v=20261008e"></script>
+  <script src="js/seo.js?v=20261008e" defer></script>
   <script src="js/firebase-config.js"></script>
   <script src="js/api.js"></script>
-  <script src="js/destinations-data.js?v=20261008d"></script>
-  <script src="js/haibo-defaults.js?v=20261008d"></script>
+  <script src="js/destinations-data.js?v=20261008e"></script>
+  <script src="js/haibo-defaults.js?v=20261008e"></script>
   <script type="module" src="js/content-store.mjs?v=7"></script>
   <script type="module" src="js/content-render.mjs"></script>
-  <script src="js/app.js?v=20261008d"></script>
+  <script src="js/app.js?v=20261008e"></script>
 </body>
 </html>
