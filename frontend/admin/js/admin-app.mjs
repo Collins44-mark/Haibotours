@@ -226,7 +226,7 @@ export async function seedAllDefaults() {
       brandName: 'HAIBO',
       tagline: 'TOURS & SAFARIS',
       searchEnabledIds: destList.map((d) => d.id),
-      destinationsSection: { eyebrow: 'Explore Tanzania', title: 'Popular Destinations' },
+      destinationsSection: { eyebrow: 'Explore Tanzania', title: 'Popular Tanzania safari tours' },
       gallerySection: { eyebrow: 'Gallery', title: 'Experience Tanzania' },
       footer: {
         brand: 'HAIBO',

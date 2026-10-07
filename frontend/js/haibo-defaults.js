@@ -54,7 +54,7 @@ const HAIBO_DEFAULTS = {
     logoUrl: 'assets/logo/logo.png',
     brandName: 'HAIBO',
     tagline: 'TOURS & SAFARIS',
-    destinationsSection: { eyebrow: 'Explore Tanzania', title: 'Popular Destinations' },
+    destinationsSection: { eyebrow: 'Explore Tanzania', title: 'Popular Tanzania safari tours' },
     gallerySection: { eyebrow: 'Gallery', title: 'Experience Tanzania' },
     footer: {
       brand: 'HAIBO',
