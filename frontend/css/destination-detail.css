@@ -88,6 +88,38 @@ body[data-page='destination-detail'] .site-footer {
   align-self: flex-end;
 }
 
+.dest-detail-crumbs ol {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.dest-detail-crumbs li + li::before {
+  content: '›';
+  margin-right: 0.35rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.dest-detail-crumbs a {
+  color: rgba(255, 255, 255, 0.78);
+  text-decoration: none;
+}
+
+.dest-detail-crumbs a:hover,
+.dest-detail-crumbs a:focus-visible {
+  color: var(--haibo-gold, #f5b51b);
+}
+
+.dest-detail-crumbs [aria-current='page'] {
+  color: rgba(255, 255, 255, 0.92);
+}
+
 .dest-detail-hero__pills {
   display: flex;
   flex-wrap: wrap;
@@ -465,6 +497,10 @@ body[data-page='destination-detail'] .site-footer {
     gap: 1.35rem;
     align-items: stretch;
   }
+
+  .dest-detail-tabs__map-grid--text {
+    grid-template-columns: 1fr;
+  }
 }
 
 .dest-detail-tabs__map-frame {
@@ -530,6 +566,35 @@ body[data-page='destination-detail'] .site-footer {
   display: flex;
   justify-content: center;
   padding-top: 0.25rem;
+}
+
+/* ── Related tours (internal links) ── */
+.dest-detail-related {
+  margin-top: clamp(3.5rem, 9vw, 5.5rem);
+}
+
+.dest-detail-related__title {
+  margin: 0 0 1.5rem;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+
+.dest-detail-related__all {
+  margin: 1.5rem 0 0;
+  text-align: center;
+}
+
+.dest-detail-related__all a {
+  color: var(--haibo-gold, #f5b51b);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.dest-detail-related__all a:hover,
+.dest-detail-related__all a:focus-visible {
+  text-decoration: underline;
 }
 
 .dest-detail-book__btn {

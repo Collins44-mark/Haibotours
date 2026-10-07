@@ -297,10 +297,14 @@ export async function loadDestinationById(id) {
   if (!id) return null;
   const key = destinationIdKey(id);
   const fromCms = getDestinationFromCms(key);
-  const row = mergeDestinationsForAdmin().find((d) => destinationIdKey(d.id) === key);
+  /* An existing Firestore tour is edited as stored — never backfilled from the seed catalog,
+     whose content belongs to whatever tour originally used this slug. */
+  const row = fromCms
+    ? null
+    : mergeDestinationsForAdmin().find((d) => destinationIdKey(d.id) === key);
   if (!row && !fromCms) return null;
 
-  const base = row ? { ...row } : { ...fromCms, id: key };
+  const base = fromCms ? { ...fromCms, id: key } : { ...row };
   const gallery =
     fromCms && Object.prototype.hasOwnProperty.call(fromCms, 'gallery')
       ? normalizeGalleryItems(fromCms.gallery)

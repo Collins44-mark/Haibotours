@@ -513,17 +513,7 @@ function haiboDestinationDurationLabel(dest) {
     const n = Number(fromName[1]);
     return n === 1 ? '1 Day' : `${n} Days`;
   }
-  const pkgs = Array.isArray(dest?.packages) ? dest.packages : [];
-  const preferred =
-    pkgs.find((p) => p?.popular && p?.duration) || pkgs.find((p) => p?.duration) || null;
-  if (!preferred?.duration) return '';
-  const raw = String(preferred.duration).trim();
-  const match = raw.match(/(\d+)\s*Days?/i);
-  if (match) {
-    const n = Number(match[1]);
-    return n === 1 ? '1 Day' : `${n} Days`;
-  }
-  return raw;
+  return '';
 }
 
 function haiboDestinationHeroTitle(dest) {
@@ -531,8 +521,8 @@ function haiboDestinationHeroTitle(dest) {
   if (!name) {
     return haiboDestinationDurationLabel(dest) || 'Safari';
   }
-  /* Never prepend duration if the title already includes any "N Days" phrase */
-  if (/\d+\s*Days?\b/i.test(name)) return name;
+  /* Never prepend duration if the title already includes "N Days" / "N-Day" */
+  if (/\d+\s*-?\s*Days?\b/i.test(name)) return name;
   const duration = haiboDestinationDurationLabel(dest);
   if (!duration) return name;
   return `${duration} ${name}`;
@@ -550,11 +540,6 @@ function haiboDestinationCardDescription(dest) {
   return '';
 }
 
-function haiboDestinationPreferredPackage(dest) {
-  const pkgs = Array.isArray(dest?.packages) ? dest.packages : [];
-  return pkgs.find((p) => p?.popular) || pkgs.find((p) => p?.price || p?.duration) || pkgs[0] || null;
-}
-
 function haiboDestinationStartingPrice(dest) {
   if (dest?.price && String(dest.price).trim()) {
     const note = String(dest.priceNote || dest.priceType || 'per person')
@@ -567,13 +552,7 @@ function haiboDestinationStartingPrice(dest) {
         : note || 'per person';
     return { price: String(dest.price).trim(), note: shortNote };
   }
-  const pkg = haiboDestinationPreferredPackage(dest);
-  if (!pkg?.price) return null;
-  const note = String(pkg.priceNote || 'per person')
-    .replace(/^·\s*/, '')
-    .trim();
-  const shortNote = /per person/i.test(note) ? 'per person' : note || 'per person';
-  return { price: String(pkg.price).trim(), note: shortNote };
+  return null;
 }
 
 function haiboNormalizeFeatureItem(item) {
@@ -592,26 +571,10 @@ function haiboNormalizeFeatureItem(item) {
   return { title: raw, detail: '' };
 }
 
+/** Tour-level fields only — legacy packages[] may hold leftovers from a previous tour in the same slot. */
 function haiboDestinationIncludedFeatures(dest) {
-  let raw = [];
-  if (Array.isArray(dest?.included) && dest.included.length) {
-    raw = dest.included;
-  } else {
-    const pkg = haiboDestinationPreferredPackage(dest);
-    if (Array.isArray(pkg?.features) && pkg.features.length) {
-      raw = pkg.features;
-    } else {
-      const aggregated = [];
-      (dest?.packages || []).forEach((p) => {
-        (p?.features || []).forEach((f) => {
-          const text = String(f || '').trim();
-          if (text && !aggregated.includes(text)) aggregated.push(text);
-        });
-      });
-      raw = aggregated.length ? aggregated : dest?.highlights || [];
-    }
-  }
-  return raw.map(haiboNormalizeFeatureItem).filter(Boolean);
+  if (!Array.isArray(dest?.included)) return [];
+  return dest.included.map(haiboNormalizeFeatureItem).filter(Boolean);
 }
 
 function haiboDestinationExcludedFeatures(dest) {
@@ -649,13 +612,9 @@ function haiboDestinationMapUrl(dest) {
   return '';
 }
 
+/** Only an admin-set map location; tour names are not geocodable places. */
 function haiboDestinationMapQuery(dest) {
-  const custom = String(dest?.mapQuery || '').trim();
-  if (custom) return custom;
-  const region = String(dest?.region || '').trim();
-  const name = String(dest?.name || '').trim();
-  if (region && name) return `${name}, ${region}, Tanzania`;
-  return region || name || 'Tanzania';
+  return String(dest?.mapQuery || '').trim();
 }
 
 function haiboDestinationImportantInfo(dest) {

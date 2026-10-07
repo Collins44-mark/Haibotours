@@ -745,10 +745,7 @@ function resolveMapEmbedSrc(mapUrl, mapQuery) {
   return `https://maps.google.com/maps?q=${encodeURIComponent(q)}&z=7&output=embed`;
 }
 
-function renderFeatureListHtml(items, emptyMessage) {
-  if (!items.length) {
-    return `<p class="dest-detail-tabs__empty">${escapeHtml(emptyMessage)}</p>`;
-  }
+function renderFeatureListHtml(items) {
   return `<ul class="dest-detail-tabs__features">
     ${items
       .map(
@@ -766,9 +763,6 @@ function renderFeatureListHtml(items, emptyMessage) {
 }
 
 function renderItineraryHtml(steps) {
-  if (!steps.length) {
-    return '<p class="dest-detail-tabs__empty">Itinerary details will appear here once published in the CMS.</p>';
-  }
   return `<ol class="dest-detail-tabs__itinerary">
     ${steps
       .map(
@@ -786,32 +780,31 @@ function renderItineraryHtml(steps) {
   </ol>`;
 }
 
-function renderMapOverviewHtml(overview, mapSrc) {
-  return `<div class="dest-detail-tabs__map-grid">
-    <div class="dest-detail-tabs__map-frame">
+function renderMapOverviewHtml(overview, mapSrc, mapTitle) {
+  const mapHtml = mapSrc
+    ? `<div class="dest-detail-tabs__map-frame">
       <iframe
-        title="Destination map"
+        title="${escapeHtml(mapTitle)}"
         src="${escapeAttrUrl(mapSrc)}"
         loading="lazy"
         referrerpolicy="no-referrer-when-downgrade"
         allowfullscreen
       ></iframe>
-    </div>
-    <div class="dest-detail-tabs__overview">
+    </div>`
+    : '';
+  const overviewHtml = overview
+    ? `<div class="dest-detail-tabs__overview">
       <h3 class="dest-detail-tabs__panel-title">Overview</h3>
-      <p class="dest-detail-tabs__overview-text">${
-        overview
-          ? escapeHtml(overview)
-          : 'Overview will appear here once published in the CMS.'
-      }</p>
-    </div>
+      <p class="dest-detail-tabs__overview-text">${escapeHtml(overview)}</p>
+    </div>`
+    : '';
+  return `<div class="dest-detail-tabs__map-grid${mapSrc ? '' : ' dest-detail-tabs__map-grid--text'}">
+    ${mapHtml}
+    ${overviewHtml}
   </div>`;
 }
 
 function renderImportantHtml(rows) {
-  if (!rows.length) {
-    return '<p class="dest-detail-tabs__empty">Important information will appear here once published in the CMS.</p>';
-  }
   return `<dl class="dest-detail-tabs__info">
     ${rows
       .map(
@@ -846,31 +839,51 @@ function buildDestDetailTabsHtml(dest) {
     typeof haiboDestinationImportantInfo === 'function'
       ? haiboDestinationImportantInfo(dest)
       : [];
-  const mapSrc = resolveMapEmbedSrc(mapUrl, mapQuery);
+  const mapSrc = mapUrl || mapQuery ? resolveMapEmbedSrc(mapUrl, mapQuery) : '';
 
+  /* A tab exists only when this tour's own record has data for it. */
   const tabs = [
-    { id: 'included', label: "What's Included", icon: DEST_TAB_ICONS.included },
-    { id: 'excluded', label: "What's Excluded", icon: DEST_TAB_ICONS.excluded },
-    { id: 'itinerary', label: 'Itinerary', icon: DEST_TAB_ICONS.itinerary },
-    { id: 'map', label: 'Map & Overview', icon: DEST_TAB_ICONS.map },
-    { id: 'info', label: 'Important Information', icon: DEST_TAB_ICONS.info },
-  ];
-
-  const panels = {
-    included: `<h3 class="dest-detail-tabs__panel-title">What's Included</h3>
+    included.length && {
+      id: 'included',
+      label: "What's Included",
+      icon: DEST_TAB_ICONS.included,
+      html: `<h3 class="dest-detail-tabs__panel-title">What's Included</h3>
       <span class="dest-detail-tabs__accent" aria-hidden="true"></span>
-      ${renderFeatureListHtml(included, 'Inclusions will appear here once published in the CMS.')}`,
-    excluded: `<h3 class="dest-detail-tabs__panel-title">What's Excluded</h3>
+      ${renderFeatureListHtml(included)}`,
+    },
+    excluded.length && {
+      id: 'excluded',
+      label: "What's Excluded",
+      icon: DEST_TAB_ICONS.excluded,
+      html: `<h3 class="dest-detail-tabs__panel-title">What's Excluded</h3>
       <span class="dest-detail-tabs__accent" aria-hidden="true"></span>
-      ${renderFeatureListHtml(excluded, 'Exclusions will appear here once published in the CMS.')}`,
-    itinerary: `<h3 class="dest-detail-tabs__panel-title">Itinerary</h3>
+      ${renderFeatureListHtml(excluded)}`,
+    },
+    itinerary.length && {
+      id: 'itinerary',
+      label: 'Itinerary',
+      icon: DEST_TAB_ICONS.itinerary,
+      html: `<h3 class="dest-detail-tabs__panel-title">Itinerary</h3>
       <span class="dest-detail-tabs__accent" aria-hidden="true"></span>
       ${renderItineraryHtml(itinerary)}`,
-    map: renderMapOverviewHtml(overview, mapSrc),
-    info: `<h3 class="dest-detail-tabs__panel-title">Important Information</h3>
+    },
+    (overview || mapSrc) && {
+      id: 'map',
+      label: mapSrc ? 'Map & Overview' : 'Overview',
+      icon: DEST_TAB_ICONS.map,
+      html: renderMapOverviewHtml(overview, mapSrc, `Map: ${dest.name || 'tour location'}`),
+    },
+    important.length && {
+      id: 'info',
+      label: 'Important Information',
+      icon: DEST_TAB_ICONS.info,
+      html: `<h3 class="dest-detail-tabs__panel-title">Important Information</h3>
       <span class="dest-detail-tabs__accent" aria-hidden="true"></span>
       ${renderImportantHtml(important)}`,
-  };
+    },
+  ].filter(Boolean);
+
+  if (!tabs.length) return '';
 
   return `
     <section class="dest-detail-tabs" aria-label="Package information">
@@ -905,12 +918,80 @@ function buildDestDetailTabsHtml(dest) {
               aria-labelledby="dest-tab-${tab.id}"
               data-dest-panel="${tab.id}"
               ${i === 0 ? '' : 'hidden'}
-            >${panels[tab.id]}</div>`
+            >${tab.html}</div>`
             )
             .join('')}
         </div>
       </div>
     </section>`;
+}
+
+const RELATED_PLACE_STOPWORDS = new Set([
+  'NATIONAL', 'PARK', 'CRATER', 'LAKE', 'AREA', 'THE', 'AND', 'OF', 'MOUNTAIN', 'MOUNT', 'TOWN',
+  'FOREST', 'TANZANIA', 'SAFARI', 'DAY', 'DAYS',
+]);
+
+/** Place keywords from the tour's own subtitle/highlights (e.g. SERENGETI, NGORONGORO, MANYARA). */
+function destinationPlaceKeys(dest) {
+  const text = [dest?.subtitle, ...(Array.isArray(dest?.highlights) ? dest.highlights : [])]
+    .map((s) => String(s || ''))
+    .join(' ')
+    .toUpperCase();
+  return new Set(
+    text
+      .split(/[^A-Z]+/)
+      .filter((w) => w.length > 2 && !RELATED_PLACE_STOPWORDS.has(w))
+  );
+}
+
+/** Other published tours that visit the same places, best match first. */
+function relatedDestinations(dest, limit) {
+  const list = typeof getHaiboDestinations === 'function' ? getHaiboDestinations() : [];
+  const keys = destinationPlaceKeys(dest);
+  return list
+    .filter((d) => d.id !== dest.id)
+    .map((d) => {
+      const other = destinationPlaceKeys(d);
+      let score = 0;
+      keys.forEach((k) => {
+        if (other.has(k)) score += 1;
+      });
+      return { d, score };
+    })
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score || (a.d.order ?? 0) - (b.d.order ?? 0))
+    .slice(0, limit)
+    .map((x) => x.d);
+}
+
+function renderRelatedToursHtml(dest) {
+  if (typeof haiboBuildDestinationCard !== 'function') return '';
+  let related = relatedDestinations(dest, 3);
+  let title = 'Related Tanzania tours';
+  if (!related.length) {
+    const list = typeof getHaiboDestinations === 'function' ? getHaiboDestinations() : [];
+    related = list.filter((d) => d.id !== dest.id).slice(0, 3);
+    title = 'More Tanzania tours';
+  }
+  if (!related.length) return '';
+  return `
+    <section class="dest-detail-related" aria-labelledby="dest-related-title">
+      <h2 id="dest-related-title" class="dest-detail-related__title">${title}</h2>
+      <div class="destinations-catalog-grid">
+        ${related.map((d) => haiboBuildDestinationCard(d)).join('')}
+      </div>
+      <p class="dest-detail-related__all"><a href="destinations.html">See all Tanzania safari tours</a></p>
+    </section>`;
+}
+
+function renderDestinationBreadcrumbHtml(dest) {
+  return `<nav class="dest-detail-crumbs" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="/">Home</a></li>
+      <li><a href="destinations.html">Destinations</a></li>
+      <li aria-current="page">${escapeHtml(dest.name)}</li>
+    </ol>
+  </nav>`;
 }
 
 function initDestDetailTabs(root) {
@@ -1049,6 +1130,7 @@ function renderDestinationDetail() {
         <div class="dest-detail-hero__overlay" aria-hidden="true"></div>
       </div>
       <div class="dest-detail-hero__content">
+        ${renderDestinationBreadcrumbHtml(dest)}
         <div class="dest-detail-hero__pills">
           ${locationPill}
           ${durationPill}
@@ -1079,6 +1161,8 @@ function renderDestinationDetail() {
             <span class="dest-detail-book__arrow" aria-hidden="true">${DEST_DETAIL_ARROW_SVG}</span>
           </a>
         </div>
+
+        ${renderRelatedToursHtml(dest)}
       </div>
     </div>
   `;

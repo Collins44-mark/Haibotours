@@ -328,16 +328,7 @@ function bindBuilders(data) {
   const excludedRoot = document.getElementById('excluded-root');
   const itineraryRoot = document.getElementById('itinerary-root');
   const infoRoot = document.getElementById('important-info-root');
-  const isNew = !editId;
-
-  const includedSeed =
-    Array.isArray(data.included) && data.included.length
-      ? data.included
-      : isNew
-        ? []
-        : Array.isArray(preservedPackages[0]?.features)
-          ? preservedPackages[0].features
-          : [];
+  const includedSeed = Array.isArray(data.included) ? data.included : [];
   const excludedSeed = Array.isArray(data.excluded) ? data.excluded : [];
 
   try {
